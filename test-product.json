@@ -1,0 +1,12 @@
+{
+    "name": "Teste Produto",
+    "price": "R$ 100,00",
+    "image": "https://test.com/image.jpg",
+    "category": "Vestuário",
+    "condition": "Novo",
+    "rating": 5,
+    "description": "Teste",
+    "specs": [
+        "Spec 1"
+    ]
+}

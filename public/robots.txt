@@ -1,0 +1,12 @@
+# Mercado Harley - Robots.txt
+# Permite que todos os motores de busca indexem o site
+
+User-agent: *
+Allow: /
+
+# Bloquear áreas administrativas
+Disallow: /admin/
+Disallow: /checkout/
+
+# Sitemap
+Sitemap: https://seusite.com/sitemap.xml

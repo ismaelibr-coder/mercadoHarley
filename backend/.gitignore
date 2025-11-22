@@ -1,0 +1,7 @@
+# Keep your Firebase service account JSON file here
+# Download from: Firebase Console > Project Settings > Service Accounts > Generate New Private Key
+
+# This file should be named: firebase-service-account.json
+# DO NOT commit this file to version control!
+
+*.json
