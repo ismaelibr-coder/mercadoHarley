@@ -4,4 +4,7 @@
 # This file should be named: firebase-service-account.json
 # DO NOT commit this file to version control!
 
-*.json
+# Secrets
+firebase-service-account.json
+serviceAccountKey.json
+.env
