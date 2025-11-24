@@ -69,19 +69,48 @@ export const getOrderById = async (orderId) => {
 };
 
 // Get all orders for a specific user
-export const getUserOrders = async (userId) => {
+export const getUserOrders = async (userId, userEmail) => {
     try {
-        const q = query(
+        // Query by userId
+        const q1 = query(
             collection(db, ORDERS_COLLECTION),
             where('userId', '==', userId),
             orderBy('createdAt', 'desc')
         );
 
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({
+        // Query by userEmail (for orders made before login or as guest)
+        const q2 = userEmail ? query(
+            collection(db, ORDERS_COLLECTION),
+            where('userEmail', '==', userEmail),
+            orderBy('createdAt', 'desc')
+        ) : null;
+
+        const snapshot1 = await getDocs(q1);
+        const orders1 = snapshot1.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
+
+        if (!q2) return orders1;
+
+        const snapshot2 = await getDocs(q2);
+        const orders2 = snapshot2.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // Merge and remove duplicates
+        const allOrders = [...orders1, ...orders2];
+        const uniqueOrders = allOrders.filter((order, index, self) =>
+            index === self.findIndex(o => o.id === order.id)
+        );
+
+        // Sort by createdAt desc
+        return uniqueOrders.sort((a, b) => {
+            const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt);
+            const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt);
+            return dateB - dateA;
+        });
     } catch (error) {
         console.error('Error getting user orders:', error);
         throw error;

@@ -16,7 +16,7 @@ const MyOrdersPage = () => {
             if (!currentUser) return;
 
             try {
-                const userOrders = await getUserOrders(currentUser.uid);
+                const userOrders = await getUserOrders(currentUser.uid, currentUser.email);
                 setOrders(userOrders);
             } catch (err) {
                 console.error('Error fetching orders:', err);
