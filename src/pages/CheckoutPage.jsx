@@ -289,7 +289,7 @@ const CheckoutPage = () => {
                     deliveryDays: selectedShipping ? selectedShipping.deliveryDays : 0
                 },
                 items: cartItems.map(item => ({
-                    productId: item.id,
+                    id: item.id,
                     name: item.name,
                     price: parseFloat(item.price.replace('R$', '').replace('.', '').replace(',', '.').trim()),
                     quantity: item.quantity,
