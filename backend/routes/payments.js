@@ -4,7 +4,7 @@ import {
     createBoletoPayment,
     processCreditCardPayment,
     getPaymentStatus
-} from '../../services/mercadoPagoService.js';
+} from '../services/mercadoPagoService.js';
 import {
     createOrder as createOrderInFirestore,
     updateOrderPayment,
