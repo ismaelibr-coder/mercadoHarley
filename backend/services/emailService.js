@@ -3,7 +3,15 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization to prevent crash when API key is missing
+let resend = null;
+const getResend = () => {
+    if (!resend && process.env.RESEND_API_KEY) {
+        resend = new Resend(process.env.RESEND_API_KEY);
+    }
+    return resend;
+};
+
 const EMAIL_FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 const APP_NAME = 'Mercado Harley';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -19,7 +27,7 @@ export const sendWelcomeEmail = async (user) => {
             return;
         }
 
-        const { data, error } = await resend.emails.send({
+        const { data, error } = await getResend()?.emails.send({
             from: `${APP_NAME} <${EMAIL_FROM}>`,
             to: [user.email],
             subject: `Bem-vindo ao ${APP_NAME}!`,
@@ -113,7 +121,7 @@ export const sendOrderConfirmation = async (order) => {
             </li>`
         ).join('');
 
-        const { data, error } = await resend.emails.send({
+        const { data, error } = await getResend()?.emails.send({
             from: `${APP_NAME} <${EMAIL_FROM}>`,
             to: [order.customer.email],
             subject: `Pedido Confirmado #${order.id.slice(0, 8).toUpperCase()}`,
@@ -219,7 +227,7 @@ export const sendOrderStatusUpdate = async (order, status) => {
                 color = '#ff6600';
         }
 
-        const { data, error } = await resend.emails.send({
+        const { data, error } = await getResend()?.emails.send({
             from: `${APP_NAME} <${EMAIL_FROM}>`,
             to: [order.customer.email],
             subject: `Atualização do Pedido #${order.id.slice(0, 8).toUpperCase()}`,
@@ -292,7 +300,7 @@ export const sendPasswordReset = async (email, link) => {
             return;
         }
 
-        const { data, error } = await resend.emails.send({
+        const { data, error } = await getResend()?.emails.send({
             from: `${APP_NAME} <${EMAIL_FROM}>`,
             to: [email],
             subject: `Recuperação de Senha - ${APP_NAME}`,
@@ -354,3 +362,4 @@ export const sendPasswordReset = async (email, link) => {
         return { success: false, error: err };
     }
 };
+
