@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
 
@@ -11,15 +12,27 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
+    const { currentUser } = useAuth();
     const [cartItems, setCartItems] = useState(() => {
-        const savedCart = localStorage.getItem('mercado-harley-cart');
+        // Get cart specific to current user
+        const userId = currentUser?.uid || 'guest';
+        const savedCart = localStorage.getItem(`mercado-harley-cart-${userId}`);
         return savedCart ? JSON.parse(savedCart) : [];
     });
     const [isCartOpen, setIsCartOpen] = useState(false);
 
+    // Save cart to localStorage whenever it changes
     useEffect(() => {
-        localStorage.setItem('mercado-harley-cart', JSON.stringify(cartItems));
-    }, [cartItems]);
+        const userId = currentUser?.uid || 'guest';
+        localStorage.setItem(`mercado-harley-cart-${userId}`, JSON.stringify(cartItems));
+    }, [cartItems, currentUser]);
+
+    // Clear cart and load user-specific cart when user changes
+    useEffect(() => {
+        const userId = currentUser?.uid || 'guest';
+        const savedCart = localStorage.getItem(`mercado-harley-cart-${userId}`);
+        setCartItems(savedCart ? JSON.parse(savedCart) : []);
+    }, [currentUser?.uid]);
 
     const addToCart = (product) => {
         setCartItems(prevItems => {
