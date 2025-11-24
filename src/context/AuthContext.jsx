@@ -5,9 +5,10 @@ import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signOut,
-    updateProfile
+    updateProfile,
+    sendPasswordResetEmail
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -23,6 +24,7 @@ export const AuthProvider = ({ children }) => {
     // Real Firebase auth state listener
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            console.log('🔐 AUTH STATE CHANGED:', user ? user.email : 'No user');
             setCurrentUser(user);
 
             if (user) {
@@ -64,7 +66,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const register = async (name, email, password) => {
+    const register = async (name, email, password, additionalData = {}) => {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
@@ -73,17 +75,38 @@ export const AuthProvider = ({ children }) => {
                 displayName: name
             });
 
-            // Create user document in Firestore
+            // Create user document in Firestore with all data
             await setDoc(doc(db, 'users', userCredential.user.uid), {
                 email: email,
                 displayName: name,
+                phone: additionalData.phone || '',
+                cpf: additionalData.cpf || '',
+                address: additionalData.address || {},
                 isAdmin: false,
-                createdAt: new Date()
+                createdAt: new Date(),
+                updatedAt: new Date()
             });
 
             // Refresh the user to get updated profile
             await userCredential.user.reload();
             setCurrentUser(auth.currentUser);
+
+            // Send welcome email via backend
+            try {
+                await fetch(`${import.meta.env.VITE_API_URL}/api/auth/welcome`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        displayName: name
+                    })
+                });
+            } catch (emailError) {
+                console.error('Failed to trigger welcome email:', emailError);
+                // Don't fail registration
+            }
 
             return userCredential.user;
         } catch (error) {
@@ -101,12 +124,61 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const resetPassword = async (email) => {
+        try {
+            await sendPasswordResetEmail(auth, email);
+        } catch (error) {
+            console.error('Password reset error:', error);
+            throw error;
+        }
+    };
+
+    const requestPasswordReset = async (email) => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/forgot-password`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to send reset email');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Request password reset error:', error);
+            throw error;
+        }
+    };
+
+    const getUserProfile = async (uid) => {
+        try {
+            const userDoc = await getDoc(doc(db, 'users', uid || currentUser?.uid));
+            if (userDoc.exists()) {
+                return userDoc.data();
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching user profile:', error);
+            return null;
+        }
+    };
+
     const value = {
         currentUser,
+        user: currentUser, // Add alias for consistency
         isAdmin,
+        loading,
         login,
         register,
-        logout
+        logout,
+        resetPassword,
+        requestPasswordReset,
+        getUserProfile
     };
 
     return (

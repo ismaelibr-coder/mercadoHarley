@@ -63,6 +63,9 @@ export const createPixPayment = async (orderData) => {
         };
     } catch (error) {
         console.error('Error creating PIX payment:', error);
+        if (error.cause) {
+            console.error('Mercado Pago Error Cause:', JSON.stringify(error.cause, null, 2));
+        }
         throw new Error(error.message || 'Erro ao criar pagamento PIX');
     }
 };

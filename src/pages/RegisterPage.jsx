@@ -11,13 +11,75 @@ const RegisterPage = () => {
         email: '',
         password: '',
         confirmPassword: '',
-        phone: ''
+        phone: '',
+        cpf: '',
+        cep: '',
+        address: '',
+        number: '',
+        complement: '',
+        city: '',
+        state: ''
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [cepLoading, setCepLoading] = useState(false);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        let maskedValue = value;
+
+        // Apply masks
+        if (name === 'cpf') {
+            maskedValue = value
+                .replace(/\D/g, '')
+                .replace(/(\d{3})(\d)/, '$1.$2')
+                .replace(/(\d{3})(\d)/, '$1.$2')
+                .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+                .replace(/(-\d{2})\d+?$/, '$1');
+        }
+        if (name === 'cep') {
+            maskedValue = value
+                .replace(/\D/g, '')
+                .replace(/(\d{5})(\d)/, '$1-$2')
+                .replace(/(-\d{3})\d+?$/, '$1');
+        }
+        if (name === 'phone') {
+            maskedValue = value
+                .replace(/\D/g, '')
+                .replace(/(\d{2})(\d)/, '($1) $2')
+                .replace(/(\d{5})(\d)/, '$1-$2')
+                .replace(/(-\d{4})\d+?$/, '$1');
+        }
+
+        setFormData({ ...formData, [name]: maskedValue });
+    };
+
+    const fetchAddressByCep = async (cep) => {
+        const cleanCep = cep.replace(/\D/g, '');
+
+        if (cleanCep.length !== 8) return;
+
+        setCepLoading(true);
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+            const data = await response.json();
+
+            if (!data.erro) {
+                setFormData(prev => ({
+                    ...prev,
+                    address: data.logradouro || '',
+                    city: data.localidade || '',
+                    state: data.uf || '',
+                    complement: data.complemento || prev.complement
+                }));
+            } else {
+                alert('CEP não encontrado');
+            }
+        } catch (error) {
+            console.error('Erro ao buscar CEP:', error);
+        } finally {
+            setCepLoading(false);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -32,7 +94,18 @@ const RegisterPage = () => {
         }
 
         try {
-            await register(formData.name, formData.email, formData.password);
+            await register(formData.name, formData.email, formData.password, {
+                phone: formData.phone,
+                cpf: formData.cpf,
+                address: {
+                    cep: formData.cep,
+                    street: formData.address,
+                    number: formData.number,
+                    complement: formData.complement,
+                    city: formData.city,
+                    state: formData.state
+                }
+            });
             alert("Cadastro realizado com sucesso! Bem-vindo ao Mercado Harley.");
             navigate('/');
         } catch (err) {
@@ -146,6 +219,105 @@ const RegisterPage = () => {
                             />
                             <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" />
                         </div>
+                    </div>
+
+                    {/* Address Section */}
+                    <div className="col-span-2 mt-6 pt-6 border-t border-gray-800">
+                        <h3 className="text-gray-400 text-sm mb-4 font-bold">📍 Endereço (Opcional - facilita o checkout)</h3>
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 text-sm mb-2">CPF</label>
+                        <input
+                            type="text"
+                            name="cpf"
+                            value={formData.cpf}
+                            onChange={handleChange}
+                            placeholder="000.000.000-00"
+                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 text-sm mb-2">CEP</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                name="cep"
+                                value={formData.cep}
+                                onChange={handleChange}
+                                onBlur={(e) => fetchAddressByCep(e.target.value)}
+                                placeholder="00000-000"
+                                className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors"
+                            />
+                            {cepLoading && (
+                                <div className="absolute right-3 top-3.5">
+                                    <div className="w-5 h-5 border-2 border-harley-orange border-t-transparent rounded-full animate-spin"></div>
+                                </div>
+                            )}
+                        </div>
+                        <p className="text-gray-500 text-xs mt-1">O endereço será preenchido automaticamente</p>
+                    </div>
+
+                    <div className="col-span-2">
+                        <label className="block text-gray-400 text-sm mb-2">Endereço</label>
+                        <input
+                            type="text"
+                            name="address"
+                            value={formData.address}
+                            onChange={handleChange}
+                            placeholder="Rua, Avenida..."
+                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 text-sm mb-2">Número</label>
+                        <input
+                            type="text"
+                            name="number"
+                            value={formData.number}
+                            onChange={handleChange}
+                            placeholder="123"
+                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 text-sm mb-2">Complemento</label>
+                        <input
+                            type="text"
+                            name="complement"
+                            value={formData.complement}
+                            onChange={handleChange}
+                            placeholder="Apto, Bloco..."
+                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 text-sm mb-2">Cidade</label>
+                        <input
+                            type="text"
+                            name="city"
+                            value={formData.city}
+                            onChange={handleChange}
+                            placeholder="São Paulo"
+                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 text-sm mb-2">Estado</label>
+                        <input
+                            type="text"
+                            name="state"
+                            value={formData.state}
+                            onChange={handleChange}
+                            placeholder="SP"
+                            maxLength="2"
+                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors uppercase"
+                        />
                     </div>
 
                     <button

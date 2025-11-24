@@ -1,50 +1,74 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getActiveBanners } from '../services/bannerService';
 
 const Hero = () => {
+    const [heroBanners, setHeroBanners] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        loadHeroBanners();
+    }, []);
+
+    const loadHeroBanners = async () => {
+        try {
+            const data = await getActiveBanners();
+            // Filter only hero-type banners
+            const heroTypeBanners = (data || []).filter(banner => banner.displayType === 'hero');
+            setHeroBanners(heroTypeBanners);
+        } catch (error) {
+            console.error('Error loading hero banners:', error);
+            setHeroBanners([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleBannerClick = (banner) => {
+        const { type, value } = banner.link;
+
+        if (type === 'category') {
+            navigate(`/products?category=${encodeURIComponent(value)}`);
+        } else if (type === 'product') {
+            navigate(`/product/${value}`);
+        } else if (type === 'external') {
+            window.open(value, '_blank', 'noopener,noreferrer');
+        }
+    };
+
+    // Don't render if no hero banners
+    if (loading || heroBanners.length === 0) {
+        return null;
+    }
+
+    // Display the first hero banner (highest priority)
+    const banner = heroBanners[0];
+
     return (
-        <div className="relative h-[600px] flex items-center overflow-hidden">
-            {/* Background Image with Overlay */}
-            <div className="absolute inset-0 z-0">
-                <img
-                    src="/hero-chopper.png"
-                    alt="Harley Davidson Chopper"
-                    className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent"></div>
-            </div>
+        <div className="relative h-[300px] md:h-[500px] lg:h-[600px] w-full mb-12 overflow-hidden cursor-pointer group"
+            onClick={() => handleBannerClick(banner)}
+        >
+            {/* Background Image */}
+            <img
+                src={banner.image}
+                alt={banner.title}
+                className="w-full h-full object-cover"
+            />
+
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent"></div>
 
             {/* Content */}
-            <div className="container mx-auto px-4 relative z-10">
-                <div className="max-w-2xl">
-                    <span className="text-harley-orange font-bold tracking-widest uppercase mb-4 block">
-                        Performance & Estilo
-                    </span>
-                    <h1 className="text-5xl md:text-7xl font-display font-bold text-white mb-6 leading-tight">
-                        LIBERDADE <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500">
-                            SOBRE RODAS
-                        </span>
-                    </h1>
-                    <p className="text-gray-300 text-lg mb-8 max-w-lg">
-                        Encontre as melhores peças e acessórios para sua Harley.
-                        Qualidade premium para quem exige o melhor da estrada.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <Link
-                            to="/category/todos"
-                            className="bg-harley-orange text-white px-8 py-4 rounded font-bold text-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 group"
-                        >
-                            Ver Catálogo
-                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                        <Link
-                            to="/custom-parts"
-                            className="border-2 border-white text-white px-8 py-4 rounded font-bold text-lg hover:bg-white hover:text-black transition-colors text-center"
-                        >
-                            Peças Customizadas
-                        </Link>
+            <div className="absolute inset-0 flex items-center">
+                <div className="container mx-auto px-4">
+                    <div className="max-w-2xl">
+                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white mb-4 leading-tight">
+                            {banner.title}
+                        </h1>
+                        <div className="mt-6 inline-block bg-harley-orange text-white px-6 py-3 rounded font-bold group-hover:bg-orange-700 transition-colors">
+                            Ver Mais
+                        </div>
                     </div>
                 </div>
             </div>

@@ -35,9 +35,10 @@ const Layout = ({ children }) => {
                         </Link>
 
                         {/* Desktop Navigation */}
-                        <nav className="hidden md:flex items-center gap-8">
+                        <nav className="hidden md:flex items-center gap-4 lg:gap-6">
                             <Link to="/" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Início</Link>
                             <Link to="/category/pecas" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Peças</Link>
+                            <Link to="/custom-parts" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Peças Customizadas</Link>
                             <Link to="/category/acessorios" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Acessórios</Link>
                             <Link to="/category/vestuario" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Vestuário</Link>
                             <Link to="/contato" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Contato</Link>
@@ -46,33 +47,49 @@ const Layout = ({ children }) => {
                         {/* Actions */}
                         <div className="flex items-center gap-4">
                             {currentUser ? (
-                                <div className="hidden md:flex items-center gap-4">
-                                    <span className="text-sm font-bold text-gray-300">
-                                        Olá, <span className="text-harley-orange">{currentUser.displayName || 'Rider'}</span>
-                                    </span>
-                                    <Link
-                                        to="/my-orders"
-                                        className="text-sm font-bold text-gray-300 hover:text-harley-orange transition-colors uppercase"
-                                        title="Meus Pedidos"
-                                    >
-                                        Meus Pedidos
-                                    </Link>
-                                    {currentUser.isAdmin && (
-                                        <Link
-                                            to="/admin/products"
-                                            className="text-sm font-bold text-gray-300 hover:text-harley-orange transition-colors uppercase"
-                                            title="Painel Admin"
-                                        >
-                                            Admin
-                                        </Link>
-                                    )}
-                                    <button
-                                        onClick={handleLogout}
-                                        className="p-2 hover:bg-gray-900 rounded-full transition-colors text-gray-400 hover:text-white"
-                                        title="Sair"
-                                    >
-                                        <LogOut className="w-5 h-5" />
+                                <div className="hidden md:flex items-center gap-4 relative group">
+                                    <button className="flex items-center gap-2 text-sm font-bold text-gray-300 hover:text-harley-orange transition-colors uppercase">
+                                        <User className="w-5 h-5" />
+                                        <span className="max-w-[100px] truncate" title={currentUser.displayName}>
+                                            {currentUser.displayName || 'Minha Conta'}
+                                        </span>
                                     </button>
+
+                                    {/* Dropdown Menu */}
+                                    <div className="absolute top-full right-0 mt-2 w-48 bg-gray-900 border border-gray-800 rounded shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                        <div className="py-2">
+                                            <div className="px-4 py-2 border-b border-gray-800 mb-2">
+                                                <p className="text-xs text-gray-500">Logado como</p>
+                                                <p className="text-sm font-bold text-white truncate" title={currentUser.displayName}>
+                                                    {currentUser.displayName || 'Rider'}
+                                                </p>
+                                            </div>
+
+                                            <Link
+                                                to="/my-orders"
+                                                className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-harley-orange transition-colors"
+                                            >
+                                                Meus Pedidos
+                                            </Link>
+
+                                            {currentUser.isAdmin && (
+                                                <Link
+                                                    to="/admin"
+                                                    className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-harley-orange transition-colors"
+                                                >
+                                                    Painel Admin
+                                                </Link>
+                                            )}
+
+                                            <button
+                                                onClick={handleLogout}
+                                                className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-800 hover:text-red-300 transition-colors flex items-center gap-2"
+                                            >
+                                                <LogOut className="w-4 h-4" />
+                                                Sair
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
                                 <Link
@@ -134,6 +151,7 @@ const Layout = ({ children }) => {
                             )}
                             <Link to="/" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Início</Link>
                             <Link to="/category/pecas" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Peças</Link>
+                            <Link to="/custom-parts" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Peças Customizadas</Link>
                             <Link to="/category/acessorios" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Acessórios</Link>
                             <Link to="/category/vestuario" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Vestuário</Link>
                             <Link to="/contato" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Contato</Link>

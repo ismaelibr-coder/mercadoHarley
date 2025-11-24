@@ -24,13 +24,29 @@ export const CartProvider = ({ children }) => {
     const addToCart = (product) => {
         setCartItems(prevItems => {
             const existingItem = prevItems.find(item => item.id === product.id);
+
+            // Check stock availability
+            const productStock = product.stock || 0;
+
             if (existingItem) {
+                // Check if we can add one more
+                if (existingItem.quantity >= productStock) {
+                    alert(`Estoque insuficiente. Apenas ${productStock} unidades disponíveis.`);
+                    return prevItems;
+                }
                 return prevItems.map(item =>
                     item.id === product.id
                         ? { ...item, quantity: item.quantity + 1 }
                         : item
                 );
             }
+
+            // Check if product has stock
+            if (productStock < 1) {
+                alert('Produto esgotado.');
+                return prevItems;
+            }
+
             return [...prevItems, { ...product, quantity: 1 }];
         });
         setIsCartOpen(true);
@@ -45,12 +61,20 @@ export const CartProvider = ({ children }) => {
             removeFromCart(productId);
             return;
         }
+
         setCartItems(prevItems =>
-            prevItems.map(item =>
-                item.id === productId
-                    ? { ...item, quantity: newQuantity }
-                    : item
-            )
+            prevItems.map(item => {
+                if (item.id === productId) {
+                    // Check stock limit
+                    const productStock = item.stock || 0;
+                    if (newQuantity > productStock) {
+                        alert(`Estoque insuficiente. Apenas ${productStock} unidades disponíveis.`);
+                        return item;
+                    }
+                    return { ...item, quantity: newQuantity };
+                }
+                return item;
+            })
         );
     };
 

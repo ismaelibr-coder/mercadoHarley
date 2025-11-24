@@ -1,25 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getProductsByCategory, getAllProducts } from '../services/productService';
+import { getAllProducts } from '../services/productService';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { Star } from 'lucide-react';
+import ProductFilters from '../components/ProductFilters';
 
 const CategoryPage = () => {
     const { type } = useParams();
     const { addToCart } = useCart();
     const [products, setProducts] = useState([]);
+    const [initialProducts, setInitialProducts] = useState([]); // Store all fetched products for filtering
     const [loading, setLoading] = useState(true);
 
-    // Map URL parameter to display title and category name
+    // Map URL parameter to display title and allowed categories
     const categoryMap = {
-        'todos': { title: 'Todos os Produtos', category: null },
-        'pecas': { title: 'Peças', category: 'Peças' },
-        'acessorios': { title: 'Acessórios', category: 'Acessórios' },
-        'vestuario': { title: 'Vestuário', category: 'Vestuário' }
+        'todos': {
+            title: 'Todos os Produtos',
+            allowedCategories: null // All categories
+        },
+        'pecas': {
+            title: 'Peças',
+            allowedCategories: ['Peças', 'Escapamentos', 'Guidões', 'Bancos', 'Performance', 'Iluminação', 'Freios', 'Suspensão']
+        },
+        'acessorios': {
+            title: 'Acessórios',
+            allowedCategories: ['Acessórios', 'Alforges', 'Retrovisores', 'Manoplas']
+        },
+        'vestuario': {
+            title: 'Vestuário',
+            allowedCategories: ['Vestuário', 'Jaquetas', 'Capacetes', 'Luvas', 'Botas', 'Camisetas']
+        }
     };
 
-    const currentCategory = categoryMap[type] || { title: 'Produtos', category: null };
+    const currentCategory = categoryMap[type] || { title: 'Produtos', allowedCategories: [] };
 
     useEffect(() => {
         loadProducts();
@@ -28,19 +42,63 @@ const CategoryPage = () => {
     const loadProducts = async () => {
         setLoading(true);
         try {
-            // If category is 'todos' or null, get all products
-            if (type === 'todos' || !currentCategory.category) {
-                const data = await getAllProducts();
-                setProducts(data);
-            } else {
-                const data = await getProductsByCategory(currentCategory.category);
-                setProducts(data);
+            // Fetch all products and filter client-side
+            // This is efficient enough for small catalogs and ensures we get all subcategories
+            const allProducts = await getAllProducts();
+
+            let filtered = allProducts;
+            if (currentCategory.allowedCategories) {
+                filtered = allProducts.filter(p =>
+                    currentCategory.allowedCategories.includes(p.category)
+                );
             }
+
+            setInitialProducts(filtered);
+            setProducts(filtered);
         } catch (error) {
             console.error('Error loading products:', error);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleFilterChange = (filters) => {
+        let filtered = [...initialProducts];
+
+        // Search
+        if (filters.search) {
+            const term = filters.search.toLowerCase();
+            filtered = filtered.filter(p =>
+                p.name.toLowerCase().includes(term) ||
+                p.description?.toLowerCase().includes(term)
+            );
+        }
+
+        // Price Range
+        if (filters.priceRange.min) {
+            filtered = filtered.filter(p => {
+                const price = parseFloat(p.price.replace('R$', '').replace('.', '').replace(',', '.').trim());
+                return price >= parseFloat(filters.priceRange.min);
+            });
+        }
+        if (filters.priceRange.max) {
+            filtered = filtered.filter(p => {
+                const price = parseFloat(p.price.replace('R$', '').replace('.', '').replace(',', '.').trim());
+                return price <= parseFloat(filters.priceRange.max);
+            });
+        }
+
+        // Categories
+        if (filters.categories.length > 0) {
+            filtered = filtered.filter(p => filters.categories.includes(p.category));
+        }
+
+        // Conditions
+        if (filters.conditions && filters.conditions.length > 0) {
+            filtered = filtered.filter(p => filters.conditions.includes(p.condition));
+        }
+
+        setProducts(filtered);
     };
 
     return (
@@ -56,13 +114,18 @@ const CategoryPage = () => {
                     </p>
                 </div>
 
+                <ProductFilters
+                    products={initialProducts}
+                    onFilterChange={handleFilterChange}
+                />
+
                 {loading ? (
                     <div className="text-center text-gray-400 py-12">
                         Carregando produtos...
                     </div>
                 ) : products.length === 0 ? (
                     <div className="text-center text-gray-400 py-12">
-                        Nenhum produto encontrado nesta categoria.
+                        Nenhum produto encontrado com os filtros selecionados.
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -1,0 +1,171 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Save, ArrowLeft } from 'lucide-react';
+import { createProduct, updateProduct, getProductById } from '../../services/productService';
+import ImageUpload from '../../components/ImageUpload';
+
+const ProductForm = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const isEdit = Boolean(id);
+
+    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState({
+        name: '',
+        price: '',
+        image: '',
+        category: '',
+        condition: '',
+        rating: 5,
+        stock: 10,
+        description: '',
+        specs: ['', '', '', '']
+    });
+
+    useEffect(() => {
+        if (isEdit) {
+            loadProduct();
+        }
+    }, [id]);
+
+    const loadProduct = async () => {
+        try {
+            const product = await getProductById(id);
+            setFormData({
+                name: product.name || '',
+                price: product.price || '',
+                image: product.image || '',
+                category: product.category || '',
+                condition: product.condition || '',
+                rating: product.rating || 5,
+                stock: product.stock || 10,
+                description: product.description || '',
+                specs: product.specs || ['', '', '', '']
+            });
+        } catch (error) {
+            console.error('Error loading product:', error);
+            name = "price"
+            value = { formData.price }
+            onChange = { handleChange }
+            placeholder = "R$ 0,00"
+            required
+            className = "w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none"
+                />
+                    </div >
+
+                    <div>
+                        <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Categoria *</label>
+                        <select
+                            name="category"
+                            value={formData.category}
+                            onChange={handleChange}
+                            required
+                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none"
+                        >
+                            <option value="">Selecione uma categoria</option>
+                            <option value="Peças">Peças</option>
+                            <option value="Vestuário">Vestuário</option>
+                            <option value="Acessórios">Acessórios</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Condição *</label>
+                        <select
+                            name="condition"
+                            value={formData.condition}
+                            onChange={handleChange}
+                            required
+                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none"
+                        >
+                            <option value="">Selecione a condição</option>
+                            <option value="Novo">Novo</option>
+                            <option value="Usado">Usado</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Avaliação (1-5)</label>
+                        <input
+                            type="number"
+                            name="rating"
+                            value={formData.rating}
+                            onChange={handleChange}
+                            min="1"
+                            max="5"
+                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Quantidade em Estoque *</label>
+                        <input
+                            type="number"
+                            name="stock"
+                            value={formData.stock}
+                            onChange={handleChange}
+                            min="0"
+                            required
+                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none"
+                        />
+                    </div>
+                </div >
+
+                <div className="mb-6">
+                    <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Imagem do Produto *</label>
+                    <ImageUpload
+                        currentImage={formData.image}
+                        onImageUploaded={(url) => setFormData(prev => ({ ...prev, image: url }))}
+                        onImageRemoved={() => setFormData(prev => ({ ...prev, image: '' }))}
+                    />
+                </div>
+
+                <div className="mb-6">
+                    <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Descrição *</label>
+                    <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        required
+                        rows="4"
+                        className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none resize-none"
+                    ></textarea>
+                </div>
+
+                <div className="mb-6">
+                    <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Especificações</label>
+                    {formData.specs.map((spec, index) => (
+                        <input
+                            key={index}
+                            type="text"
+                            value={spec}
+                            onChange={(e) => handleSpecChange(index, e.target.value)}
+                            placeholder={`Especificação ${index + 1}`}
+                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none mb-3"
+                        />
+                    ))}
+                </div>
+
+                <div className="flex gap-4">
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="flex items-center gap-2 bg-harley-orange text-white px-6 py-3 rounded font-bold uppercase tracking-wide hover:bg-orange-700 transition-colors disabled:opacity-50"
+                    >
+                        <Save className="w-5 h-5" />
+                        {loading ? 'Salvando...' : 'Salvar Produto'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/admin/products')}
+                        className="bg-gray-800 text-white px-6 py-3 rounded font-bold uppercase tracking-wide hover:bg-gray-700 transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                </div>
+            </form >
+        </div >
+    );
+};
+
+export default ProductForm;

@@ -97,7 +97,7 @@ const LoginPage = () => {
                             <input type="checkbox" className="mr-2 rounded bg-gray-800 border-gray-700 text-harley-orange focus:ring-harley-orange" />
                             Lembrar de mim
                         </label>
-                        <a href="#" className="text-harley-orange hover:underline">Esqueceu a senha?</a>
+                        <Link to="/forgot-password" className="text-harley-orange hover:underline">Esqueceu a senha?</Link>
                     </div>
 
                     <button

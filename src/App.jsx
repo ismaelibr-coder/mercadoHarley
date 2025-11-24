@@ -7,6 +7,10 @@ import ProductPage from './pages/ProductPage';
 import CheckoutPage from './pages/CheckoutPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
+import AdminBanners from './pages/admin/AdminBanners';
+import BannerForm from './pages/admin/BannerForm';
 import ContactPage from './pages/ContactPage';
 import CategoryPage from './pages/CategoryPage';
 import CustomPartsPage from './pages/CustomPartsPage';
@@ -19,6 +23,7 @@ import AdminProducts from './pages/admin/AdminProducts';
 import ProductForm from './pages/admin/ProductForm';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminOrderDetailsPage from './pages/admin/AdminOrderDetailsPage';
+import ShippingRules from './pages/admin/ShippingRules';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -35,6 +40,7 @@ function App() {
             <Route path="/product/:id" element={<Layout><ProductPage /></Layout>} />
             <Route path="/login" element={<Layout><LoginPage /></Layout>} />
             <Route path="/register" element={<Layout><RegisterPage /></Layout>} />
+            <Route path="/forgot-password" element={<Layout><ForgotPasswordPage /></Layout>} />
             <Route path="/contato" element={<Layout><ContactPage /></Layout>} />
             <Route path="/category/:type" element={<Layout><CategoryPage /></Layout>} />
             <Route path="/custom-parts" element={<Layout><CustomPartsPage /></Layout>} />
@@ -59,6 +65,16 @@ function App() {
                 <Layout>
                   <ProtectedRoute>
                     <MyOrdersPage />
+                  </ProtectedRoute>
+                </Layout>
+              }
+            />
+            <Route
+              path="/change-password"
+              element={
+                <Layout>
+                  <ProtectedRoute>
+                    <ChangePasswordPage />
                   </ProtectedRoute>
                 </Layout>
               }
@@ -89,6 +105,10 @@ function App() {
               <Route path="products/edit/:id" element={<ProductForm />} />
               <Route path="orders" element={<AdminOrdersPage />} />
               <Route path="orders/:id" element={<AdminOrderDetailsPage />} />
+              <Route path="shipping" element={<ShippingRules />} />
+              <Route path="banners" element={<AdminBanners />} />
+              <Route path="banners/new" element={<BannerForm />} />
+              <Route path="banners/edit/:id" element={<BannerForm />} />
             </Route>
           </Routes>
         </CartProvider>

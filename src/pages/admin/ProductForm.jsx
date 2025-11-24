@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Save, ArrowLeft } from 'lucide-react';
 import { createProduct, updateProduct, getProductById } from '../../services/productService';
+import ImageUpload from '../../components/ImageUpload';
 
 const ProductForm = () => {
     const { id } = useParams();
@@ -16,6 +17,7 @@ const ProductForm = () => {
         category: '',
         condition: '',
         rating: 5,
+        stock: 10,
         description: '',
         specs: ['', '', '', '']
     });
@@ -36,6 +38,7 @@ const ProductForm = () => {
                 category: product.category || '',
                 condition: product.condition || '',
                 rating: product.rating || 5,
+                stock: product.stock || 10,
                 description: product.description || '',
                 specs: product.specs || ['', '', '', '']
             });
@@ -47,7 +50,32 @@ const ProductForm = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        if (name === 'price') {
+            // Remove tudo exceto números e vírgula
+            const numericValue = value.replace(/[^\d,]/g, '');
+            setFormData(prev => ({
+                ...prev,
+                [name]: numericValue
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
+    };
+
+    const formatCurrencyDisplay = (value) => {
+        if (!value) return '';
+        // Converte vírgula para ponto e formata
+        const numericValue = value.toString().replace(',', '.');
+        const number = parseFloat(numericValue);
+        if (isNaN(number)) return '';
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(number);
     };
 
     const handleSpecChange = (index, value) => {
@@ -63,7 +91,9 @@ const ProductForm = () => {
         try {
             const productData = {
                 ...formData,
+                price: parseFloat(formData.price.replace(',', '.')) || 0,
                 rating: parseInt(formData.rating),
+                stock: parseInt(formData.stock) || 0,
                 specs: formData.specs.filter(spec => spec.trim() !== '')
             };
 
@@ -115,15 +145,23 @@ const ProductForm = () => {
 
                     <div>
                         <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Preço *</label>
-                        <input
-                            type="text"
-                            name="price"
-                            value={formData.price}
-                            onChange={handleChange}
-                            placeholder="R$ 0,00"
-                            required
-                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none"
-                        />
+                        <div className="relative">
+                            <span className="absolute left-3 top-3.5 text-gray-400 font-bold">R$</span>
+                            <input
+                                type="text"
+                                name="price"
+                                value={formData.price}
+                                onChange={handleChange}
+                                placeholder="0,00"
+                                required
+                                className="w-full bg-black border border-gray-700 rounded p-3 pl-12 text-white focus:border-harley-orange focus:outline-none"
+                            />
+                        </div>
+                        {formData.price && (
+                            <p className="text-xs text-green-500 mt-1 font-bold">
+                                {formatCurrencyDisplay(formData.price)}
+                            </p>
+                        )}
                     </div>
 
                     <div>
@@ -169,21 +207,28 @@ const ProductForm = () => {
                             className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none"
                         />
                     </div>
+
+                    <div>
+                        <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Quantidade em Estoque *</label>
+                        <input
+                            type="number"
+                            name="stock"
+                            value={formData.stock}
+                            onChange={handleChange}
+                            min="0"
+                            required
+                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none"
+                        />
+                    </div>
                 </div>
 
                 <div className="mb-6">
-                    <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">URL da Imagem *</label>
-                    <input
-                        type="url"
-                        name="image"
-                        value={formData.image}
-                        onChange={handleChange}
-                        required
-                        className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none"
+                    <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Imagem do Produto *</label>
+                    <ImageUpload
+                        currentImage={formData.image}
+                        onImageUploaded={(url) => setFormData(prev => ({ ...prev, image: url }))}
+                        onImageRemoved={() => setFormData(prev => ({ ...prev, image: '' }))}
                     />
-                    {formData.image && (
-                        <img src={formData.image} alt="Preview" className="mt-3 w-32 h-32 object-cover rounded" />
-                    )}
                 </div>
 
                 <div className="mb-6">

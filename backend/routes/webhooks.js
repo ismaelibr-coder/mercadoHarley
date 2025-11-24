@@ -1,6 +1,6 @@
 import express from 'express';
 import { updateOrderStatus, getOrderById } from '../services/firebaseService.js';
-import { getPaymentStatus } from '../services/mercadopagoService.js';
+import { getPaymentStatus } from '../services/mercadoPagoService.js';
 
 const router = express.Router();
 

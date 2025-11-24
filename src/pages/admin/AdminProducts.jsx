@@ -89,6 +89,7 @@ const AdminProducts = () => {
                                 <th className="text-left p-4 text-gray-400 font-bold uppercase text-sm">Nome</th>
                                 <th className="text-left p-4 text-gray-400 font-bold uppercase text-sm">Categoria</th>
                                 <th className="text-left p-4 text-gray-400 font-bold uppercase text-sm">Preço</th>
+                                <th className="text-left p-4 text-gray-400 font-bold uppercase text-sm">Estoque</th>
                                 <th className="text-left p-4 text-gray-400 font-bold uppercase text-sm">Avaliação</th>
                                 <th className="text-right p-4 text-gray-400 font-bold uppercase text-sm">Ações</th>
                             </tr>
@@ -106,6 +107,16 @@ const AdminProducts = () => {
                                     <td className="p-4 text-white font-bold">{product.name}</td>
                                     <td className="p-4 text-gray-400">{product.category}</td>
                                     <td className="p-4 text-harley-orange font-bold">{product.price}</td>
+                                    <td className="p-4">
+                                        <span className={`px-3 py-1 rounded font-bold text-sm ${(product.stock || 0) === 0
+                                                ? 'bg-red-900/50 text-red-400'
+                                                : (product.stock || 0) <= 5
+                                                    ? 'bg-yellow-900/50 text-yellow-400'
+                                                    : 'bg-green-900/50 text-green-400'
+                                            }`}>
+                                            {product.stock || 0}
+                                        </span>
+                                    </td>
                                     <td className="p-4 text-gray-400">{'⭐'.repeat(product.rating || 0)}</td>
                                     <td className="p-4">
                                         <div className="flex items-center justify-end gap-2">

@@ -4,11 +4,13 @@ import {
     createBoletoPayment,
     processCreditCardPayment,
     getPaymentStatus
-} from '../services/mercadopagoService.js';
+} from '../services/mercadoPagoService.js';
 import {
     createOrder as createOrderInFirestore,
-    updateOrderPayment
+    updateOrderPayment,
+    getOrderById
 } from '../services/firebaseService.js';
+import { sendOrderConfirmation } from '../services/emailService.js';
 import { optionalAuth } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -141,6 +143,12 @@ router.post('/credit-card', optionalAuth, async (req, res, next) => {
             paymentId: paymentResult.paymentId,
             statusDetail: paymentResult.statusDetail
         });
+
+        // Send confirmation email if approved
+        if (paymentResult.status === 'approved') {
+            const fullOrder = await getOrderById(order.id);
+            await sendOrderConfirmation(fullOrder);
+        }
 
         res.json({
             success: true,

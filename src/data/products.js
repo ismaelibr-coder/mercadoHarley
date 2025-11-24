@@ -12,7 +12,8 @@ export const products = [
             'Material: Aço Inoxidável',
             'Compatibilidade: Sportster 2014-2022',
             'Som: Alto e Grave'
-        ]
+        ],
+        stock: 10,
     },
     {
         id: 2,
@@ -27,7 +28,8 @@ export const products = [
             'Diâmetro: 1.25 polegadas',
             'Acabamento: Cromado',
             'Pré-furado para fiação interna'
-        ]
+        ],
+        stock: 10,
     },
     {
         id: 3,
@@ -42,7 +44,8 @@ export const products = [
             'Costura: Diamante Duplo',
             'Base: Fibra de vidro reforçada',
             'Instalação: Plug & Play'
-        ]
+        ],
+        stock: 10,
     },
     {
         id: 4,
@@ -57,7 +60,8 @@ export const products = [
             'Ganho de potência: Até 5cv',
             'Acabamento: Preto texturizado',
             'Inclui capa de chuva'
-        ]
+        ],
+        stock: 10,
     },
     {
         id: 5,
@@ -72,7 +76,8 @@ export const products = [
             'Temperatura de cor: 6000K',
             'Certificação: DOT/SAE',
             'Vida útil: 50.000 horas'
-        ]
+        ],
+        stock: 10,
     },
     {
         id: 6,

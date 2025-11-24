@@ -4,6 +4,7 @@ import { ArrowLeft, Star, ShoppingCart, Truck, ShieldCheck } from 'lucide-react'
 import { getProductById } from '../services/productService';
 import { useCart } from '../context/CartContext';
 import SEO from '../components/SEO';
+import ShippingCalculator from '../components/ShippingCalculator';
 
 const ProductPage = () => {
     const { id } = useParams();
@@ -111,8 +112,27 @@ const ProductPage = () => {
                             </div>
                         </div>
 
-                        <div className="text-4xl font-bold text-white mb-8">
-                            {product.price}
+                        <div className="mb-8">
+                            <div className="text-4xl font-bold text-white mb-4">
+                                {product.price}
+                            </div>
+
+                            {/* Stock Status */}
+                            <div className="flex items-center gap-2">
+                                {product.stock === 0 ? (
+                                    <span className="px-4 py-2 bg-red-900/50 border border-red-700 text-red-400 rounded font-bold uppercase text-sm">
+                                        ❌ Esgotado
+                                    </span>
+                                ) : product.stock <= 5 ? (
+                                    <span className="px-4 py-2 bg-yellow-900/50 border border-yellow-700 text-yellow-400 rounded font-bold uppercase text-sm">
+                                        ⚠️ Últimas {product.stock} unidades
+                                    </span>
+                                ) : (
+                                    <span className="px-4 py-2 bg-green-900/50 border border-green-700 text-green-400 rounded font-bold uppercase text-sm">
+                                        ✓ Em Estoque
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
                         <div className="prose prose-invert max-w-none mb-8">
@@ -140,19 +160,25 @@ const ProductPage = () => {
                         <div className="flex flex-col sm:flex-row gap-4 mb-8">
                             <button
                                 onClick={() => addToCart(product)}
-                                className="flex-1 bg-harley-orange text-white py-4 px-8 rounded font-bold text-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 uppercase tracking-wider"
+                                disabled={!product.stock || product.stock === 0}
+                                className={`flex-1 py-4 px-8 rounded font-bold text-lg transition-colors flex items-center justify-center gap-2 uppercase tracking-wider ${!product.stock || product.stock === 0
+                                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                        : 'bg-harley-orange text-white hover:bg-orange-700'
+                                    }`}
                             >
                                 <ShoppingCart className="w-6 h-6" />
-                                Adicionar ao Carrinho
+                                {!product.stock || product.stock === 0 ? 'Indisponível' : 'Adicionar ao Carrinho'}
                             </button>
+                        </div>
+
+                        {/* Shipping Calculator */}
+                        <div className="mb-8">
+                            <ShippingCalculator productWeight={product.weight || 1} />
                         </div>
 
                         {/* Features */}
                         <div className="grid grid-cols-2 gap-4 pt-8 border-t border-gray-800">
-                            <div className="flex items-center gap-3 text-gray-300">
-                                <Truck className="w-6 h-6 text-harley-orange" />
-                                <span className="text-sm">Frete Grátis para todo Brasil</span>
-                            </div>
+                            {/* Shipping info removed */}
                             <div className="flex items-center gap-3 text-gray-300">
                                 <ShieldCheck className="w-6 h-6 text-harley-orange" />
                                 <span className="text-sm">Garantia de 1 ano</span>
