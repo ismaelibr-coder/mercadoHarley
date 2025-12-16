@@ -90,6 +90,16 @@ app.get('/', (req, res) => {
     });
 });
 
+// CORS test endpoint
+app.get('/test-cors', (req, res) => {
+    res.json({
+        success: true,
+        message: 'CORS is working!',
+        origin: req.headers.origin,
+        timestamp: new Date().toISOString()
+    });
+});
+
 app.use('/api/payments', paymentsRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/products', limiter, productsRouter);
