@@ -67,7 +67,7 @@ const seedProducts = async () => {
                 name: `${template.name} - ${partner}`,
                 description: `Produto de alta qualidade da marca ${partner}. Ideal para customização.`,
                 price: parseFloat(price.toFixed(2)),
-                image: 'https://via.placeholder.com/400x400.png?text=SICK+GRIP+Product', // Placeholder
+                image: 'https://res.cloudinary.com/demo/image/upload/placeholder.png', // Placeholder
                 category,
                 condition,
                 partType,
