@@ -62,7 +62,8 @@ export const getFilterSettings = async () => {
             return DEFAULT_SETTINGS;
         }
     } catch (error) {
-        console.error("Error fetching settings:", error);
+        // Silent fail - use defaults if Firestore is not accessible (expected for public users)
+        console.warn("⚠️ Using default filter settings (Firestore not accessible)");
         return DEFAULT_SETTINGS;
     }
 };
