@@ -63,46 +63,62 @@ const CategoryPage = () => {
     };
 
     const handleFilterChange = (filters) => {
+        console.log('🔍 Filter changed:', filters);
+        console.log('📦 Initial products count:', initialProducts.length);
+
         let filtered = [...initialProducts];
 
         // Search
         if (filters.search) {
             const term = filters.search.toLowerCase();
+            console.log('🔎 Searching for:', term);
             filtered = filtered.filter(p =>
                 p.name.toLowerCase().includes(term) ||
                 p.description?.toLowerCase().includes(term)
             );
+            console.log('✅ After search:', filtered.length, 'products');
         }
 
         // Price Range
         if (filters.priceRange.min) {
+            console.log('💰 Min price filter:', filters.priceRange.min);
             filtered = filtered.filter(p => {
                 const price = parseFloat(p.price.replace('R$', '').replace('.', '').replace(',', '.').trim());
                 return price >= parseFloat(filters.priceRange.min);
             });
+            console.log('✅ After min price:', filtered.length, 'products');
         }
         if (filters.priceRange.max) {
+            console.log('💰 Max price filter:', filters.priceRange.max);
             filtered = filtered.filter(p => {
                 const price = parseFloat(p.price.replace('R$', '').replace('.', '').replace(',', '.').trim());
                 return price <= parseFloat(filters.priceRange.max);
             });
+            console.log('✅ After max price:', filtered.length, 'products');
         }
 
         // Categories
         if (filters.categories.length > 0) {
+            console.log('📁 Category filter:', filters.categories);
             filtered = filtered.filter(p => filters.categories.includes(p.category));
+            console.log('✅ After categories:', filtered.length, 'products');
         }
 
         // Part Types
         if (filters.partTypes && filters.partTypes.length > 0) {
+            console.log('🔧 Part type filter:', filters.partTypes);
             filtered = filtered.filter(p => filters.partTypes.includes(p.partType));
+            console.log('✅ After part types:', filtered.length, 'products');
         }
 
         // Partners
         if (filters.partners && filters.partners.length > 0) {
+            console.log('🤝 Partner filter:', filters.partners);
             filtered = filtered.filter(p => filters.partners.includes(p.partner));
+            console.log('✅ After partners:', filtered.length, 'products');
         }
 
+        console.log('🎯 Final filtered products:', filtered.length);
         setProducts(filtered);
     };
 
