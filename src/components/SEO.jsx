@@ -2,13 +2,13 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
 const SEO = ({
-    title = 'Mercado Harley - Peças e Acessórios para Harley-Davidson',
+    title = 'SICK GRIP - Peças e Acessórios para Harley-Davidson',
     description = 'Encontre as melhores peças, acessórios e equipamentos para sua Harley-Davidson. Entrega para todo Brasil com qualidade garantida.',
     image = '/og-image.jpg',
     url = window.location.href,
     type = 'website'
 }) => {
-    const siteTitle = 'Mercado Harley';
+    const siteTitle = 'SICK GRIP';
     const fullTitle = title.includes(siteTitle) ? title : `${title} | ${siteTitle}`;
 
     return (
@@ -36,7 +36,7 @@ const SEO = ({
             {/* Additional Meta Tags */}
             <meta name="robots" content="index, follow" />
             <meta name="language" content="Portuguese" />
-            <meta name="author" content="Mercado Harley" />
+            <meta name="author" content="SICK GRIP" />
             <link rel="canonical" href={url} />
         </Helmet>
     );

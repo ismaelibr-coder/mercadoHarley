@@ -18,8 +18,11 @@ const ProductList = () => {
             console.log('🔍 Fetching products from Firestore...');
             const data = await getAllProducts();
             console.log('📦 Products received:', data);
-            console.log('📊 Number of products:', data.length);
-            setProducts(data);
+
+            // Filter for featured products and limit to 6
+            const featuredProducts = data.filter(p => p.featured).slice(0, 6);
+            console.log('⭐ Featured products:', featuredProducts.length);
+            setProducts(featuredProducts);
         } catch (error) {
             console.error('❌ Error loading products:', error);
         } finally {
@@ -35,11 +38,11 @@ const ProductList = () => {
                         <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-2 uppercase">
                             Destaques da Loja
                         </h2>
-                        <div className="h-1 w-20 bg-harley-orange"></div>
+                        <div className="h-1 w-20 bg-sick-red"></div>
                     </div>
                     <Link
                         to="/category/todos"
-                        className="hidden md:block text-harley-orange font-bold hover:text-white transition-colors"
+                        className="hidden md:block text-sick-red font-bold hover:text-white transition-colors"
                     >
                         Ver Todos os Produtos
                     </Link>
@@ -51,12 +54,12 @@ const ProductList = () => {
                     </div>
                 ) : products.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-gray-400 text-lg">Nenhum produto disponível no momento.</p>
+                        <p className="text-gray-400 text-lg">Nenhum produto em destaque no momento.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {products.map((product) => (
-                            <div key={product.id} className="bg-black border border-gray-800 rounded-lg overflow-hidden group hover:border-harley-orange transition-colors duration-300 flex flex-col">
+                            <div key={product.id} className="bg-black border border-gray-800 rounded-lg overflow-hidden group hover:border-sick-red transition-colors duration-300 flex flex-col">
                                 <Link to={`/product/${product.id}`} className="relative h-64 overflow-hidden block">
                                     <img
                                         src={product.image}
@@ -82,13 +85,13 @@ const ProductList = () => {
                                         {[...Array(5)].map((_, i) => (
                                             <Star
                                                 key={i}
-                                                className={`w-4 h-4 ${i < product.rating ? 'text-harley-orange fill-harley-orange' : 'text-gray-600'}`}
+                                                className={`w-4 h-4 ${i < product.rating ? 'text-sick-red fill-sick-red' : 'text-gray-600'}`}
                                             />
                                         ))}
                                     </div>
 
                                     <Link to={`/product/${product.id}`} className="block mb-2">
-                                        <h3 className="text-xl font-bold text-white group-hover:text-harley-orange transition-colors line-clamp-2">
+                                        <h3 className="text-xl font-bold text-white group-hover:text-sick-red transition-colors line-clamp-2">
                                             {product.name}
                                         </h3>
                                     </Link>
@@ -98,12 +101,12 @@ const ProductList = () => {
                                     </p>
 
                                     <div className="flex items-center justify-between mt-auto">
-                                        <span className="text-2xl font-bold text-harley-orange">
+                                        <span className="text-2xl font-bold text-sick-red">
                                             {product.price}
                                         </span>
                                         <button
                                             onClick={() => addToCart(product)}
-                                            className="bg-harley-orange text-white p-3 rounded-full hover:bg-white hover:text-black transition-colors group/btn"
+                                            className="bg-sick-red text-white p-3 rounded-full hover:bg-white hover:text-black transition-colors group/btn"
                                         >
                                             <ShoppingCart className="w-5 h-5" />
                                         </button>

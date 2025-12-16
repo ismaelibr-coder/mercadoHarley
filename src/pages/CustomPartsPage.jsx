@@ -34,7 +34,7 @@ const CustomPartsPage = () => {
     return (
         <div className="min-h-screen bg-black text-white py-12">
             <SEO
-                title="Peças Customizadas - Mercado Harley"
+                title="Peças Customizadas - SICK GRIP"
                 description="Fabricamos peças exclusivas sob medida para sua Harley-Davidson. Entre em contato via WhatsApp para orçamentos e ideias personalizadas."
             />
 

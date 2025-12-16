@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 /**
  * Calculate shipping options based on CEP and weight
@@ -6,13 +6,13 @@ const API_URL = import.meta.env.VITE_API_URL;
  * @param {number} weight - Total weight in kg
  * @returns {Promise<Array>} Array of shipping options
  */
-export const calculateShipping = async (cep, weight) => {
+export const calculateShipping = async (cep, weight, dimensions) => {
     const response = await fetch(`${API_URL}/api/shipping/calculate`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ cep, weight })
+        body: JSON.stringify({ cep, weight, dimensions })
     });
 
     if (!response.ok) {

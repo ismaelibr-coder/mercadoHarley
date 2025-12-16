@@ -162,8 +162,8 @@ const ProductPage = () => {
                                 onClick={() => addToCart(product)}
                                 disabled={!product.stock || product.stock === 0}
                                 className={`flex-1 py-4 px-8 rounded font-bold text-lg transition-colors flex items-center justify-center gap-2 uppercase tracking-wider ${!product.stock || product.stock === 0
-                                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                        : 'bg-harley-orange text-white hover:bg-orange-700'
+                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                    : 'bg-harley-orange text-white hover:bg-orange-700'
                                     }`}
                             >
                                 <ShoppingCart className="w-6 h-6" />
@@ -173,7 +173,14 @@ const ProductPage = () => {
 
                         {/* Shipping Calculator */}
                         <div className="mb-8">
-                            <ShippingCalculator productWeight={product.weight || 1} />
+                            <ShippingCalculator
+                                productWeight={product.weight || 1}
+                                dimensions={{
+                                    width: product.width || 20,
+                                    height: product.height || 20,
+                                    length: product.length || 20
+                                }}
+                            />
                         </div>
 
                         {/* Features */}

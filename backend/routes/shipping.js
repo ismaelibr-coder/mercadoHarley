@@ -1,20 +1,28 @@
 import express from 'express';
 import { calculateShipping, getAllShippingRules, createShippingRule, updateShippingRule, deleteShippingRule } from '../services/shippingService.js';
 import { verifyToken, isUserAdmin } from '../services/firebaseService.js';
+import { calculateMelhorEnvioShipping } from '../services/melhorEnvioService.js';
 
 const router = express.Router();
 
 // Calculate shipping (public endpoint)
 router.post('/calculate', async (req, res) => {
     try {
-        const { cep, weight } = req.body;
+        const { cep, weight, dimensions } = req.body;
 
         if (!cep || !weight) {
             return res.status(400).json({ error: 'CEP e peso são obrigatórios' });
         }
 
-        const options = await calculateShipping(cep, parseFloat(weight));
-        res.json(options);
+        // 1. Try Melhor Envio (External API)
+        const melhorEnvioOptions = await calculateMelhorEnvioShipping(cep, parseFloat(weight), dimensions);
+
+        if (melhorEnvioOptions && melhorEnvioOptions.length > 0) {
+            return res.json(melhorEnvioOptions);
+        } else {
+            console.error('Melhor Envio returned no options or failed.');
+            return res.status(503).json({ error: 'Serviço de cálculo de frete indisponível no momento.' });
+        }
     } catch (error) {
         console.error('Error calculating shipping:', error);
         res.status(500).json({ error: error.message });

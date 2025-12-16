@@ -91,7 +91,7 @@ const ChangePasswordPage = () => {
         <div className="min-h-screen bg-black flex items-center justify-center px-4 py-12">
             <SEO
                 title="Alterar Senha"
-                description="Altere sua senha do Mercado Harley"
+                description="Altere sua senha do SICK GRIP"
             />
             <div className="max-w-md w-full bg-gray-900 rounded-lg border border-gray-800 p-8">
                 <div className="text-center mb-8">

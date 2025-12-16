@@ -2,6 +2,7 @@
 import admin from 'firebase-admin';
 import { readFileSync } from 'fs';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -20,8 +21,9 @@ const db = admin.firestore();
 const auth = admin.auth();
 
 const createAdmin = async () => {
-    const email = 'admin@mercadoharley.com';
-    const password = '123456';
+    const email = 'admin@sickgrip.com.br';
+    // Gerar senha aleatória forte (16 caracteres)
+    const password = crypto.randomBytes(16).toString('hex');
     const displayName = 'Admin Novo';
 
     try {
@@ -64,6 +66,7 @@ const createAdmin = async () => {
 
         console.log('✅ Firestore profile updated');
         console.log(`\n🎉 Admin user created successfully!`);
+        console.log(`\n⚠️  IMPORTANTE: Salve esta senha em local seguro!`);
         console.log(`Email: ${email}`);
         console.log(`Password: ${password}`);
 

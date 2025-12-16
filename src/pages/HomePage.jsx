@@ -1,24 +1,33 @@
 import React from 'react';
-import BannerCarousel from '../components/BannerCarousel';
-import Hero from '../components/Hero';
+import FeaturedCarousel from '../components/FeaturedCarousel';
 import ProductList from '../components/ProductList';
-import SEO from '../components/SEO';
+import PartnersBanner from '../components/PartnersBanner';
+import CategoryGrid from '../components/CategoryGrid';
 
 const HomePage = () => {
     return (
         <>
-            <SEO
-                title="Mercado Harley - Peças e Acessórios para Harley-Davidson"
-                description="Encontre as melhores peças, acessórios e equipamentos para sua Harley-Davidson. Escapamentos, guidões, bancos e muito mais. Entrega para todo Brasil."
-            />
+            <FeaturedCarousel />
 
-            {/* Hero Section - displays hero-type banners */}
-            <Hero />
+            <div className="container mx-auto px-4 py-12">
+                <h2 className="text-3xl font-display font-bold mb-8 text-white uppercase border-l-4 border-sick-red pl-4">
+                    Compre por Categoria
+                </h2>
+                <CategoryGrid />
+            </div>
 
-            {/* Carousel Section - displays carousel-type banners */}
-            <BannerCarousel />
+            <main className="container mx-auto px-4 py-12">
+                <div className="mb-12">
+                    <h2 className="text-3xl font-display font-bold mb-8 text-white uppercase border-l-4 border-sick-red pl-4">
+                        Destaques da Loja
+                    </h2>
+                    <ProductList />
 
-            <ProductList />
+
+                </div>
+            </main>
+
+            <PartnersBanner />
         </>
     );
 };

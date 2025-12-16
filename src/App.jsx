@@ -12,8 +12,11 @@ import ChangePasswordPage from './pages/ChangePasswordPage';
 import AdminBanners from './pages/admin/AdminBanners';
 import BannerForm from './pages/admin/BannerForm';
 import ContactPage from './pages/ContactPage';
+import AboutPage from './pages/AboutPage';
+import TermsPage from './pages/TermsPage';
 import CategoryPage from './pages/CategoryPage';
 import CustomPartsPage from './pages/CustomPartsPage';
+import NewsPage from './pages/NewsPage';
 import SeedDatabase from './pages/SeedDatabase';
 import MigrateCategories from './pages/MigrateCategories';
 import OrderConfirmation from './pages/OrderConfirmation';
@@ -24,6 +27,7 @@ import ProductForm from './pages/admin/ProductForm';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminOrderDetailsPage from './pages/admin/AdminOrderDetailsPage';
 import ShippingRules from './pages/admin/ShippingRules';
+import AdminSettings from './pages/admin/AdminSettings';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -41,9 +45,12 @@ function App() {
             <Route path="/login" element={<Layout><LoginPage /></Layout>} />
             <Route path="/register" element={<Layout><RegisterPage /></Layout>} />
             <Route path="/forgot-password" element={<Layout><ForgotPasswordPage /></Layout>} />
-            <Route path="/contato" element={<Layout><ContactPage /></Layout>} />
+            <Route path="/contato" element={<ContactPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/terms" element={<TermsPage />} />
             <Route path="/category/:type" element={<Layout><CategoryPage /></Layout>} />
             <Route path="/custom-parts" element={<Layout><CustomPartsPage /></Layout>} />
+            <Route path="/news" element={<NewsPage />} />
             <Route path="/seed" element={<SeedDatabase />} />
             <Route path="/migrate-categories" element={<MigrateCategories />} />
             {/* The original /order-confirmation/:orderId route was public, now it's moved to protected */}
@@ -109,6 +116,7 @@ function App() {
               <Route path="banners" element={<AdminBanners />} />
               <Route path="banners/new" element={<BannerForm />} />
               <Route path="banners/edit/:id" element={<BannerForm />} />
+              <Route path="settings" element={<AdminSettings />} />
             </Route>
           </Routes>
         </CartProvider>

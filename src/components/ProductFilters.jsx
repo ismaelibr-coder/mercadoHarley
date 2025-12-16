@@ -1,29 +1,68 @@
-
 import React, { useState, useEffect } from 'react';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronDown, ChevronRight } from 'lucide-react';
+import { getFilterSettings } from '../services/settingsService';
 
 const ProductFilters = ({ products, onFilterChange }) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(true);
     const [priceRange, setPriceRange] = useState({ min: '', max: '' });
     const [selectedCategories, setSelectedCategories] = useState([]);
-    const [selectedConditions, setSelectedConditions] = useState([]);
+    const [selectedPartTypes, setSelectedPartTypes] = useState([]);
+    const [selectedPartners, setSelectedPartners] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Extract unique categories from products
-    const availableCategories = [...new Set(products.map(p => p.category))].filter(Boolean).sort();
+    // Dynamic Options State
+    const [availableCategories, setAvailableCategories] = useState([]);
+    const [availablePartTypes, setAvailablePartTypes] = useState([]);
+    const [availablePartners, setAvailablePartners] = useState([]);
 
-    // Extract unique conditions
-    const availableConditions = ['Novo', 'Usado'];
+    // Accordion states
+    const [expandedSections, setExpandedSections] = useState({
+        categories: false,
+        partTypes: false,
+        partners: false,
+        price: false
+    });
+
+    // Load Settings
+    useEffect(() => {
+        const loadSettings = async () => {
+            const settings = await getFilterSettings();
+            setAvailableCategories(settings.categories);
+            setAvailablePartTypes(settings.partTypes);
+            setAvailablePartners(settings.partners);
+        };
+        loadSettings();
+    }, []);
+
+    // Counts (Computed from products)
+    const categoryCounts = products.reduce((acc, product) => {
+        const cat = product.category || 'Outros';
+        acc[cat] = (acc[cat] || 0) + 1;
+        return acc;
+    }, {});
+
+    const partTypeCounts = products.reduce((acc, product) => {
+        const type = product.partType;
+        if (type) acc[type] = (acc[type] || 0) + 1;
+        return acc;
+    }, {});
+
+    const partnerCounts = products.reduce((acc, product) => {
+        const partner = product.partner;
+        if (partner) acc[partner] = (acc[partner] || 0) + 1;
+        return acc;
+    }, {});
 
     useEffect(() => {
         applyFilters();
-    }, [priceRange, selectedCategories, selectedConditions, searchTerm]);
+    }, [priceRange, selectedCategories, selectedPartTypes, selectedPartners, searchTerm]);
 
     const applyFilters = () => {
         onFilterChange({
             priceRange,
             categories: selectedCategories,
-            conditions: selectedConditions,
+            partTypes: selectedPartTypes,
+            partners: selectedPartners,
             search: searchTerm
         });
     };
@@ -36,117 +75,186 @@ const ProductFilters = ({ products, onFilterChange }) => {
         );
     };
 
+    const togglePartType = (type) => {
+        setSelectedPartTypes(prev =>
+            prev.includes(type)
+                ? prev.filter(t => t !== type)
+                : [...prev, type]
+        );
+    };
+
+    const togglePartner = (partner) => {
+        setSelectedPartners(prev =>
+            prev.includes(partner)
+                ? prev.filter(p => p !== partner)
+                : [...prev, partner]
+        );
+    };
+
+    const toggleSection = (section) => {
+        setExpandedSections(prev => ({
+            ...prev,
+            [section]: !prev[section]
+        }));
+    };
+
     const clearFilters = () => {
         setPriceRange({ min: '', max: '' });
         setSelectedCategories([]);
-        setSelectedConditions([]);
+        setSelectedPartTypes([]);
+        setSelectedPartners([]);
         setSearchTerm('');
     };
 
     return (
-        <div className="mb-8">
+        <div className="mb-8 md:mb-0">
             {/* Mobile Filter Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="md:hidden w-full bg-gray-900 border border-gray-800 text-white p-3 rounded flex items-center justify-center gap-2 mb-4"
+                className="md:hidden w-full bg-gray-900 border border-gray-800 text-white p-3 rounded flex items-center justify-center gap-2 mb-4 uppercase font-bold text-sm tracking-wide hover:border-sick-red transition-colors"
             >
-                <SlidersHorizontal className="w-5 h-5" />
-                Filtros
+                <SlidersHorizontal className="w-5 h-5 text-sick-red" />
+                Filtros & Categorias
             </button>
 
-            {/* Filters Container */}
-            <div className={`${isOpen ? 'block' : 'hidden'} md:block bg-gray-900 border border-gray-800 rounded-lg p-6`}>
-                <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-end">
+            {/* Sidebar Container */}
+            <div className={`${isOpen ? 'block' : 'hidden'} md:block bg-gray-900/50 border border-gray-800 rounded-lg p-6 sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto`}>
+                <h3 className="font-display font-bold text-xl uppercase text-white mb-6 border-b border-gray-800 pb-2">
+                    Navegar Por
+                </h3>
 
-                    {/* Search */}
-                    <div className="w-full md:w-1/4">
-                        <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Buscar</label>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                placeholder="Nome do produto..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full bg-black border border-gray-700 rounded p-3 pl-10 text-white focus:border-harley-orange focus:outline-none transition-colors"
-                            />
-                            <Search className="absolute left-3 top-3.5 w-5 h-5 text-gray-500" />
-                        </div>
-                    </div>
-
-                    {/* Price Range */}
-                    <div className="w-full md:w-1/4">
-                        <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Preço (R$)</label>
-                        <div className="flex gap-2 items-center">
-                            <input
-                                type="number"
-                                placeholder="Mín"
-                                value={priceRange.min}
-                                onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-                                className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors"
-                            />
-                            <span className="text-gray-500">-</span>
-                            <input
-                                type="number"
-                                placeholder="Máx"
-                                value={priceRange.max}
-                                onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-                                className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Condition (Dropdown) */}
-                    <div className="w-full md:w-1/4">
-                        <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Condição</label>
-                        <select
-                            value={selectedConditions[0] || ''}
-                            onChange={(e) => setSelectedConditions(e.target.value ? [e.target.value] : [])}
-                            className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors appearance-none cursor-pointer"
-                        >
-                            <option value="">Todas</option>
-                            {availableConditions.map(condition => (
-                                <option key={condition} value={condition}>{condition}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Categories */}
-                    <div className="w-full md:w-1/4">
-                        <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Categorias</label>
-                        <div className="flex flex-wrap gap-2">
-                            {availableCategories.map(category => (
-                                <button
-                                    key={category}
-                                    onClick={() => toggleCategory(category)}
-                                    className={`px-3 py-1 rounded-full text-xs font-bold uppercase border transition-colors ${selectedCategories.includes(category)
-                                            ? 'bg-harley-orange border-harley-orange text-white'
-                                            : 'bg-black border-gray-700 text-gray-400 hover:border-gray-500'
-                                        }`}
-                                >
-                                    {category}
-                                </button>
-                            ))}
-                        </div>
+                {/* Search */}
+                <div className="mb-6">
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Buscar peça..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-black border border-gray-700 rounded p-2 pl-9 text-sm text-white focus:border-sick-red focus:outline-none transition-colors"
+                        />
+                        <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-500" />
                     </div>
                 </div>
 
-                {/* Active Filters Summary & Clear */}
-                {(searchTerm || priceRange.min || priceRange.max || selectedCategories.length > 0 || selectedConditions.length > 0) && (
-                    <div className="mt-6 pt-6 border-t border-gray-800 flex justify-between items-center">
-                        <div className="text-sm text-gray-400">
-                            Filtros ativos:
-                            {searchTerm && <span className="ml-2 text-white">"{searchTerm}"</span>}
-                            {(priceRange.min || priceRange.max) && <span className="ml-2 text-white">Preço</span>}
-                            {selectedConditions.length > 0 && <span className="ml-2 text-white">{selectedConditions.join(', ')}</span>}
-                            {selectedCategories.length > 0 && <span className="ml-2 text-white">{selectedCategories.length} categorias</span>}
+                {/* Categories */}
+                <div className="mb-6">
+                    <button
+                        onClick={() => toggleSection('categories')}
+                        className="w-full flex items-center justify-between text-gray-300 text-sm font-bold uppercase mb-2 tracking-wider bg-gray-800/50 p-2 rounded hover:bg-gray-800 transition-colors"
+                    >
+                        <span>Categoria</span>
+                        {expandedSections.categories ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    </button>
+                    {expandedSections.categories && (
+                        <div className="space-y-1 pl-2 max-h-48 overflow-y-auto">
+                            {availableCategories.map(category => (
+                                <label key={category} className="flex items-center gap-2 text-sm text-gray-300 hover:text-sick-red cursor-pointer py-1 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedCategories.includes(category)}
+                                        onChange={() => toggleCategory(category)}
+                                        className="rounded bg-black border-gray-600 text-sick-red focus:ring-sick-red focus:ring-offset-0"
+                                    />
+                                    <span className="flex-1">{category}</span>
+                                    <span className="text-xs text-gray-500">({categoryCounts[category]})</span>
+                                </label>
+                            ))}
                         </div>
-                        <button
-                            onClick={clearFilters}
-                            className="text-red-500 text-sm font-bold uppercase flex items-center gap-1 hover:text-red-400"
-                        >
-                            <X className="w-4 h-4" /> Limpar Filtros
-                        </button>
-                    </div>
+                    )}
+                </div>
+
+                {/* Part Types */}
+                <div className="mb-6">
+                    <button
+                        onClick={() => toggleSection('partTypes')}
+                        className="w-full flex items-center justify-between text-gray-300 text-sm font-bold uppercase mb-2 tracking-wider bg-gray-800/50 p-2 rounded hover:bg-gray-800 transition-colors"
+                    >
+                        <span>Tipo de Peça</span>
+                        {expandedSections.partTypes ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    </button>
+                    {expandedSections.partTypes && (
+                        <div className="space-y-1 pl-2 max-h-64 overflow-y-auto">
+                            {availablePartTypes.map(type => (
+                                <label key={type} className="flex items-center gap-2 text-sm text-gray-300 hover:text-sick-red cursor-pointer py-1 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedPartTypes.includes(type)}
+                                        onChange={() => togglePartType(type)}
+                                        className="rounded bg-black border-gray-600 text-sick-red focus:ring-sick-red focus:ring-offset-0"
+                                    />
+                                    <span className="flex-1">{type}</span>
+                                    {partTypeCounts[type] && <span className="text-xs text-gray-500">({partTypeCounts[type]})</span>}
+                                </label>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Partners */}
+                <div className="mb-6">
+                    <button
+                        onClick={() => toggleSection('partners')}
+                        className="w-full flex items-center justify-between text-gray-300 text-sm font-bold uppercase mb-2 tracking-wider bg-gray-800/50 p-2 rounded hover:bg-gray-800 transition-colors"
+                    >
+                        <span>Parceiro / Marca</span>
+                        {expandedSections.partners ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    </button>
+                    {expandedSections.partners && (
+                        <div className="space-y-1 pl-2 max-h-48 overflow-y-auto">
+                            {availablePartners.map(partner => (
+                                <label key={partner} className="flex items-center gap-2 text-sm text-gray-300 hover:text-sick-red cursor-pointer py-1 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedPartners.includes(partner)}
+                                        onChange={() => togglePartner(partner)}
+                                        className="rounded bg-black border-gray-600 text-sick-red focus:ring-sick-red focus:ring-offset-0"
+                                    />
+                                    <span className="flex-1">{partner}</span>
+                                    {partnerCounts[partner] && <span className="text-xs text-gray-500">({partnerCounts[partner]})</span>}
+                                </label>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Price Range */}
+                <div className="mb-6">
+                    <button
+                        onClick={() => toggleSection('price')}
+                        className="w-full flex items-center justify-between text-gray-300 text-sm font-bold uppercase mb-2 tracking-wider bg-gray-800/50 p-2 rounded hover:bg-gray-800 transition-colors"
+                    >
+                        <span>Faixa de Preço</span>
+                        {expandedSections.price ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    </button>
+                    {expandedSections.price && (
+                        <div className="grid grid-cols-2 gap-2 pl-2">
+                            <input
+                                type="number"
+                                placeholder="Min"
+                                value={priceRange.min}
+                                onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
+                                className="bg-black border border-gray-700 rounded p-2 text-sm text-white focus:border-sick-red focus:outline-none"
+                            />
+                            <input
+                                type="number"
+                                placeholder="Max"
+                                value={priceRange.max}
+                                onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
+                                className="bg-black border border-gray-700 rounded p-2 text-sm text-white focus:border-sick-red focus:outline-none"
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* Clear Filters */}
+                {(selectedCategories.length > 0 || selectedPartTypes.length > 0 || selectedPartners.length > 0 || priceRange.min || priceRange.max || searchTerm) && (
+                    <button
+                        onClick={clearFilters}
+                        className="w-full bg-sick-red text-white py-2 rounded font-bold uppercase text-xs hover:bg-red-700 transition-colors"
+                    >
+                        Limpar Filtros
+                    </button>
                 )}
             </div>
         </div>

@@ -9,8 +9,9 @@ let db = null;
 
 export const initializeFirebase = () => {
     try {
+        const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || './firebase-service-account.json';
         const serviceAccount = JSON.parse(
-            readFileSync(process.env.FIREBASE_SERVICE_ACCOUNT_PATH, 'utf8')
+            readFileSync(serviceAccountPath, 'utf8')
         );
 
         admin.initializeApp({

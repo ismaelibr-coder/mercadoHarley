@@ -106,7 +106,7 @@ const RegisterPage = () => {
                     state: formData.state
                 }
             });
-            alert("Cadastro realizado com sucesso! Bem-vindo ao Mercado Harley.");
+            alert("Cadastro realizado com sucesso! Bem-vindo ao SICK GRIP.");
             navigate('/');
         } catch (err) {
             // Firebase error handling
@@ -131,7 +131,7 @@ const RegisterPage = () => {
             <div className="max-w-md w-full bg-gray-900 rounded-lg border border-gray-800 p-8">
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-display font-bold text-white uppercase mb-2">Criar Conta</h1>
-                    <p className="text-gray-400">Junte-se à comunidade Mercado Harley</p>
+                    <p className="text-gray-400">Junte-se à comunidade SICK GRIP</p>
                 </div>
 
                 {error && (

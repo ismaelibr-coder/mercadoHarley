@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import WhatsAppButton from './WhatsAppButton';
+import InfoBar from './InfoBar';
 
 const Layout = ({ children }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,9 +29,9 @@ const Layout = ({ children }) => {
                     <div className="flex items-center justify-between">
                         {/* Logo */}
                         <Link to="/" className="flex items-center gap-3 group">
-                            <img src="/logo.png" alt="Mercado Harley" className="h-16 md:h-20 w-auto transition-transform duration-300 group-hover:scale-105" />
-                            <span className="font-display font-bold text-2xl md:text-3xl tracking-wider uppercase text-white group-hover:text-harley-orange transition-colors duration-300 hidden sm:block">
-                                Mercado <span className="text-harley-orange group-hover:text-white">Harley</span>
+                            <img src="/sick-grip-logo.png" alt="SICK GRIP" className="h-16 md:h-20 w-auto transition-transform duration-300 group-hover:scale-105" />
+                            <span className="font-display font-bold text-2xl md:text-3xl tracking-wider uppercase text-white group-hover:text-sick-red transition-colors duration-300 hidden sm:block">
+                                SICK <span className="text-sick-red group-hover:text-white">GRIP</span>
                             </span>
                         </Link>
 
@@ -170,15 +171,18 @@ const Layout = ({ children }) => {
                 {children}
             </main>
 
+            {/* InfoBar */}
+            <InfoBar />
+
             {/* Footer */}
             <footer className="bg-gray-900 border-t border-gray-800 pt-16 pb-8">
                 <div className="container mx-auto px-4">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                         <div>
                             <div className="flex items-center gap-3 mb-6">
-                                <img src="/logo.png" alt="Mercado Harley" className="h-10 w-auto" />
+                                <img src="/sick-grip-logo.png" alt="SICK GRIP" className="h-10 w-auto" />
                                 <span className="font-display font-bold text-xl tracking-wider uppercase text-white">
-                                    Mercado <span className="text-harley-orange">Harley</span>
+                                    SICK <span className="text-sick-red">GRIP</span>
                                 </span>
                             </div>
                             <p className="text-gray-400 mb-6">
@@ -216,7 +220,7 @@ const Layout = ({ children }) => {
                                 </li>
                                 <li className="flex items-center gap-3">
                                     <Mail className="w-5 h-5 text-harley-orange" />
-                                    <span>contato@mercadoharley.com.br</span>
+                                    <span>contato@sickgrip.com.br</span>
                                 </li>
                             </ul>
                         </div>
@@ -238,7 +242,7 @@ const Layout = ({ children }) => {
                     </div>
 
                     <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
-                        <p>&copy; 2024 Mercado Harley. Todos os direitos reservados.</p>
+                        <p>&copy; 2024 SICK GRIP. Todos os direitos reservados.</p>
                     </div>
                 </div>
             </footer>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Truck, Loader2, AlertCircle } from 'lucide-react';
 import { calculateShipping } from '../services/shippingService';
 
-const ShippingCalculator = ({ productWeight = 1 }) => {
+const ShippingCalculator = ({ productWeight = 1, dimensions }) => {
     const [cep, setCep] = useState('');
     const [options, setOptions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -33,7 +33,7 @@ const ShippingCalculator = ({ productWeight = 1 }) => {
         setOptions([]);
 
         try {
-            const result = await calculateShipping(cep, productWeight);
+            const result = await calculateShipping(cep, productWeight, dimensions);
 
             if (result.length === 0) {
                 setError('Nenhuma opção de frete disponível para este CEP');
@@ -103,7 +103,7 @@ const ShippingCalculator = ({ productWeight = 1 }) => {
                             <div>
                                 <p className="font-semibold text-white">{option.name}</p>
                                 <p className="text-sm text-gray-400">
-                                    Entrega em {option.deliveryDays} dias úteis
+                                    Entrega em {option.deliveryTime} dias úteis
                                 </p>
                             </div>
                             <p className="text-harley-orange font-bold">

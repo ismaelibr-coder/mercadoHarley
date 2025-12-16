@@ -225,7 +225,7 @@ const CheckoutPage = () => {
 
                 try {
                     const totalWeight = cartItems.reduce((total, item) => {
-                        const itemWeight = item.weight || 1;
+                        const itemWeight = item.dimensions?.weight || item.weight || 1;
                         return total + (itemWeight * item.quantity);
                     }, 0);
 
@@ -293,7 +293,9 @@ const CheckoutPage = () => {
                     name: item.name,
                     price: parseFloat(item.price.replace('R$', '').replace('.', '').replace(',', '.').trim()),
                     quantity: item.quantity,
-                    image: item.image
+                    image: item.image,
+                    profitMargin: item.profitMargin || 0,
+                    partner: item.partner || ''
                 })),
                 payment: {
                     method: paymentMethod,
@@ -341,7 +343,7 @@ const CheckoutPage = () => {
         return (
             <div className="min-h-[60vh] flex flex-col items-center justify-center text-white">
                 <h2 className="text-3xl font-bold mb-4">Seu carrinho está vazio</h2>
-                <button onClick={() => navigate('/')} className="text-harley-orange hover:underline">
+                <button onClick={() => navigate('/')} className="text-sick-red hover:underline">
                     Voltar para a loja
                 </button>
             </div>
@@ -354,13 +356,13 @@ const CheckoutPage = () => {
                 <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6">
                     <ShieldCheck className="w-10 h-10 text-white" />
                 </div>
-                <h2 className="text-4xl font-display font-bold mb-4 text-harley-orange">Pedido Confirmado!</h2>
+                <h2 className="text-4xl font-display font-bold mb-4 text-sick-red">Pedido Confirmado!</h2>
                 <p className="text-gray-400 text-lg mb-8 max-w-md">
                     Obrigado pela sua compra. Você receberá um e-mail com os detalhes do pedido e código de rastreio.
                 </p>
                 <button
                     onClick={() => navigate('/')}
-                    className="bg-harley-orange text-white py-3 px-8 rounded font-bold hover:bg-orange-700 transition-colors uppercase tracking-wide"
+                    className="bg-sick-red text-white py-3 px-8 rounded font-bold hover:bg-orange-700 transition-colors uppercase tracking-wide"
                 >
                     Voltar para a Loja
                 </button>
@@ -381,7 +383,7 @@ const CheckoutPage = () => {
                         {/* Shipping */}
                         <div className="bg-gray-900 p-6 rounded-lg border border-gray-800">
                             <div className="flex items-center gap-3 mb-6">
-                                <Truck className="w-6 h-6 text-harley-orange" />
+                                <Truck className="w-6 h-6 text-sick-red" />
                                 <h2 className="text-xl font-bold text-white uppercase">Endereço de Entrega</h2>
                             </div>
 
@@ -393,7 +395,7 @@ const CheckoutPage = () => {
                                     <label className="block text-gray-400 text-sm mb-2">Nome Completo</label>
                                     <input
                                         name="name" value={formData.name} onChange={handleChange}
-                                        type="text" className={`w-full bg-black border ${errors.name ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors`}
+                                        type="text" className={`w-full bg-black border ${errors.name ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                     />
                                     {errors.name && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.name}</span>}
                                 </div>
@@ -401,7 +403,7 @@ const CheckoutPage = () => {
                                     <label className="block text-gray-400 text-sm mb-2">CPF</label>
                                     <input
                                         name="cpf" value={formData.cpf} onChange={handleChange} placeholder="000.000.000-00"
-                                        type="text" className={`w-full bg-black border ${errors.cpf ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors`}
+                                        type="text" className={`w-full bg-black border ${errors.cpf ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                     />
                                     {errors.cpf && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cpf}</span>}
                                 </div>
@@ -409,7 +411,7 @@ const CheckoutPage = () => {
                                     <label className="block text-gray-400 text-sm mb-2">Telefone / WhatsApp</label>
                                     <input
                                         name="phone" value={formData.phone} onChange={handleChange} placeholder="(00) 00000-0000"
-                                        type="text" className={`w-full bg-black border ${errors.phone ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors`}
+                                        type="text" className={`w-full bg-black border ${errors.phone ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                     />
                                     {errors.phone && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.phone}</span>}
                                 </div>
@@ -423,7 +425,7 @@ const CheckoutPage = () => {
                                                     type="checkbox"
                                                     checked={useSavedAddress}
                                                     onChange={(e) => setUseSavedAddress(e.target.checked)}
-                                                    className="text-harley-orange focus:ring-harley-orange bg-black border-gray-600 rounded"
+                                                    className="text-sick-red focus:ring-sick-red bg-black border-gray-600 rounded"
                                                 />
                                                 <span className="text-gray-400">Usar endereço cadastrado</span>
                                             </label>
@@ -437,11 +439,11 @@ const CheckoutPage = () => {
                                             name="cep" value={formData.cep} onChange={handleChange}
                                             onBlur={(e) => fetchAddressByCep(e.target.value)}
                                             placeholder="00000-000"
-                                            type="text" className={`w-full bg-black border ${errors.cep ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors`}
+                                            type="text" className={`w-full bg-black border ${errors.cep ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                         />
                                         {cepLoading && (
                                             <div className="absolute right-3 top-3.5">
-                                                <div className="w-5 h-5 border-2 border-harley-orange border-t-transparent rounded-full animate-spin"></div>
+                                                <div className="w-5 h-5 border-2 border-sick-red border-t-transparent rounded-full animate-spin"></div>
                                             </div>
                                         )}
                                     </div>
@@ -452,7 +454,7 @@ const CheckoutPage = () => {
                                     <label className="block text-gray-400 text-sm mb-2">Cidade</label>
                                     <input
                                         name="city" value={formData.city} onChange={handleChange}
-                                        type="text" className={`w-full bg-black border ${errors.city ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors`}
+                                        type="text" className={`w-full bg-black border ${errors.city ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                     />
                                     {errors.city && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.city}</span>}
                                 </div>
@@ -460,7 +462,7 @@ const CheckoutPage = () => {
                                     <label className="block text-gray-400 text-sm mb-2">Endereço</label>
                                     <input
                                         name="address" value={formData.address} onChange={handleChange}
-                                        type="text" className={`w-full bg-black border ${errors.address ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors`}
+                                        type="text" className={`w-full bg-black border ${errors.address ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                     />
                                     {errors.address && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.address}</span>}
                                 </div>
@@ -468,7 +470,7 @@ const CheckoutPage = () => {
                                     <label className="block text-gray-400 text-sm mb-2">Número</label>
                                     <input
                                         name="number" value={formData.number} onChange={handleChange}
-                                        type="text" className={`w-full bg-black border ${errors.number ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors`}
+                                        type="text" className={`w-full bg-black border ${errors.number ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                     />
                                     {errors.number && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.number}</span>}
                                 </div>
@@ -476,7 +478,7 @@ const CheckoutPage = () => {
                                     <label className="block text-gray-400 text-sm mb-2">Complemento</label>
                                     <input
                                         name="complement" value={formData.complement} onChange={handleChange}
-                                        type="text" className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors"
+                                        type="text" className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors"
                                     />
                                 </div>
 
@@ -491,21 +493,21 @@ const CheckoutPage = () => {
                                         ) : shippingOptions.length > 0 ? (
                                             <div className="space-y-3">
                                                 {shippingOptions.map((option, index) => (
-                                                    <label key={index} className={`flex items-center justify-between p-4 rounded border cursor-pointer transition-colors ${selectedShipping === option ? 'border-harley-orange bg-gray-800' : 'border-gray-700 hover:border-gray-600'}`}>
+                                                    <label key={index} className={`flex items-center justify-between p-4 rounded border cursor-pointer transition-colors ${selectedShipping === option ? 'border-sick-red bg-gray-800' : 'border-gray-700 hover:border-gray-600'}`}>
                                                         <div className="flex items-center gap-3">
                                                             <input
                                                                 type="radio"
                                                                 name="shipping"
                                                                 checked={selectedShipping === option}
                                                                 onChange={() => setSelectedShipping(option)}
-                                                                className="text-harley-orange focus:ring-harley-orange"
+                                                                className="text-sick-red focus:ring-sick-red"
                                                             />
                                                             <div>
                                                                 <div className="text-white font-medium">{option.name}</div>
                                                                 <div className="text-gray-400 text-sm">Entrega em {option.deliveryDays} dias úteis</div>
                                                             </div>
                                                         </div>
-                                                        <div className="text-harley-orange font-bold">R$ {option.price.toFixed(2)}</div>
+                                                        <div className="text-sick-red font-bold">R$ {option.price.toFixed(2)}</div>
                                                     </label>
                                                 ))}
                                             </div>
@@ -516,7 +518,7 @@ const CheckoutPage = () => {
                                 {/* Payment Method */}
                                 <div className="md:col-span-2 mt-6">
                                     <div className="flex items-center gap-3 mb-6">
-                                        <CreditCard className="w-6 h-6 text-harley-orange" />
+                                        <CreditCard className="w-6 h-6 text-sick-red" />
                                         <h2 className="text-xl font-bold text-white uppercase">Forma de Pagamento</h2>
                                     </div>
 
@@ -524,26 +526,26 @@ const CheckoutPage = () => {
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod('credit')}
-                                            className={`p-4 rounded border transition-colors ${paymentMethod === 'credit' ? 'border-harley-orange bg-gray-800' : 'border-gray-700 hover:border-gray-600'}`}
+                                            className={`p-4 rounded border transition-colors ${paymentMethod === 'credit' ? 'border-sick-red bg-gray-800' : 'border-gray-700 hover:border-gray-600'}`}
                                         >
-                                            <CreditCard className="w-8 h-8 mx-auto mb-2 text-harley-orange" />
+                                            <CreditCard className="w-8 h-8 mx-auto mb-2 text-sick-red" />
                                             <div className="text-white font-medium">Cartão de Crédito</div>
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod('pix')}
-                                            className={`p-4 rounded border transition-colors ${paymentMethod === 'pix' ? 'border-harley-orange bg-gray-800' : 'border-gray-700 hover:border-gray-600'}`}
+                                            className={`p-4 rounded border transition-colors ${paymentMethod === 'pix' ? 'border-sick-red bg-gray-800' : 'border-gray-700 hover:border-gray-600'}`}
                                         >
-                                            <QrCode className="w-8 h-8 mx-auto mb-2 text-harley-orange" />
+                                            <QrCode className="w-8 h-8 mx-auto mb-2 text-sick-red" />
                                             <div className="text-white font-medium">PIX</div>
                                             <div className="text-green-500 text-xs">5% de desconto</div>
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => setPaymentMethod('boleto')}
-                                            className={`p-4 rounded border transition-colors ${paymentMethod === 'boleto' ? 'border-harley-orange bg-gray-800' : 'border-gray-700 hover:border-gray-600'}`}
+                                            className={`p-4 rounded border transition-colors ${paymentMethod === 'boleto' ? 'border-sick-red bg-gray-800' : 'border-gray-700 hover:border-gray-600'}`}
                                         >
-                                            <Barcode className="w-8 h-8 mx-auto mb-2 text-harley-orange" />
+                                            <Barcode className="w-8 h-8 mx-auto mb-2 text-sick-red" />
                                             <div className="text-white font-medium">Boleto</div>
                                         </button>
                                     </div>
@@ -555,7 +557,7 @@ const CheckoutPage = () => {
                                                 <input
                                                     name="cardNumber" value={formData.cardNumber} onChange={handleChange}
                                                     placeholder="0000 0000 0000 0000"
-                                                    type="text" className={`w-full bg-black border ${errors.cardNumber ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors`}
+                                                    type="text" className={`w-full bg-black border ${errors.cardNumber ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                                 />
                                                 {errors.cardNumber && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cardNumber}</span>}
                                             </div>
@@ -564,7 +566,7 @@ const CheckoutPage = () => {
                                                 <input
                                                     name="cardName" value={formData.cardName} onChange={handleChange}
                                                     placeholder="NOME COMO NO CARTÃO"
-                                                    type="text" className={`w-full bg-black border ${errors.cardName ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors uppercase`}
+                                                    type="text" className={`w-full bg-black border ${errors.cardName ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors uppercase`}
                                                 />
                                                 {errors.cardName && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cardName}</span>}
                                             </div>
@@ -573,7 +575,7 @@ const CheckoutPage = () => {
                                                 <input
                                                     name="cardExpiry" value={formData.cardExpiry} onChange={handleChange}
                                                     placeholder="MM/AA"
-                                                    type="text" className={`w-full bg-black border ${errors.cardExpiry ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors`}
+                                                    type="text" className={`w-full bg-black border ${errors.cardExpiry ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                                 />
                                                 {errors.cardExpiry && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cardExpiry}</span>}
                                             </div>
@@ -582,7 +584,7 @@ const CheckoutPage = () => {
                                                 <input
                                                     name="cardCvv" value={formData.cardCvv} onChange={handleChange}
                                                     placeholder="000"
-                                                    type="text" maxLength="4" className={`w-full bg-black border ${errors.cardCvv ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-harley-orange focus:outline-none transition-colors`}
+                                                    type="text" maxLength="4" className={`w-full bg-black border ${errors.cardCvv ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                                 />
                                                 {errors.cardCvv && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cardCvv}</span>}
                                             </div>
@@ -594,7 +596,7 @@ const CheckoutPage = () => {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full bg-harley-orange text-white py-4 rounded font-bold hover:bg-orange-700 transition-colors uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full bg-sick-red text-white py-4 rounded font-bold hover:bg-orange-700 transition-colors uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {loading ? 'Processando...' : 'Finalizar Pedido'}
                                     </button>

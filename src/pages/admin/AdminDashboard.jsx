@@ -95,13 +95,20 @@ const AdminDashboard = () => {
             </div>
 
             {/* Metrics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                 <MetricCard
                     icon={DollarSign}
-                    label="Vendas do Mês"
+                    label="Faturamento Bruto"
                     value={metrics?.monthSales || 0}
                     trend={metrics?.trends?.salesChange}
                     format="currency"
+                />
+                <MetricCard
+                    icon={DollarSign}
+                    label="Faturamento Líquido"
+                    value={metrics?.monthNetRevenue || 0}
+                    format="currency"
+                    className="text-green-500"
                 />
                 <MetricCard
                     icon={ShoppingCart}
@@ -132,8 +139,8 @@ const AdminDashboard = () => {
                         <button
                             onClick={() => setChartPeriod('day')}
                             className={`px-4 py-2 rounded font-bold text-sm transition-colors ${chartPeriod === 'day'
-                                    ? 'bg-harley-orange text-white'
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                ? 'bg-sick-red text-white'
+                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                                 }`}
                         >
                             Dia
@@ -141,8 +148,8 @@ const AdminDashboard = () => {
                         <button
                             onClick={() => setChartPeriod('week')}
                             className={`px-4 py-2 rounded font-bold text-sm transition-colors ${chartPeriod === 'week'
-                                    ? 'bg-harley-orange text-white'
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                ? 'bg-sick-red text-white'
+                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                                 }`}
                         >
                             Semana
@@ -150,8 +157,8 @@ const AdminDashboard = () => {
                         <button
                             onClick={() => setChartPeriod('month')}
                             className={`px-4 py-2 rounded font-bold text-sm transition-colors ${chartPeriod === 'month'
-                                    ? 'bg-harley-orange text-white'
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                ? 'bg-sick-red text-white'
+                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                                 }`}
                         >
                             Mês
@@ -196,8 +203,8 @@ const AdminDashboard = () => {
                                     <div>
                                         <p className="text-white font-bold">{product.name}</p>
                                         <p className={`text-sm font-bold ${product.stock === 0 ? 'text-red-500' :
-                                                product.stock <= 2 ? 'text-orange-500' :
-                                                    'text-yellow-500'
+                                            product.stock <= 2 ? 'text-orange-500' :
+                                                'text-yellow-500'
                                             }`}>
                                             {product.stock === 0 ? 'Esgotado' : `${product.stock} unidades`}
                                         </p>
@@ -205,7 +212,7 @@ const AdminDashboard = () => {
                                 </div>
                                 <Link
                                     to={`/admin/products/edit/${product.id}`}
-                                    className="px-4 py-2 bg-harley-orange text-white rounded hover:bg-orange-700 transition-colors font-bold text-sm"
+                                    className="px-4 py-2 bg-sick-red text-white rounded hover:bg-orange-700 transition-colors font-bold text-sm"
                                 >
                                     Editar
                                 </Link>

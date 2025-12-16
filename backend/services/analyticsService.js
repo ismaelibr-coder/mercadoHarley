@@ -15,6 +15,7 @@ export const getSalesMetrics = async (startDate, endDate) => {
             .get();
 
         let totalSales = 0;
+        let netRevenue = 0;
         let orderCount = 0;
 
         ordersSnapshot.forEach(doc => {
@@ -23,6 +24,16 @@ export const getSalesMetrics = async (startDate, endDate) => {
             if (order.status !== 'cancelled') {
                 totalSales += order.total || 0;
                 orderCount++;
+
+                // Calculate Net Revenue based on profit margin
+                if (order.items && Array.isArray(order.items)) {
+                    order.items.forEach(item => {
+                        const profitMargin = item.profitMargin || 0; // %
+                        const itemTotal = (item.price * item.quantity) || 0;
+                        const itemProfit = itemTotal * (profitMargin / 100);
+                        netRevenue += itemProfit;
+                    });
+                }
             }
         });
 
@@ -30,6 +41,7 @@ export const getSalesMetrics = async (startDate, endDate) => {
 
         return {
             totalSales,
+            netRevenue,
             orderCount,
             averageTicket
         };
@@ -204,6 +216,7 @@ export const getDashboardMetrics = async () => {
 
         return {
             monthSales: currentMetrics.totalSales,
+            monthNetRevenue: currentMetrics.netRevenue,
             monthOrders: currentMetrics.orderCount,
             averageTicket: currentMetrics.averageTicket,
             pendingOrders,
