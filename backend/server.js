@@ -21,8 +21,22 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+// CORS must come BEFORE helmet
+app.use(cors({
+    origin: [
+        process.env.FRONTEND_URL || 'http://localhost:5173',
+        'http://localhost:5175',
+        'http://localhost:5174',
+        'https://sickgrip.com.br',
+        'https://www.sickgrip.com.br',
+        'https://mercado-harley.vercel.app' // Vercel preview URL
+    ],
+    credentials: true
+}));
+
 // Security headers
 app.use(helmet({
+    crossOriginResourcePolicy: false, // Disable to allow CORS
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
@@ -51,18 +65,6 @@ const authLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// CORS
-app.use(cors({
-    origin: [
-        process.env.FRONTEND_URL || 'http://localhost:5173',
-        'http://localhost:5175',
-        'http://localhost:5174',
-        'https://sickgrip.com.br',
-        'https://www.sickgrip.com.br',
-        'https://mercado-harley.vercel.app' // Vercel preview URL
-    ],
-    credentials: true
-}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
