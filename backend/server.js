@@ -34,7 +34,9 @@ app.use(cors({
     credentials: true
 }));
 
-// Security headers
+// Security headers - TEMPORARILY DISABLED FOR DEBUGGING
+// TODO: Re-enable after fixing CORS
+/*
 app.use(helmet({
     crossOriginResourcePolicy: false, // Disable to allow CORS
     contentSecurityPolicy: {
@@ -47,6 +49,7 @@ app.use(helmet({
         },
     },
 }));
+*/
 
 // Rate limiting
 const limiter = rateLimit({
