@@ -22,8 +22,10 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 // CORS - TEMPORARILY PERMISSIVE FOR DEBUGGING
+console.log('🔧 Applying CORS middleware (allow all origins)...');
 app.use(cors());
 app.options('*', cors()); // Enable pre-flight for all routes
+console.log('✅ CORS middleware applied successfully');
 
 // Security headers - TEMPORARILY DISABLED FOR DEBUGGING
 // TODO: Re-enable after fixing CORS
