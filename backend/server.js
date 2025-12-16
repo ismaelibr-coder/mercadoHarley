@@ -21,18 +21,9 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-// CORS must come BEFORE helmet
-app.use(cors({
-    origin: [
-        process.env.FRONTEND_URL || 'http://localhost:5173',
-        'http://localhost:5175',
-        'http://localhost:5174',
-        'https://sickgrip.com.br',
-        'https://www.sickgrip.com.br',
-        'https://mercado-harley.vercel.app' // Vercel preview URL
-    ],
-    credentials: true
-}));
+// CORS - TEMPORARILY PERMISSIVE FOR DEBUGGING
+app.use(cors());
+app.options('*', cors()); // Enable pre-flight for all routes
 
 // Security headers - TEMPORARILY DISABLED FOR DEBUGGING
 // TODO: Re-enable after fixing CORS
