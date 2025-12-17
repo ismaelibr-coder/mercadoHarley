@@ -14,7 +14,7 @@ const FeaturedCarousel = () => {
             try {
                 const q = query(
                     collection(db, 'products'),
-                    where('featured', '==', true),
+                    where('featuredCarousel', '==', true),
                     limit(5)
                 );
                 const querySnapshot = await getDocs(q);

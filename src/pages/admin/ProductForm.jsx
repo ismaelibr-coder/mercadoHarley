@@ -43,7 +43,8 @@ const ProductForm = () => {
         stock: 10,
         description: '',
         profitMargin: '',
-        featured: false, // Destaque na home
+        featured: false, // Destaque na Loja (meio)
+        featuredCarousel: false, // Destaque no Carrossel (topo)
         weight: '',
         height: '',
         width: '',
@@ -88,6 +89,7 @@ const ProductForm = () => {
                 description: product.description || '',
                 profitMargin: product.profitMargin || '',
                 featured: product.featured || false,
+                featuredCarousel: product.featuredCarousel || false,
                 weight: product.dimensions?.weight || '',
                 height: product.dimensions?.height || '',
                 width: product.dimensions?.width || '',
@@ -446,6 +448,40 @@ const ProductForm = () => {
                                 className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-sick-red focus:outline-none mb-3"
                             />
                         ))}
+                    </div>
+
+                    {/* Checkboxes de Destaque */}
+                    <div className="border-t border-gray-800 pt-6 mt-6">
+                        <label className="block text-gray-400 text-sm mb-4 font-bold uppercase">Opções de Destaque</label>
+                        <div className="flex flex-col gap-4">
+                            <label className="flex items-center gap-3 cursor-pointer hover:bg-gray-800 p-3 rounded transition-colors">
+                                <input
+                                    type="checkbox"
+                                    name="featuredCarousel"
+                                    checked={formData.featuredCarousel}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, featuredCarousel: e.target.checked }))}
+                                    className="w-5 h-5 accent-sick-red cursor-pointer"
+                                />
+                                <div>
+                                    <span className="text-white font-bold">Destaque no Carrossel (Topo)</span>
+                                    <p className="text-gray-500 text-sm">Aparece no carrossel principal da home (até 5 produtos)</p>
+                                </div>
+                            </label>
+
+                            <label className="flex items-center gap-3 cursor-pointer hover:bg-gray-800 p-3 rounded transition-colors">
+                                <input
+                                    type="checkbox"
+                                    name="featured"
+                                    checked={formData.featured}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, featured: e.target.checked }))}
+                                    className="w-5 h-5 accent-sick-red cursor-pointer"
+                                />
+                                <div>
+                                    <span className="text-white font-bold">Destaque na Loja (Meio)</span>
+                                    <p className="text-gray-500 text-sm">Aparece na seção "Destaques da Loja" (até 6 produtos)</p>
+                                </div>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
