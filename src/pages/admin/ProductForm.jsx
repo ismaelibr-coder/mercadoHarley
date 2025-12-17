@@ -2,12 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Save, ArrowLeft, Package, DollarSign, Tag, Truck } from 'lucide-react';
 import { createProduct, updateProduct, getProductById } from '../../services/productService';
+import { getFilterSettings } from '../../services/settingsService';
 import ImageUpload from '../../components/ImageUpload';
-
-const PARTNERS = [
-    'Shinko',
-    'Outros'
-];
 
 const PART_TYPES = [
     'Guidão',
@@ -34,6 +30,7 @@ const ProductForm = () => {
     const isEdit = Boolean(id);
 
     const [loading, setLoading] = useState(false);
+    const [partners, setPartners] = useState(['Outros']); // Default fallback
     const [formData, setFormData] = useState({
         name: '',
         price: '',
@@ -53,6 +50,21 @@ const ProductForm = () => {
         length: '',
         specs: ['', '', '', '']
     });
+
+    // Load partners from settings
+    useEffect(() => {
+        const loadSettings = async () => {
+            try {
+                const settings = await getFilterSettings();
+                if (settings.partners && settings.partners.length > 0) {
+                    setPartners(settings.partners);
+                }
+            } catch (error) {
+                console.error('Error loading partners:', error);
+            }
+        };
+        loadSettings();
+    }, []);
 
     useEffect(() => {
         if (isEdit) {
@@ -203,7 +215,7 @@ const ProductForm = () => {
                                 className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-sick-red focus:outline-none"
                             >
                                 <option value="">Selecione um parceiro</option>
-                                {PARTNERS.map(p => (
+                                {partners.map(p => (
                                     <option key={p} value={p}>{p}</option>
                                 ))}
                             </select>
