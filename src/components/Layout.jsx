@@ -207,7 +207,7 @@ const Layout = ({ children }) => {
                                 <li><Link to="/" className="hover:text-harley-orange transition-colors">Início</Link></li>
                                 <li><Link to="/category/pecas" className="hover:text-harley-orange transition-colors">Peças</Link></li>
                                 <li><Link to="/category/acessorios" className="hover:text-harley-orange transition-colors">Acessórios</Link></li>
-                                <li><Link to="/contato" className="hover:text-harley-orange transition-colors">Sobre Nós</Link></li>
+                                <li><Link to="/about" className="hover:text-harley-orange transition-colors">Sobre Nós</Link></li>
                             </ul>
                         </div>
 
