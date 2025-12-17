@@ -9,4 +9,4 @@ Disallow: /admin/
 Disallow: /checkout/
 
 # Sitemap
-Sitemap: https://seusite.com/sitemap.xml
+Sitemap: https://sickgrip.com.br/sitemap.xml

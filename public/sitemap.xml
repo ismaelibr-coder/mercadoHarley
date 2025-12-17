@@ -1,52 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Homepage -->
+  <!-- Página Principal -->
   <url>
-    <loc>https://seusite.com/</loc>
-    <lastmod>2025-01-21</lastmod>
+    <loc>https://sickgrip.com.br/</loc>
+    <lastmod>2025-12-16</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
-  
-  <!-- Category Pages -->
+
+  <!-- Categorias -->
   <url>
-    <loc>https://seusite.com/category/escapamentos</loc>
+    <loc>https://sickgrip.com.br/category/pecas</loc>
+    <lastmod>2025-12-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://sickgrip.com.br/category/acessorios</loc>
+    <lastmod>2025-12-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://sickgrip.com.br/category/vestuario</loc>
+    <lastmod>2025-12-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Peças Customizadas -->
+  <url>
+    <loc>https://sickgrip.com.br/custom-parts</loc>
+    <lastmod>2025-12-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
+
+  <!-- Páginas Estáticas -->
   <url>
-    <loc>https://seusite.com/category/guidoes</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://seusite.com/category/bancos</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://seusite.com/category/performance</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://seusite.com/category/iluminacao</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://seusite.com/category/acessorios</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
-  <!-- Static Pages -->
-  <url>
-    <loc>https://seusite.com/contact</loc>
+    <loc>https://sickgrip.com.br/about</loc>
+    <lastmod>2025-12-16</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
   </url>
-  
-  <!-- Note: Product URLs should be generated dynamically -->
-  <!-- You can create a script to generate this file with all products -->
+
+  <url>
+    <loc>https://sickgrip.com.br/contato</loc>
+    <lastmod>2025-12-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://sickgrip.com.br/login</loc>
+    <lastmod>2025-12-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- 
+    NOTA: Para incluir produtos individuais, você precisaria gerar
+    dinamicamente este sitemap com base nos produtos do Firestore.
+    Por enquanto, este é um sitemap estático com as páginas principais.
+    
+    Para gerar automaticamente com produtos:
+    1. Criar script backend que busca produtos do Firestore
+    2. Gerar XML com todas as URLs de produtos
+    3. Atualizar este arquivo periodicamente (cron job)
+  -->
 </urlset>
