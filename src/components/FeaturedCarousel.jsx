@@ -121,7 +121,7 @@ const FeaturedCarousel = () => {
                             <img
                                 src={currentProduct.image}
                                 alt={currentProduct.name}
-                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full object-contain drop-shadow-2xl transition-transform duration-700 hover:scale-110"
+                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full object-cover drop-shadow-2xl transition-transform duration-700 hover:scale-110"
                             />
                         </div>
                     </div>

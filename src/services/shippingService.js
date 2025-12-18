@@ -7,6 +7,23 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
  * @returns {Promise<Array>} Array of shipping options
  */
 export const calculateShipping = async (cep, weight, dimensions) => {
+    // Free shipping for test user
+    try {
+        const auth = window.firebase?.auth();
+        const user = auth?.currentUser;
+
+        if (user && user.email === 'ismael.ibr@gmail.com') {
+            return [{
+                name: 'Frete Grátis (Teste)',
+                price: 0,
+                deliveryTime: '1-2 dias úteis',
+                service: 'FREE_TEST'
+            }];
+        }
+    } catch (error) {
+        console.log('Could not check user for free shipping:', error);
+    }
+
     const response = await fetch(`${API_URL}/api/shipping/calculate`, {
         method: 'POST',
         headers: {
