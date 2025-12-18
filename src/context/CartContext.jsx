@@ -96,8 +96,10 @@ export const CartProvider = ({ children }) => {
     };
 
     const cartTotal = cartItems.reduce((total, item) => {
-        // Remove "R$ " and "." and replace "," with "." to parse price
-        const price = parseFloat(item.price.replace('R$ ', '').replace('.', '').replace(',', '.'));
+        // Handle price as both number and string
+        const price = typeof item.price === 'number'
+            ? item.price
+            : parseFloat(item.price.replace('R$ ', '').replace('.', '').replace(',', '.'));
         return total + price * item.quantity;
     }, 0);
 

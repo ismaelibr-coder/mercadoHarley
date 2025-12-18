@@ -78,7 +78,7 @@ const FeaturedCarousel = () => {
             {/* Background Blur Effect */}
             <div
                 className="absolute inset-0 bg-cover bg-center opacity-30 blur-xl scale-110 transition-all duration-700"
-                style={{ backgroundImage: `url(${currentProduct.imageUrl})` }}
+                style={{ backgroundImage: `url(${currentProduct.image})` }}
             ></div>
 
             {/* Gradient Overlay */}
@@ -119,7 +119,7 @@ const FeaturedCarousel = () => {
                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] h-[90%] border-2 border-dashed border-gray-700 rounded-full animate-spin-slow"></div>
 
                             <img
-                                src={currentProduct.imageUrl}
+                                src={currentProduct.image}
                                 alt={currentProduct.name}
                                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full object-contain drop-shadow-2xl transition-transform duration-700 hover:scale-110"
                             />
