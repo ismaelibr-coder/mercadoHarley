@@ -12,6 +12,7 @@ import analyticsRoutes from './routes/analytics.js';
 import bannerRoutes from './routes/banner.js';
 import authRoutes from './routes/auth.js';
 import orderRoutes from './routes/orders.js';
+import cleanupRoutes from './routes/cleanup.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 
@@ -111,6 +112,8 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/orders', limiter, orderRoutes);
+app.use('/api/admin', cleanupRoutes); // Admin cleanup routes
+
 
 // Error handling
 app.use(errorHandler);
