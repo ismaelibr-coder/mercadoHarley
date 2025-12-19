@@ -1,7 +1,7 @@
 import React from 'react';
 
 const WhatsAppButton = () => {
-    const phoneNumber = "5511999999999";
+    const phoneNumber = "5551984442294";
     const message = "Olá! Gostaria de saber mais sobre as peças da SICK GRIP.";
 
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;

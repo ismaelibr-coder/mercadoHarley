@@ -69,8 +69,8 @@ const FeaturedCarousel = () => {
 
     // Safe access for price
     const formattedPrice = currentProduct.price
-        ? Number(currentProduct.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
-        : '0,00';
+        ? `R$ ${Number(currentProduct.price).toFixed(2).replace('.', ',')}`
+        : 'R$ 0,00';
 
     return (
         <div className="relative w-full h-[500px] md:h-[600px] bg-black overflow-hidden group">
@@ -100,7 +100,7 @@ const FeaturedCarousel = () => {
                         </p>
                         <div className="flex items-center gap-6">
                             <span className="text-3xl font-bold text-white">
-                                R$ {formattedPrice}
+                                {formattedPrice}
                             </span>
                             <Link
                                 to={`/product/${currentProduct.id}`}

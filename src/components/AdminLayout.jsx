@@ -45,6 +45,7 @@ const AdminLayout = () => {
                         <ShoppingBag className="w-5 h-5" />
                         <span className="font-bold">Pedidos</span>
                     </Link>
+                    {/* Banners menu disabled
                     <Link
                         to="/admin/banners"
                         className="flex items-center gap-3 px-4 py-3 rounded hover:bg-gray-800 transition-colors mb-2"
@@ -52,6 +53,8 @@ const AdminLayout = () => {
                         <Image className="w-5 h-5" />
                         <span className="font-bold">Banners</span>
                     </Link>
+                    */}
+
 
                     <Link
                         to="/admin/settings"

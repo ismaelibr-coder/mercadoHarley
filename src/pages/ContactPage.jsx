@@ -22,7 +22,7 @@ const ContactPage = () => {
                                 </div>
                                 <div>
                                     <h3 className="font-bold uppercase text-sm text-gray-500">Telefone / WhatsApp</h3>
-                                    <p className="text-xl font-bold">(11) 98765-4321</p>
+                                    <p className="text-xl font-bold">(51) 98444-2294</p>
                                 </div>
                             </div>
 
@@ -32,7 +32,7 @@ const ContactPage = () => {
                                 </div>
                                 <div>
                                     <h3 className="font-bold uppercase text-sm text-gray-500">Email</h3>
-                                    <p className="text-xl font-bold">contato@sickgrip.com</p>
+                                    <p className="text-xl font-bold">sickgrip.br@gmail.com</p>
                                 </div>
                             </div>
 
@@ -42,7 +42,7 @@ const ContactPage = () => {
                                 </div>
                                 <div>
                                     <h3 className="font-bold uppercase text-sm text-gray-500">Endereço</h3>
-                                    <p className="text-lg font-bold">Av. Paulista, 1000 - São Paulo, SP</p>
+                                    <p className="text-lg font-bold">R. Júlio Verne, 788 - Santa Maria Goretti, Porto Alegre - RS, 91030-170</p>
                                 </div>
                             </div>
                         </div>

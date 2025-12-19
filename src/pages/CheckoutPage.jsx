@@ -577,6 +577,27 @@ const CheckoutPage = () => {
                                 {formData.cep.length >= 9 && (
                                     <div className="md:col-span-2 mt-4">
                                         <h3 className="text-white font-bold mb-4 border-b border-gray-800 pb-2">Opções de Frete</h3>
+                                        {/* Store Pickup Option */}
+                                        <div className="mb-4">
+                                            <label className={`flex items-center justify-between p-4 rounded border cursor-pointer transition-colors ${selectedShipping?.name === 'Retirar na Loja' ? 'border-sick-red bg-gray-800' : 'border-gray-700 hover:border-gray-600'}`}>
+                                                <div className="flex items-center gap-3">
+                                                    <input
+                                                        type="radio"
+                                                        name="shipping"
+                                                        checked={selectedShipping?.name === 'Retirar na Loja'}
+                                                        onChange={() => setSelectedShipping({ name: 'Retirar na Loja', price: 0, deliveryDays: 0 })}
+                                                        className="text-sick-red focus:ring-sick-red"
+                                                    />
+                                                    <div>
+                                                        <div className="text-white font-medium">Retirar na Loja</div>
+                                                        <div className="text-gray-400 text-sm">Pavilhão Oficina - R. Júlio Verne, 788</div>
+                                                        <div className="text-gray-400 text-xs">Santa Maria Goretti, Porto Alegre - RS</div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-green-500 font-bold">GRÁTIS</div>
+                                            </label>
+                                        </div>
+
                                         {shippingLoading ? (
                                             <div className="text-gray-400 text-center py-4">Calculando frete...</div>
                                         ) : shippingError ? (
