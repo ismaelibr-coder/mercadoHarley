@@ -48,6 +48,12 @@ router.post('/pix', optionalAuth, async (req, res, next) => {
         });
 
         // Update order with payment info
+        console.log('💾 Saving payment info to order:', {
+            orderId: order.id,
+            paymentId: paymentResult.paymentId,
+            paymentIdType: typeof paymentResult.paymentId
+        });
+
         await updateOrderPayment(order.id, {
             method: 'pix',
             status: paymentResult.status,

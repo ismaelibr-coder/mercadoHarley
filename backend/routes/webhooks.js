@@ -8,20 +8,35 @@ const router = express.Router();
 async function findOrderByPaymentId(paymentId) {
     const db = getFirestore();
 
-    console.log('🔍 Searching for order with payment ID:', paymentId);
+    console.log('🔍 Searching for order with payment ID:', paymentId, 'Type:', typeof paymentId);
 
-    const ordersSnapshot = await db.collection('orders')
-        .where('payment.paymentId', '==', paymentId)
+    // Try as string first
+    let ordersSnapshot = await db.collection('orders')
+        .where('payment.paymentId', '==', String(paymentId))
         .limit(1)
         .get();
 
-    console.log('📊 Query results:', {
+    console.log('📊 Query results (as string):', {
         empty: ordersSnapshot.empty,
         size: ordersSnapshot.size
     });
 
+    // If not found as string, try as number
     if (ordersSnapshot.empty) {
-        console.log('⚠️ No order found with payment.paymentId ==', paymentId);
+        console.log('🔄 Trying as number...');
+        ordersSnapshot = await db.collection('orders')
+            .where('payment.paymentId', '==', Number(paymentId))
+            .limit(1)
+            .get();
+
+        console.log('📊 Query results (as number):', {
+            empty: ordersSnapshot.empty,
+            size: ordersSnapshot.size
+        });
+    }
+
+    if (ordersSnapshot.empty) {
+        console.log('⚠️ No order found with payment.paymentId ==', paymentId, '(tried both string and number)');
         return null;
     }
 
@@ -33,7 +48,8 @@ async function findOrderByPaymentId(paymentId) {
     console.log('📦 Order found:', {
         id: orderData.id,
         orderNumber: orderData.orderNumber,
-        paymentId: orderData.payment?.paymentId
+        paymentId: orderData.payment?.paymentId,
+        paymentIdType: typeof orderData.payment?.paymentId
     });
 
     return orderData;
