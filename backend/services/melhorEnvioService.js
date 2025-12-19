@@ -11,12 +11,6 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
     const token = process.env.MELHOR_ENVIO_TOKEN;
     const fromCep = process.env.MELHOR_ENVIO_FROM_CEP || '91030170'; // Default from user request
     const isSandbox = process.env.MELHOR_ENVIO_SANDBOX === 'true';
-
-    if (!token) {
-        console.warn('Melhor Envio Token not found. Skipping external calculation.');
-        return null; // Return null to fallback to manual rules
-    }
-
     const apiUrl = isSandbox ? SANDBOX_URL : PRODUCTION_URL;
 
     // Default dimensions if not provided (in cm)
@@ -24,8 +18,13 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
     const width = dimensions?.width || 20;
     const length = dimensions?.length || 20;
 
-    // CRITICAL: Melhor Envio API expects weight in GRAMS, not KG!
-    const weightInGrams = weightKg * 1000;
+    // Melhor Envio API expects weight in KG (decimal), not grams!
+    const weightInKg = weightKg || 1;
+
+    if (!token) {
+        console.warn('Melhor Envio Token not found. Skipping external calculation.');
+        return null; // Return null to fallback to manual rules
+    }
 
     try {
         const payload = {
@@ -41,7 +40,7 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
                     width: width,
                     height: height,
                     length: length,
-                    weight: weightInGrams, // Weight in GRAMS
+                    weight: weightInKg, // Weight in KG
                     insurance_value: 0,
                     quantity: 1
                 }
@@ -56,7 +55,7 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
         console.log('📦 Calculating Melhor Envio shipping:', {
             from: normalizeCep(fromCep),
             to: normalizeCep(toCep),
-            weight: `${weightKg}kg (${weightInGrams}g)`,
+            weight: `${weightInKg}kg`,
             dimensions: `${height}x${width}x${length}cm`,
             sandbox: isSandbox
         });
@@ -102,6 +101,30 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
             console.log('💰 Prices:', validOptions.map(o => `${o.name}: R$ ${o.price.toFixed(2)}`));
         }
 
+        // If no valid options, check if all services had errors
+        if (validOptions.length === 0 && servicesWithErrors.length > 0) {
+            // Analyze errors to provide helpful message
+            const errorMessages = servicesWithErrors.map(s => s.error);
+
+            // Check for weight limit errors
+            if (errorMessages.some(e => e.includes('Peso ultrapassa'))) {
+                throw new Error(`Produto muito pesado para envio (${weightInKg}kg). Os Correios aceitam até 30kg e transportadoras até 120kg. Entre em contato para frete personalizado.`);
+            }
+
+            // Check for dimension errors
+            if (errorMessages.some(e => e.includes('dimensão') || e.includes('tamanho'))) {
+                throw new Error(`Dimensões do produto (${height}x${width}x${length}cm) excedem os limites das transportadoras. Entre em contato para frete personalizado.`);
+            }
+
+            // Check for CEP errors
+            if (errorMessages.some(e => e.includes('CEP') || e.includes('postal'))) {
+                throw new Error('CEP inválido ou não atendido pelas transportadoras. Verifique o CEP digitado.');
+            }
+
+            // Generic error
+            throw new Error('Nenhuma transportadora disponível para este envio. Entre em contato para consultar opções de frete.');
+        }
+
         return validOptions;
 
     } catch (error) {
@@ -117,12 +140,17 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
             // Check for specific errors
             if (apiError.errors?.['to.postal_code']) {
                 console.error('CEP de destino inválido:', normalizeCep(toCep));
+                throw new Error('CEP de destino inválido. Verifique se o CEP está correto.');
             }
             if (apiError.errors?.['from.postal_code']) {
                 console.error('CEP de origem inválido:', normalizeCep(fromCep));
             }
+        } else if (error.message) {
+            // Re-throw our custom errors
+            console.error('❌ Shipping Error:', error.message);
+            throw error;
         } else {
-            console.error('❌ Melhor Envio Error:', error.message);
+            console.error('❌ Melhor Envio Error:', error);
         }
 
         return null; // Fallback on error
