@@ -19,10 +19,13 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
 
     const apiUrl = isSandbox ? SANDBOX_URL : PRODUCTION_URL;
 
-    // Default dimensions if not provided
+    // Default dimensions if not provided (in cm)
     const height = dimensions?.height || 20;
     const width = dimensions?.width || 20;
     const length = dimensions?.length || 20;
+
+    // CRITICAL: Melhor Envio API expects weight in GRAMS, not KG!
+    const weightInGrams = weightKg * 1000;
 
     try {
         const payload = {
@@ -38,7 +41,7 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
                     width: width,
                     height: height,
                     length: length,
-                    weight: weightKg || 1,
+                    weight: weightInGrams, // Weight in GRAMS
                     insurance_value: 0,
                     quantity: 1
                 }
@@ -53,9 +56,12 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
         console.log('📦 Calculating Melhor Envio shipping:', {
             from: normalizeCep(fromCep),
             to: normalizeCep(toCep),
-            weight: weightKg,
+            weight: `${weightKg}kg (${weightInGrams}g)`,
+            dimensions: `${height}x${width}x${length}cm`,
             sandbox: isSandbox
         });
+
+        console.log('📤 Full payload:', JSON.stringify(payload, null, 2));
 
         const response = await axios.post(apiUrl, payload, {
             headers: {
