@@ -1,8 +1,26 @@
 import express from 'express';
-import { updateOrderStatus, getOrderById } from '../services/firebaseService.js';
+import { updateOrderStatus, getOrderById, getFirestore } from '../services/firebaseService.js';
 import { getPaymentStatus } from '../services/mercadoPagoService.js';
 
 const router = express.Router();
+
+// Helper function to find order by payment ID
+async function findOrderByPaymentId(paymentId) {
+    const db = getFirestore();
+    const ordersSnapshot = await db.collection('orders')
+        .where('payment.paymentId', '==', paymentId)
+        .limit(1)
+        .get();
+
+    if (ordersSnapshot.empty) {
+        return null;
+    }
+
+    return {
+        id: ordersSnapshot.docs[0].id,
+        ...ordersSnapshot.docs[0].data()
+    };
+}
 
 // Mercado Pago webhook
 router.post('/mercadopago', async (req, res) => {
@@ -19,17 +37,26 @@ router.post('/mercadopago', async (req, res) => {
             const paymentStatus = await getPaymentStatus(paymentId);
             console.log('💳 Payment status:', paymentStatus);
 
-            // Find order by payment ID (you might need to query Firestore)
-            // For now, we'll get the order ID from metadata
-            // In production, you should query orders collection
+            // Find order by payment ID
+            const order = await findOrderByPaymentId(paymentId);
+
+            if (!order) {
+                console.log('⚠️ Order not found for payment ID:', paymentId);
+                return res.sendStatus(200);
+            }
+
+            console.log('📦 Order found:', order.id);
 
             // Update order status based on payment status
             if (paymentStatus.status === 'approved') {
-                console.log('✅ Payment approved, updating order status');
-                // await updateOrderStatus(orderId, 'paid');
+                console.log('✅ Payment approved, updating order status to paid');
+                await updateOrderStatus(order.id, 'paid');
             } else if (paymentStatus.status === 'rejected') {
-                console.log('❌ Payment rejected');
-                // await updateOrderStatus(orderId, 'cancelled');
+                console.log('❌ Payment rejected, updating order status to cancelled');
+                await updateOrderStatus(order.id, 'cancelled');
+            } else if (paymentStatus.status === 'pending') {
+                console.log('⏳ Payment pending');
+                // Status remains 'pending'
             }
         }
 

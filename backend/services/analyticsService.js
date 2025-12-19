@@ -20,8 +20,8 @@ export const getSalesMetrics = async (startDate, endDate) => {
 
         ordersSnapshot.forEach(doc => {
             const order = doc.data();
-            // Filter out cancelled orders in code
-            if (order.status !== 'cancelled') {
+            // Only count paid orders in dashboard metrics
+            if (order.status === 'paid') {
                 totalSales += order.total || 0;
                 orderCount++;
 
