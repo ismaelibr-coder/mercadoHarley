@@ -305,7 +305,9 @@ const CheckoutPage = () => {
                 items: cartItems.map(item => ({
                     id: item.id,
                     name: item.name,
-                    price: parseFloat(item.price.replace('R$', '').replace('.', '').replace(',', '.').trim()),
+                    price: typeof item.price === 'number'
+                        ? item.price
+                        : parseFloat(item.price.replace('R$', '').replace('.', '').replace(',', '.').trim()),
                     quantity: item.quantity,
                     image: item.image,
                     profitMargin: item.profitMargin || 0,

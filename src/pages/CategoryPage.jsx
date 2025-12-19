@@ -83,7 +83,9 @@ const CategoryPage = () => {
         if (filters.priceRange.min) {
             console.log('💰 Min price filter:', filters.priceRange.min);
             filtered = filtered.filter(p => {
-                const price = parseFloat(p.price.replace('R$', '').replace('.', '').replace(',', '.').trim());
+                const price = typeof p.price === 'number'
+                    ? p.price
+                    : parseFloat(p.price.replace('R$', '').replace('.', '').replace(',', '.').trim());
                 return price >= parseFloat(filters.priceRange.min);
             });
             console.log('✅ After min price:', filtered.length, 'products');
@@ -91,7 +93,9 @@ const CategoryPage = () => {
         if (filters.priceRange.max) {
             console.log('💰 Max price filter:', filters.priceRange.max);
             filtered = filtered.filter(p => {
-                const price = parseFloat(p.price.replace('R$', '').replace('.', '').replace(',', '.').trim());
+                const price = typeof p.price === 'number'
+                    ? p.price
+                    : parseFloat(p.price.replace('R$', '').replace('.', '').replace(',', '.').trim());
                 return price <= parseFloat(filters.priceRange.max);
             });
             console.log('✅ After max price:', filtered.length, 'products');
