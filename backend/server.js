@@ -18,8 +18,12 @@ import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
+
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Trust proxy - Required for Render deployment
+app.set('trust proxy', 1);
 
 // Middleware
 // CORS - TEMPORARILY PERMISSIVE FOR DEBUGGING

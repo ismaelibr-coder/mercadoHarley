@@ -73,6 +73,18 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
             timeout: 10000
         });
 
+        console.log(`📥 API Response: ${response.data.length} services returned`);
+
+        // Log any services with errors
+        const servicesWithErrors = response.data.filter(opt => opt.error);
+        if (servicesWithErrors.length > 0) {
+            console.log('⚠️ Services with errors:', servicesWithErrors.map(s => ({
+                company: s.company?.name,
+                service: s.name,
+                error: s.error
+            })));
+        }
+
         // Filter valid options and format
         const validOptions = response.data
             .filter(opt => !opt.error)
@@ -84,7 +96,12 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
                 serviceId: opt.id
             }));
 
-        console.log(`✅ Melhor Envio returned ${validOptions.length} options`);
+        console.log(`✅ Melhor Envio returned ${validOptions.length} valid options`);
+
+        if (validOptions.length > 0) {
+            console.log('💰 Prices:', validOptions.map(o => `${o.name}: R$ ${o.price.toFixed(2)}`));
+        }
+
         return validOptions;
 
     } catch (error) {
