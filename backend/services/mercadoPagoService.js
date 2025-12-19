@@ -32,8 +32,8 @@ export const createPixPayment = async (orderData) => {
         }
 
         const paymentData = {
-            transaction_amount: orderData.total,
-            description: `Pedido ${orderData.orderNumber} - Mercado Harley`,
+            transaction_amount: parseFloat(Number(orderData.total).toFixed(2)),
+            description: `Pedido ${orderData.orderNumber} - Sick Grip`,
             payment_method_id: 'pix',
             payer: {
                 email: orderData.customer.email,
