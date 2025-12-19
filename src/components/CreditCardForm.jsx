@@ -57,6 +57,67 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
         } catch (error) {
             console.error('Error getting payment method:', error);
         }
+    };
+
+    const getInstallmentOptions = async (bin, amount) => {
+        if (!mp || bin.length < 6) return;
+
+        try {
+            console.log('🔍 Fetching installments:', { bin, amount });
+
+            const installmentsResponse = await mp.getInstallments({
+                amount: String(amount),
+                bin: bin,
+                locale: 'pt-BR'
+            });
+
+            console.log('📊 Installments API Response:', installmentsResponse);
+
+            if (installmentsResponse.length > 0) {
+                console.log('💳 Payer costs:', installmentsResponse[0].payer_costs);
+
+                const options = installmentsResponse[0].payer_costs.map(option => ({
+                    installments: option.installments,
+                    installmentAmount: option.installment_amount,
+                    totalAmount: option.total_amount,
+                    recommendedMessage: option.recommended_message
+                }));
+
+                console.log('✅ Parsed options:', options);
+                setInstallmentOptions(options);
+
+                // Set default to 1x
+                if (options.length > 0) {
+                    setInstallments(1);
+                }
+            } else {
+                console.warn('⚠️ No installment options returned from API');
+                // Fallback to simple calculation
+                const fallbackOptions = Array.from({ length: 12 }, (_, i) => ({
+                    installments: i + 1,
+                    installmentAmount: total / (i + 1),
+                    totalAmount: total,
+                    recommendedMessage: null
+                }));
+                console.log('🔄 Using fallback options:', fallbackOptions);
+                setInstallmentOptions(fallbackOptions);
+            }
+        } catch (error) {
+            console.error('❌ Error getting installments:', error);
+            // Fallback to simple calculation
+            const fallbackOptions = Array.from({ length: 12 }, (_, i) => ({
+                installments: i + 1,
+                installmentAmount: total / (i + 1),
+                totalAmount: total,
+                recommendedMessage: null
+            }));
+            console.log('🔄 Using fallback options due to error:', fallbackOptions);
+            setInstallmentOptions(fallbackOptions);
+        }
+    };
+
+    const handleCardNumberChange = (e) => {
+        const formatted = formatCardNumber(e.target.value);
         setCardNumber(formatted);
 
         const bin = formatted.replace(/\s/g, '').slice(0, 6);
