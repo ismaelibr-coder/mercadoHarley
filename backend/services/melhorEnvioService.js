@@ -50,6 +50,13 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
             services: '1,2,3,4' // SEDEX, PAC, etc. (Simplifying to generic calculation)
         };
 
+        console.log('📦 Calculating Melhor Envio shipping:', {
+            from: normalizeCep(fromCep),
+            to: normalizeCep(toCep),
+            weight: weightKg,
+            sandbox: isSandbox
+        });
+
         const response = await axios.post(apiUrl, payload, {
             headers: {
                 'Accept': 'application/json',
@@ -71,10 +78,30 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
                 serviceId: opt.id
             }));
 
+        console.log(`✅ Melhor Envio returned ${validOptions.length} options`);
         return validOptions;
 
     } catch (error) {
-        console.error('Error calculating Melhor Envio shipping:', error?.response?.data || error.message);
+        // Detailed error logging
+        if (error.response?.data) {
+            const apiError = error.response.data;
+            console.error('❌ Melhor Envio API Error:', {
+                status: error.response.status,
+                errors: apiError.errors,
+                message: apiError.message
+            });
+
+            // Check for specific errors
+            if (apiError.errors?.['to.postal_code']) {
+                console.error('CEP de destino inválido:', normalizeCep(toCep));
+            }
+            if (apiError.errors?.['from.postal_code']) {
+                console.error('CEP de origem inválido:', normalizeCep(fromCep));
+            }
+        } else {
+            console.error('❌ Melhor Envio Error:', error.message);
+        }
+
         return null; // Fallback on error
     }
 };

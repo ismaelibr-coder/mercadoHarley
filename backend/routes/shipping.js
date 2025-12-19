@@ -14,6 +14,14 @@ router.post('/calculate', async (req, res) => {
             return res.status(400).json({ error: 'CEP e peso são obrigatórios' });
         }
 
+        // Validate CEP format
+        const cleanCep = cep.replace(/\D/g, '');
+        if (cleanCep.length !== 8) {
+            return res.status(400).json({
+                error: 'CEP inválido. Digite um CEP válido com 8 dígitos.'
+            });
+        }
+
         // 1. Try Melhor Envio (External API)
         const melhorEnvioOptions = await calculateMelhorEnvioShipping(cep, parseFloat(weight), dimensions);
 
@@ -21,11 +29,21 @@ router.post('/calculate', async (req, res) => {
             return res.json(melhorEnvioOptions);
         } else {
             console.error('Melhor Envio returned no options or failed.');
-            return res.status(503).json({ error: 'Serviço de cálculo de frete indisponível no momento.' });
+            return res.status(503).json({
+                error: 'Não foi possível calcular o frete para este CEP. Verifique se o CEP está correto ou entre em contato conosco.'
+            });
         }
     } catch (error) {
         console.error('Error calculating shipping:', error);
-        res.status(500).json({ error: error.message });
+
+        // Return specific error message if available
+        if (error.message.includes('CEP')) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.status(500).json({
+            error: 'Erro ao calcular frete. Por favor, tente novamente ou entre em contato.'
+        });
     }
 });
 
