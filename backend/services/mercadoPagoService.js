@@ -131,8 +131,8 @@ export const createBoletoPayment = async (orderData) => {
     }
 };
 
-// Process credit card payment
-export const processCreditCardPayment = async (orderData, cardToken) => {
+// Process credit card payment with installments
+export const processCreditCardPayment = async (orderData, cardToken, installments = 1, paymentMethodId) => {
     try {
         if (isMockMode()) {
             console.log('⚠️ MOCK MODE: Processing simulated Credit Card payment');
@@ -140,18 +140,27 @@ export const processCreditCardPayment = async (orderData, cardToken) => {
                 success: true,
                 paymentId: `mock_card_${Date.now()}`,
                 status: 'approved',
-                statusDetail: 'accredited'
+                statusDetail: 'accredited',
+                installments: installments
             };
         }
 
+        console.log('💳 Processing card payment:', {
+            amount: orderData.total,
+            installments,
+            paymentMethod: paymentMethodId
+        });
+
         const paymentData = {
-            transaction_amount: orderData.total,
+            transaction_amount: parseFloat(Number(orderData.total).toFixed(2)),
             token: cardToken,
-            description: `Pedido ${orderData.orderNumber} - Mercado Harley`,
-            installments: 1,
-            payment_method_id: 'visa', // This should be detected from card
+            description: `Pedido ${orderData.orderNumber} - Sick Grip`,
+            installments: parseInt(installments),
+            payment_method_id: paymentMethodId,
             payer: {
                 email: orderData.customer.email,
+                first_name: orderData.customer.name.split(' ')[0],
+                last_name: orderData.customer.name.split(' ').slice(1).join(' ') || 'Silva',
                 identification: {
                     type: 'CPF',
                     number: orderData.customer.cpf.replace(/\D/g, '')
@@ -166,15 +175,25 @@ export const processCreditCardPayment = async (orderData, cardToken) => {
 
         const response = await payment.create({ body: paymentData });
 
+        console.log('✅ Card payment created:', {
+            id: response.id,
+            status: response.status,
+            installments: response.installments
+        });
+
         return {
             success: response.status === 'approved' || response.status === 'pending',
             paymentId: response.id,
             status: response.status,
-            statusDetail: response.status_detail
+            statusDetail: response.status_detail,
+            installments: response.installments
         };
     } catch (error) {
-        console.error('Error processing credit card:', error);
-        throw new Error(error.message || 'Erro ao processar cartão');
+        console.error('❌ Error processing credit card:', error);
+        if (error.cause) {
+            console.error('Mercado Pago Error Cause:', JSON.stringify(error.cause, null, 2));
+        }
+        throw new Error(error.message || 'Erro ao processar cartão de crédito');
     }
 };
 

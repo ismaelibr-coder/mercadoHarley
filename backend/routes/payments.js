@@ -121,7 +121,15 @@ router.post('/boleto', optionalAuth, async (req, res, next) => {
 // Process credit card payment
 router.post('/credit-card', optionalAuth, async (req, res, next) => {
     try {
-        const { orderData, cardToken } = req.body;
+        const { orderData, cardToken, installments = 1, paymentMethodId } = req.body;
+
+        if (!cardToken) {
+            return res.status(400).json({ error: 'Token do cartão é obrigatório' });
+        }
+
+        if (!paymentMethodId) {
+            return res.status(400).json({ error: 'Método de pagamento é obrigatório' });
+        }
 
         if (!orderData.orderNumber) {
             orderData.orderNumber = generateOrderNumber();
@@ -135,19 +143,20 @@ router.post('/credit-card', optionalAuth, async (req, res, next) => {
             status: 'pending'
         });
 
-        // Process credit card payment
+        // Process credit card payment with installments
         const paymentResult = await processCreditCardPayment({
             ...orderData,
             id: order.id,
             orderNumber: order.orderNumber
-        }, cardToken);
+        }, cardToken, installments, paymentMethodId);
 
         // Update order with payment info
         await updateOrderPayment(order.id, {
             method: 'credit_card',
             status: paymentResult.status,
             paymentId: paymentResult.paymentId,
-            statusDetail: paymentResult.statusDetail
+            statusDetail: paymentResult.statusDetail,
+            installments: paymentResult.installments
         });
 
         // Send confirmation email if approved
