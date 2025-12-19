@@ -174,11 +174,11 @@ const ProductPage = () => {
                         {/* Shipping Calculator */}
                         <div className="mb-8">
                             <ShippingCalculator
-                                productWeight={product.weight || 1}
+                                productWeight={product.dimensions?.weight || product.weight || 1}
                                 dimensions={{
-                                    width: product.width || 20,
-                                    height: product.height || 20,
-                                    length: product.length || 20
+                                    width: product.dimensions?.width || product.width || 20,
+                                    height: product.dimensions?.height || product.height || 20,
+                                    length: product.dimensions?.length || product.length || 20
                                 }}
                             />
                         </div>
