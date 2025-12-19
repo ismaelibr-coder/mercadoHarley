@@ -8,6 +8,7 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
     const [expirationDate, setExpirationDate] = useState('');
     const [securityCode, setSecurityCode] = useState('');
     const [installments, setInstallments] = useState(1);
+    const [installmentOptions, setInstallmentOptions] = useState([]);
     const [paymentMethodId, setPaymentMethodId] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -47,10 +48,52 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
         try {
             const paymentMethods = await mp.getPaymentMethods({ bin });
             if (paymentMethods.results.length > 0) {
-                setPaymentMethodId(paymentMethods.results[0].id);
+                const method = paymentMethods.results[0];
+                setPaymentMethodId(method.id);
+
+                // Get installment options with interest
+                await getInstallmentOptions(bin, total);
             }
         } catch (error) {
             console.error('Error getting payment method:', error);
+        }
+    };
+
+    const getInstallmentOptions = async (bin, amount) => {
+        if (!mp || bin.length < 6) return;
+
+        try {
+            const installmentsResponse = await mp.getInstallments({
+                amount: String(amount),
+                bin: bin,
+                locale: 'pt-BR'
+            });
+
+            if (installmentsResponse.length > 0) {
+                const options = installmentsResponse[0].payer_costs.map(option => ({
+                    installments: option.installments,
+                    installmentAmount: option.installment_amount,
+                    totalAmount: option.total_amount,
+                    recommendedMessage: option.recommended_message
+                }));
+
+                setInstallmentOptions(options);
+
+                // Set default to 1x
+                if (options.length > 0) {
+                    setInstallments(1);
+                }
+            }
+        } catch (error) {
+            console.error('Error getting installments:', error);
+            // Fallback to simple calculation
+            const fallbackOptions = Array.from({ length: 12 }, (_, i) => ({
+                installments: i + 1,
+                installmentAmount: total / (i + 1),
+                totalAmount: total,
+                recommendedMessage: null
+            }));
+            setInstallmentOptions(fallbackOptions);
         }
     };
 
@@ -100,9 +143,6 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
             setLoading(false);
         }
     };
-
-    const installmentOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-    const installmentValue = total / installments;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -172,18 +212,24 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
                 {/* Installments */}
                 <div className="mb-4">
                     <label className="block text-gray-400 text-sm mb-2">Parcelas</label>
-                    <select
-                        value={installments}
-                        onChange={(e) => setInstallments(e.target.value)}
-                        className="w-full bg-gray-800 text-white px-4 py-3 rounded border border-gray-700 focus:border-sick-red focus:outline-none"
-                    >
-                        {installmentOptions.map(num => (
-                            <option key={num} value={num}>
-                                {num}x de R$ {installmentValue.toFixed(2)}
-                                {num === 1 ? ' à vista' : ''}
-                            </option>
-                        ))}
-                    </select>
+                    {installmentOptions.length > 0 ? (
+                        <select
+                            value={installments}
+                            onChange={(e) => setInstallments(e.target.value)}
+                            className="w-full bg-gray-800 text-white px-4 py-3 rounded border border-gray-700 focus:border-sick-red focus:outline-none"
+                        >
+                            {installmentOptions.map(option => (
+                                <option key={option.installments} value={option.installments}>
+                                    {option.recommendedMessage ||
+                                        `${option.installments}x de R$ ${option.installmentAmount.toFixed(2)}${option.installments === 1 ? ' à vista' : ''}`}
+                                </option>
+                            ))}
+                        </select>
+                    ) : (
+                        <div className="w-full bg-gray-800 text-gray-400 px-4 py-3 rounded border border-gray-700">
+                            Digite o número do cartão para ver as opções de parcelamento
+                        </div>
+                    )}
                 </div>
 
                 {/* Security Notice */}
