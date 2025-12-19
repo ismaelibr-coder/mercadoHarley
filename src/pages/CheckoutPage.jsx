@@ -224,6 +224,20 @@ const CheckoutPage = () => {
                 setSelectedShipping(null);
 
                 try {
+                    // Check for free shipping (test user)
+                    if (currentUser && currentUser.email === 'ismael.ibr@gmail.com') {
+                        const freeShipping = [{
+                            name: 'Frete Grátis (Teste)',
+                            price: 0,
+                            deliveryTime: '1-2 dias úteis',
+                            service: 'FREE_TEST'
+                        }];
+                        setShippingOptions(freeShipping);
+                        setSelectedShipping(freeShipping[0]);
+                        setShippingLoading(false);
+                        return;
+                    }
+
                     const totalWeight = cartItems.reduce((total, item) => {
                         const itemWeight = item.dimensions?.weight || item.weight || 1;
                         return total + (itemWeight * item.quantity);
