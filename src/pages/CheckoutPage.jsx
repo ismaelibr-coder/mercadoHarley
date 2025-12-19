@@ -275,12 +275,16 @@ const CheckoutPage = () => {
         setLoading(true);
 
         try {
+            // Generate order number
+            const orderNumber = `HD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
             const subtotal = cartTotal;
             const shippingCost = selectedShipping ? selectedShipping.price : 0;
             const discount = paymentMethod === 'pix' ? subtotal * 0.05 : 0;
             const total = subtotal - discount + shippingCost;
 
             const orderData = {
+                orderNumber,
                 userId: currentUser?.uid || 'guest',
                 userEmail: currentUser?.email || formData.email || 'guest@example.com',
                 customer: {
