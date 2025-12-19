@@ -7,19 +7,36 @@ const router = express.Router();
 // Helper function to find order by payment ID
 async function findOrderByPaymentId(paymentId) {
     const db = getFirestore();
+
+    console.log('🔍 Searching for order with payment ID:', paymentId);
+
     const ordersSnapshot = await db.collection('orders')
         .where('payment.paymentId', '==', paymentId)
         .limit(1)
         .get();
 
+    console.log('📊 Query results:', {
+        empty: ordersSnapshot.empty,
+        size: ordersSnapshot.size
+    });
+
     if (ordersSnapshot.empty) {
+        console.log('⚠️ No order found with payment.paymentId ==', paymentId);
         return null;
     }
 
-    return {
+    const orderData = {
         id: ordersSnapshot.docs[0].id,
         ...ordersSnapshot.docs[0].data()
     };
+
+    console.log('📦 Order found:', {
+        id: orderData.id,
+        orderNumber: orderData.orderNumber,
+        paymentId: orderData.payment?.paymentId
+    });
+
+    return orderData;
 }
 
 // Mercado Pago webhook
