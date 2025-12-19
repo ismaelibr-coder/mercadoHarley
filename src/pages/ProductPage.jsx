@@ -114,7 +114,7 @@ const ProductPage = () => {
 
                         <div className="mb-8">
                             <div className="text-4xl font-bold text-white mb-4">
-                                {product.price}
+                                R$ {typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
                             </div>
 
                             {/* Stock Status */}

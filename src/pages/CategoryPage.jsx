@@ -199,7 +199,7 @@ const CategoryPage = () => {
                                             ))}
                                         </div>
                                         <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-800">
-                                            <span className="text-xl font-bold text-white">{product.price}</span>
+                                            <span className="text-xl font-bold text-white">R$ {typeof product.price === 'number' ? product.price.toFixed(2) : product.price}</span>
                                             <button
                                                 onClick={() => addToCart(product)}
                                                 className="bg-sick-red text-white px-3 py-1.5 rounded font-bold uppercase text-xs hover:bg-red-700 transition-colors"
