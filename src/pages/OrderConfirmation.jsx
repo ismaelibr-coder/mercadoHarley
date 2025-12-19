@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getOrderById } from '../services/orderService';
 import { CheckCircle, Package, Truck, CreditCard, QrCode, Barcode, Printer, ArrowLeft } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const OrderConfirmation = () => {
     const { orderId } = useParams();
@@ -121,13 +122,25 @@ const OrderConfirmation = () => {
                                 <p className="text-gray-400 text-sm mb-4">
                                     Escaneie o QR Code abaixo ou copie o código PIX
                                 </p>
-                                {order.payment.qrCodeBase64 && (
-                                    <img
-                                        src={`data:image/png;base64,${order.payment.qrCodeBase64}`}
-                                        alt="QR Code PIX"
-                                        className="mx-auto mb-4 w-64 h-64"
-                                    />
-                                )}
+
+                                {/* Generate QR Code from text if Base64 not available */}
+                                <div className="bg-white p-4 rounded inline-block mb-4">
+                                    {order.payment.qrCodeBase64 ? (
+                                        <img
+                                            src={`data:image/png;base64,${order.payment.qrCodeBase64}`}
+                                            alt="QR Code PIX"
+                                            className="w-64 h-64"
+                                        />
+                                    ) : (
+                                        <QRCodeSVG
+                                            value={order.payment.qrCode}
+                                            size={256}
+                                            level="H"
+                                            includeMargin={true}
+                                        />
+                                    )}
+                                </div>
+
                                 <div className="bg-gray-900 p-3 rounded text-xs text-gray-300 break-all font-mono">
                                     {order.payment.qrCode}
                                 </div>
