@@ -125,38 +125,30 @@ export const createBoletoPayment = async (orderData) => {
 };
 
 // Process credit card payment via backend
-export const processCreditCardPayment = async (orderData, cardData) => {
+export const processCreditCardPayment = async (orderData, { token, installments, paymentMethodId }) => {
     try {
-        console.log('Processing credit card payment via backend:', orderData.orderNumber);
-
-        // First, tokenize the card using Mercado Pago SDK
-        if (!mercadoPago) {
-            throw new Error('Mercado Pago SDK not initialized');
-        }
-
-        // Create card token
-        const cardToken = await mercadoPago.createCardToken({
-            cardNumber: cardData.cardNumber.replace(/\s/g, ''),
-            cardholderName: cardData.cardName,
-            cardExpirationMonth: cardData.cardExpiry.split('/')[0],
-            cardExpirationYear: '20' + cardData.cardExpiry.split('/')[1],
-            securityCode: cardData.cardCvv,
-            identificationType: 'CPF',
-            identificationNumber: cardData.cpf.replace(/\D/g, '')
+        console.log('Processing credit card payment via backend:', {
+            orderNumber: orderData.orderNumber,
+            installments,
+            paymentMethod: paymentMethodId
         });
 
-        if (!cardToken || !cardToken.id) {
-            throw new Error('Erro ao tokenizar cartão');
+        if (!token) {
+            throw new Error('Token do cartão é obrigatório');
+        }
+
+        if (!paymentMethodId) {
+            throw new Error('Método de pagamento é obrigatório');
         }
 
         // Send token to backend
-        const token = await getAuthToken();
+        const authToken = await getAuthToken();
         const headers = {
             'Content-Type': 'application/json'
         };
 
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
         }
 
         const response = await fetch(`${API_URL}/api/payments/credit-card`, {
@@ -164,19 +156,21 @@ export const processCreditCardPayment = async (orderData, cardData) => {
             headers,
             body: JSON.stringify({
                 orderData,
-                cardToken: cardToken.id
+                cardToken: token,
+                installments: installments || 1,
+                paymentMethodId
             })
         });
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Erro ao processar cartão');
+            throw new Error(error.error || 'Erro ao processar cartão');
         }
 
         const data = await response.json();
 
         return {
-            success: data.payment.status === 'approved',
+            success: data.payment.status === 'approved' || data.payment.status === 'pending',
             orderId: data.orderId,
             orderNumber: data.orderNumber,
             paymentId: data.payment.paymentId,

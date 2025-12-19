@@ -3,6 +3,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, CreditCard, Truck, QrCode, Barcode, AlertCircle } from 'lucide-react';
+import CreditCardForm from '../components/CreditCardForm';
 
 import { createPixPayment, createBoletoPayment, processCreditCardPayment, initMercadoPago } from '../services/paymentService';
 import { calculateShipping } from '../services/shippingService';
@@ -264,6 +265,76 @@ const CheckoutPage = () => {
 
         return () => clearTimeout(timer);
     }, [formData.cep, cartItems]);
+
+    // Handle card payment from CreditCardForm
+    const handleCardPayment = async ({ token, installments, paymentMethodId }) => {
+        if (!validateForm()) {
+            throw new Error('Por favor, preencha todos os campos obrigatórios');
+        }
+
+        setLoading(true);
+
+        try {
+            // Generate order number
+            const orderNumber = `HD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+            const discount = paymentMethod === 'pix' ? subtotal * 0.05 : 0;
+            const total = subtotal - discount + (selectedShipping?.price || 0);
+
+            const orderData = {
+                orderNumber,
+                items: cartItems.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    price: typeof item.price === 'number' ? item.price : parseFloat(item.price.replace('R$', '').replace('.', '').replace(',', '.').trim()),
+                    quantity: item.quantity,
+                    image: item.image
+                })),
+                customer: {
+                    name: formData.name,
+                    email: formData.email,
+                    cpf: formData.cpf,
+                    phone: formData.phone
+                },
+                shipping: {
+                    cep: formData.cep,
+                    address: formData.address,
+                    number: formData.number,
+                    complement: formData.complement,
+                    neighborhood: formData.neighborhood,
+                    city: formData.city,
+                    state: formData.state,
+                    method: selectedShipping?.name || 'Frete Grátis',
+                    price: selectedShipping?.price || 0
+                },
+                total,
+                subtotal,
+                discount,
+                method: 'credit_card',
+                installments
+            };
+
+            const paymentResult = await processCreditCardPayment(orderData, {
+                token,
+                installments,
+                paymentMethodId
+            });
+
+            if (paymentResult && paymentResult.success) {
+                setOrderId(paymentResult.orderId);
+                clearCart();
+                navigate(`/order-confirmation/${paymentResult.orderId}`);
+            } else {
+                throw new Error('Erro ao processar pagamento');
+            }
+
+        } catch (error) {
+            console.error('Error processing card payment:', error);
+            throw error; // Re-throw to be caught by CreditCardForm
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handlePayment = async (e) => {
         e.preventDefault();
@@ -571,44 +642,11 @@ const CheckoutPage = () => {
                                     </div>
 
                                     {paymentMethod === 'credit' && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="md:col-span-2">
-                                                <label className="block text-gray-400 text-sm mb-2">Número do Cartão</label>
-                                                <input
-                                                    name="cardNumber" value={formData.cardNumber} onChange={handleChange}
-                                                    placeholder="0000 0000 0000 0000"
-                                                    type="text" className={`w-full bg-black border ${errors.cardNumber ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
-                                                />
-                                                {errors.cardNumber && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cardNumber}</span>}
-                                            </div>
-                                            <div className="md:col-span-2">
-                                                <label className="block text-gray-400 text-sm mb-2">Nome no Cartão</label>
-                                                <input
-                                                    name="cardName" value={formData.cardName} onChange={handleChange}
-                                                    placeholder="NOME COMO NO CARTÃO"
-                                                    type="text" className={`w-full bg-black border ${errors.cardName ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors uppercase`}
-                                                />
-                                                {errors.cardName && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cardName}</span>}
-                                            </div>
-                                            <div>
-                                                <label className="block text-gray-400 text-sm mb-2">Validade</label>
-                                                <input
-                                                    name="cardExpiry" value={formData.cardExpiry} onChange={handleChange}
-                                                    placeholder="MM/AA"
-                                                    type="text" className={`w-full bg-black border ${errors.cardExpiry ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
-                                                />
-                                                {errors.cardExpiry && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cardExpiry}</span>}
-                                            </div>
-                                            <div>
-                                                <label className="block text-gray-400 text-sm mb-2">CVV</label>
-                                                <input
-                                                    name="cardCvv" value={formData.cardCvv} onChange={handleChange}
-                                                    placeholder="000"
-                                                    type="text" maxLength="4" className={`w-full bg-black border ${errors.cardCvv ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
-                                                />
-                                                {errors.cardCvv && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cardCvv}</span>}
-                                            </div>
-                                        </div>
+                                        <CreditCardForm
+                                            total={cartTotal - (paymentMethod === 'pix' ? cartTotal * 0.05 : 0) + (selectedShipping?.price || 0)}
+                                            onPaymentSuccess={handleCardPayment}
+                                            onError={(error) => alert(error)}
+                                        />
                                     )}
                                 </div>
 
