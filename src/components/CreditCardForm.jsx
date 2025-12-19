@@ -57,48 +57,6 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
         } catch (error) {
             console.error('Error getting payment method:', error);
         }
-    };
-
-    const getInstallmentOptions = async (bin, amount) => {
-        if (!mp || bin.length < 6) return;
-
-        try {
-            const installmentsResponse = await mp.getInstallments({
-                amount: String(amount),
-                bin: bin,
-                locale: 'pt-BR'
-            });
-
-            if (installmentsResponse.length > 0) {
-                const options = installmentsResponse[0].payer_costs.map(option => ({
-                    installments: option.installments,
-                    installmentAmount: option.installment_amount,
-                    totalAmount: option.total_amount,
-                    recommendedMessage: option.recommended_message
-                }));
-
-                setInstallmentOptions(options);
-
-                // Set default to 1x
-                if (options.length > 0) {
-                    setInstallments(1);
-                }
-            }
-        } catch (error) {
-            console.error('Error getting installments:', error);
-            // Fallback to simple calculation
-            const fallbackOptions = Array.from({ length: 12 }, (_, i) => ({
-                installments: i + 1,
-                installmentAmount: total / (i + 1),
-                totalAmount: total,
-                recommendedMessage: null
-            }));
-            setInstallmentOptions(fallbackOptions);
-        }
-    };
-
-    const handleCardNumberChange = (e) => {
-        const formatted = formatCardNumber(e.target.value);
         setCardNumber(formatted);
 
         const bin = formatted.replace(/\s/g, '').slice(0, 6);
