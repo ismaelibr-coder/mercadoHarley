@@ -1,31 +1,26 @@
 import React, { useState } from 'react';
 import { Package, Truck, Download, MapPin, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 
 const ShippingLabelSection = ({ orderId, shippingData, onUpdate }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const { currentUser } = useAuth();
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-    // Get auth token
-    const getAuthToken = () => {
+    // Get auth token from Firebase user
+    const getAuthToken = async () => {
         try {
-            const userStr = localStorage.getItem('user');
-            if (!userStr) {
-                console.error('No user in localStorage');
+            if (!currentUser) {
+                console.error('No current user');
                 return null;
             }
 
-            const user = JSON.parse(userStr);
-            const token = user.stsTokenManager?.accessToken || user.token;
-
-            if (!token) {
-                console.error('No token found in user object:', user);
-                return null;
-            }
-
+            // Get fresh token from Firebase
+            const token = await currentUser.getIdToken();
             return token;
         } catch (error) {
             console.error('Error getting auth token:', error);
