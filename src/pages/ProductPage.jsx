@@ -185,11 +185,7 @@ const ProductPage = () => {
 
                         {/* Features */}
                         <div className="grid grid-cols-2 gap-4 pt-8 border-t border-gray-800">
-                            {/* Shipping info removed */}
-                            <div className="flex items-center gap-3 text-gray-300">
-                                <ShieldCheck className="w-6 h-6 text-harley-orange" />
-                                <span className="text-sm">Garantia de 1 ano</span>
-                            </div>
+                            {/* Shipping info and warranty removed */}
                         </div>
                     </div>
                 </div>

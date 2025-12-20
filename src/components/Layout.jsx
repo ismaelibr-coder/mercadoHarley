@@ -210,11 +210,11 @@ const Layout = ({ children }) => {
                             <ul className="space-y-3 text-gray-400">
                                 <li className="flex items-center gap-3">
                                     <Phone className="w-5 h-5 text-harley-orange" />
-                                    <span>(11) 99999-9999</span>
+                                    <span>(51) 98444-2294</span>
                                 </li>
                                 <li className="flex items-center gap-3">
                                     <Mail className="w-5 h-5 text-harley-orange" />
-                                    <span>contato@sickgrip.com.br</span>
+                                    <span>sickgrip.br@gmail.com</span>
                                 </li>
                             </ul>
                         </div>
