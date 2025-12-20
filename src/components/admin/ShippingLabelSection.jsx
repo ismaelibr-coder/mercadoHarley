@@ -40,7 +40,7 @@ const ShippingLabelSection = ({ orderId, shippingData, onUpdate }) => {
             setError('');
             setSuccess('');
 
-            const token = getAuthToken();
+            const token = await getAuthToken();
             if (!token) {
                 setError('Sessão expirada. Faça login novamente.');
                 return;
