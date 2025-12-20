@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getOrderById, updateOrderStatus } from '../../services/orderService';
 import { ArrowLeft, Package, Truck, MapPin, User, CreditCard, Calendar } from 'lucide-react';
+import ShippingLabelSection from '../../components/admin/ShippingLabelSection';
 
 const AdminOrderDetailsPage = () => {
     const { id } = useParams();
@@ -37,6 +38,16 @@ const AdminOrderDetailsPage = () => {
             alert('Erro ao atualizar status.');
         } finally {
             setUpdating(false);
+        }
+    };
+
+    const handleShippingUpdate = async () => {
+        // Refresh order data after shipping label operations
+        try {
+            const orderData = await getOrderById(id);
+            setOrder(orderData);
+        } catch (err) {
+            console.error('Error refreshing order:', err);
         }
     };
 
@@ -133,6 +144,13 @@ const AdminOrderDetailsPage = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Shipping Label Section */}
+                        <ShippingLabelSection
+                            orderId={id}
+                            shippingData={order.shipping}
+                            onUpdate={handleShippingUpdate}
+                        />
                     </div>
 
                     {/* Sidebar Info */}
