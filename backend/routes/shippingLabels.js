@@ -52,6 +52,7 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
         }
 
         console.log('📦 Creating shipping label for order:', orderId);
+        console.log('📋 Complete order structure:', JSON.stringify(order, null, 2));
 
         // Step 1: Create label in cart
         const cartItem = await createShippingLabel(order);
@@ -94,10 +95,10 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
 
         // Step 7: Send shipping notification email with tracking code
         try {
-            const estimatedDelivery = shipmentDetails.delivery_range?.max 
+            const estimatedDelivery = shipmentDetails.delivery_range?.max
                 ? new Date(shipmentDetails.delivery_range.max)
                 : null;
-            
+
             await sendShippingNotification(order, trackingCode, estimatedDelivery);
             console.log('📧 Shipping notification email sent');
         } catch (emailError) {

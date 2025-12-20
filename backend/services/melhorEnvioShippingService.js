@@ -9,9 +9,20 @@ const MELHOR_ENVIO_API_URL = process.env.MELHOR_ENVIO_SANDBOX === 'true'
 
 const MELHOR_ENVIO_TOKEN = process.env.MELHOR_ENVIO_API_TOKEN;
 
+// Log token status on startup
+console.log('🔑 Melhor Envio Configuration:');
+console.log('   API URL:', MELHOR_ENVIO_API_URL);
+console.log('   Token exists:', !!MELHOR_ENVIO_TOKEN);
+console.log('   Token length:', MELHOR_ENVIO_TOKEN?.length || 0);
+console.log('   Token preview:', MELHOR_ENVIO_TOKEN?.substring(0, 50) + '...');
+
 // Helper to make authenticated requests
 const melhorEnvioRequest = async (method, endpoint, data = null) => {
     try {
+        if (!MELHOR_ENVIO_TOKEN) {
+            throw new Error('MELHOR_ENVIO_API_TOKEN não configurado');
+        }
+
         const config = {
             method,
             url: `${MELHOR_ENVIO_API_URL}${endpoint}`,

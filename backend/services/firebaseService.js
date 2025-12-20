@@ -159,9 +159,20 @@ export const updateOrderPayment = async (orderId, paymentData) => {
 // Verify user token
 export const verifyToken = async (idToken) => {
     try {
+        console.log('🔐 Verifying token...');
+        console.log('   Token length:', idToken?.length || 0);
+        console.log('   Token preview:', idToken?.substring(0, 50) + '...');
+
         const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+        console.log('✅ Token verified successfully');
+        console.log('   User ID:', decodedToken.uid);
+        console.log('   Email:', decodedToken.email);
+
         return decodedToken;
     } catch (error) {
+        console.error('❌ Token verification failed:', error.message);
+        console.error('   Error code:', error.code);
         throw new Error('Invalid token');
     }
 };
