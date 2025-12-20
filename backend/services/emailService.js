@@ -289,6 +289,120 @@ export const sendOrderStatusUpdate = async (order, status) => {
 };
 
 /**
+ * Send shipping notification with tracking code
+ * @param {Object} order - Order object
+ * @param {string} trackingCode - Tracking code
+ * @param {Date} estimatedDelivery - Estimated delivery date
+ */
+export const sendShippingNotification = async (order, trackingCode, estimatedDelivery) => {
+    try {
+        if (!process.env.RESEND_API_KEY) {
+            console.warn('RESEND_API_KEY not found. Skipping shipping notification email.');
+            return;
+        }
+
+        const deliveryDate = estimatedDelivery
+            ? new Date(estimatedDelivery).toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            })
+            : 'A confirmar';
+
+        // Tracking URL (Correios or carrier)
+        const trackingUrl = `https://rastreamento.correios.com.br/app/index.php?codigo=${trackingCode}`;
+
+        const { data, error } = await getResend()?.emails.send({
+            from: `${APP_NAME} <${EMAIL_FROM}>`,
+            to: [order.customer.email],
+            subject: `🚚 Pedido Enviado #${order.id.slice(0, 8).toUpperCase()} - Código de Rastreio`,
+            html: `
+                <!DOCTYPE html>
+                <html>
+                <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #000000;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #000000;">
+                        <tr>
+                            <td align="center" style="padding: 40px 20px;">
+                                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #333333; border-radius: 8px;">
+                                    <tr>
+                                        <td align="center" style="padding: 30px 20px; background-color: #ff6600; border-radius: 8px 8px 0 0;">
+                                            <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">🏍️ MERCADO HARLEY</h1>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 40px 30px;">
+                                            <h2 style="color: #ff6600; margin: 0 0 20px 0; font-size: 24px;">Seu Pedido Foi Enviado! 🚚</h2>
+                                            <p style="color: #cccccc; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">Olá ${order.customer.name},</p>
+                                            <p style="color: #cccccc; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">Ótimas notícias! Seu pedido já está a caminho.</p>
+                                            
+                                            <div style="background-color: #2a2a2a; border: 2px solid #10b981; border-radius: 8px; padding: 25px; margin: 25px 0;">
+                                                <h3 style="color: #10b981; margin: 0 0 15px 0; font-size: 18px;">📦 Informações de Rastreamento</h3>
+                                                <div style="background-color: #1a1a1a; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                                                    <p style="color: #999999; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase;">Código de Rastreio</p>
+                                                    <p style="color: #ffffff; margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 2px;">${trackingCode}</p>
+                                                </div>
+                                                <div style="background-color: #1a1a1a; padding: 15px; border-radius: 5px;">
+                                                    <p style="color: #999999; margin: 0 0 5px 0; font-size: 12px; text-transform: uppercase;">Previsão de Entrega</p>
+                                                    <p style="color: #ffffff; margin: 0; font-size: 18px; font-weight: bold;">📅 ${deliveryDate}</p>
+                                                </div>
+                                            </div>
+
+                                            <table cellpadding="0" cellspacing="0" style="margin: 25px 0;">
+                                                <tr>
+                                                    <td style="background-color: #10b981; border-radius: 5px; padding: 15px 30px;">
+                                                        <a href="${trackingUrl}" style="color: #ffffff; text-decoration: none; font-weight: bold; font-size: 16px; text-transform: uppercase;">🔍 Rastrear Pedido</a>
+                                                    </td>
+                                                </tr>
+                                            </table>
+
+                                            <div style="background-color: #2a2a2a; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                                <h4 style="color: #ff6600; margin: 0 0 10px 0; font-size: 16px;">📍 Endereço de Entrega:</h4>
+                                                <p style="color: #cccccc; margin: 0; line-height: 1.6;">
+                                                    ${order.shipping.address}, ${order.shipping.number}<br>
+                                                    ${order.shipping.neighborhood} - ${order.shipping.city}/${order.shipping.state}<br>
+                                                    CEP: ${order.shipping.cep}
+                                                </p>
+                                            </div>
+
+                                            <div style="background-color: #1a3a52; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                                                <p style="color: #cccccc; margin: 0; font-size: 14px; line-height: 1.6;">
+                                                    💡 <strong style="color: #ffffff;">Dica:</strong> Você pode acompanhar seu pedido em tempo real usando o código de rastreio acima.
+                                                </p>
+                                            </div>
+
+                                            <p style="color: #999999; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
+                                                Você receberá outro email assim que seu pedido for entregue.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 20px 30px; background-color: #0a0a0a; border-radius: 0 0 8px 8px; border-top: 1px solid #333333;">
+                                            <p style="color: #666666; font-size: 12px; margin: 0; text-align: center;">© ${new Date().getFullYear()} Mercado Harley - Todos os direitos reservados</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+            `
+        });
+
+        if (error) {
+            console.error('Error sending shipping notification email:', error);
+            return { success: false, error };
+        }
+
+        console.log('Shipping notification email sent successfully:', data);
+        return { success: true, data };
+    } catch (err) {
+        console.error('Exception sending shipping notification email:', err);
+        return { success: false, error: err };
+    }
+};
+
+/**
  * Send password reset email
  * @param {string} email - User email
  * @param {string} link - Password reset link

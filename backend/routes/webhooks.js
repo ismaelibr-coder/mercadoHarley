@@ -1,6 +1,7 @@
 import express from 'express';
 import { updateOrderStatus, getOrderById, getFirestore } from '../services/firebaseService.js';
 import { getPaymentStatus } from '../services/mercadoPagoService.js';
+import { sendOrderStatusUpdate } from '../services/emailService.js';
 
 const router = express.Router();
 
@@ -84,9 +85,25 @@ router.post('/mercadopago', async (req, res) => {
             if (paymentStatus.status === 'approved') {
                 console.log('✅ Payment approved, updating order status to paid');
                 await updateOrderStatus(order.id, 'paid');
+
+                // Send email notification
+                try {
+                    await sendOrderStatusUpdate(order, 'processing');
+                    console.log('📧 Status update email sent');
+                } catch (emailError) {
+                    console.error('❌ Error sending status email:', emailError);
+                }
             } else if (paymentStatus.status === 'rejected') {
                 console.log('❌ Payment rejected, updating order status to cancelled');
                 await updateOrderStatus(order.id, 'cancelled');
+
+                // Send cancellation email
+                try {
+                    await sendOrderStatusUpdate(order, 'cancelled');
+                    console.log('📧 Cancellation email sent');
+                } catch (emailError) {
+                    console.error('❌ Error sending cancellation email:', emailError);
+                }
             } else if (paymentStatus.status === 'pending') {
                 console.log('⏳ Payment pending');
                 // Status remains 'pending'
