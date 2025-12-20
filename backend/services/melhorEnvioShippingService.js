@@ -43,10 +43,24 @@ const melhorEnvioRequest = async (method, endpoint, data = null) => {
 export const createShippingLabel = async (orderData) => {
     try {
         console.log('📦 Creating shipping label for order:', orderData.id);
+        console.log('📋 Order data:', JSON.stringify(orderData, null, 2));
+
+        // Handle both shipping and shippingAddress structures
+        const shipping = orderData.shipping || orderData.shippingAddress || {};
+        const customer = orderData.customer || {};
+
+        // Validate required fields
+        if (!customer.name || !customer.email) {
+            throw new Error('Dados do cliente incompletos (nome/email)');
+        }
+
+        if (!shipping.address && !shipping.street) {
+            throw new Error('Endereço de entrega não encontrado');
+        }
 
         // Prepare shipping data
         const shippingData = {
-            service: orderData.shipping.serviceId || 1, // Service ID from shipping calculation
+            service: shipping.serviceId || 1, // Service ID from shipping calculation
             agency: null, // Optional: agency for pickup
             from: {
                 name: 'SICK GRIP',
@@ -65,35 +79,35 @@ export const createShippingLabel = async (orderData) => {
                 note: ''
             },
             to: {
-                name: orderData.customer.name,
-                phone: orderData.customer.phone,
-                email: orderData.customer.email,
-                document: orderData.customer.cpf || '00000000000',
+                name: customer.name,
+                phone: customer.phone || '00000000000',
+                email: customer.email,
+                document: customer.cpf || '00000000000',
                 company_document: '',
                 state_register: '',
-                address: orderData.shipping.address,
-                complement: orderData.shipping.complement || '',
-                number: orderData.shipping.number,
-                district: orderData.shipping.neighborhood,
-                city: orderData.shipping.city,
-                state_abbr: orderData.shipping.state,
+                address: shipping.address || shipping.street || 'Rua não informada',
+                complement: shipping.complement || '',
+                number: shipping.number || 'S/N',
+                district: shipping.neighborhood || shipping.district || 'Bairro',
+                city: shipping.city || 'Cidade',
+                state_abbr: shipping.state || 'RS',
                 country_id: 'BR',
-                postal_code: orderData.shipping.cep.replace(/\D/g, ''),
+                postal_code: (shipping.cep || shipping.zipCode || '00000000').replace(/\D/g, ''),
                 note: ''
             },
             products: orderData.items.map(item => ({
-                name: item.name,
-                quantity: item.quantity,
-                unitary_value: item.price
+                name: item.name || 'Produto',
+                quantity: item.quantity || 1,
+                unitary_value: item.price || 0.01
             })),
             volumes: [{
-                height: orderData.shipping.height || 10,
-                width: orderData.shipping.width || 20,
-                length: orderData.shipping.length || 30,
-                weight: orderData.shipping.weight || 1
+                height: shipping.height || 10,
+                width: shipping.width || 20,
+                length: shipping.length || 30,
+                weight: shipping.weight || 1
             }],
             options: {
-                insurance_value: orderData.total,
+                insurance_value: orderData.total || 0.01,
                 receipt: false,
                 own_hand: false,
                 reverse: false,
@@ -103,11 +117,13 @@ export const createShippingLabel = async (orderData) => {
                 },
                 platform: 'SICK GRIP',
                 tags: [{
-                    tag: orderData.orderNumber,
+                    tag: orderData.orderNumber || orderData.id,
                     url: null
                 }]
             }
         };
+
+        console.log('📤 Sending to Melhor Envio:', JSON.stringify(shippingData, null, 2));
 
         const result = await melhorEnvioRequest('POST', '/cart', shippingData);
 
@@ -115,6 +131,7 @@ export const createShippingLabel = async (orderData) => {
         return result;
     } catch (error) {
         console.error('❌ Error creating shipping label:', error);
+        console.error('❌ Error details:', error.response?.data || error.message);
         throw error;
     }
 };
