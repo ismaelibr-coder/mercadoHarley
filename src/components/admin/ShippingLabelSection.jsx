@@ -11,8 +11,26 @@ const ShippingLabelSection = ({ orderId, shippingData, onUpdate }) => {
 
     // Get auth token
     const getAuthToken = () => {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        return user.token;
+        try {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                console.error('No user in localStorage');
+                return null;
+            }
+
+            const user = JSON.parse(userStr);
+            const token = user.stsTokenManager?.accessToken || user.token;
+
+            if (!token) {
+                console.error('No token found in user object:', user);
+                return null;
+            }
+
+            return token;
+        } catch (error) {
+            console.error('Error getting auth token:', error);
+            return null;
+        }
     };
 
     // Create shipping label
@@ -23,6 +41,11 @@ const ShippingLabelSection = ({ orderId, shippingData, onUpdate }) => {
             setSuccess('');
 
             const token = getAuthToken();
+            if (!token) {
+                setError('Sessão expirada. Faça login novamente.');
+                return;
+            }
+
             const response = await axios.post(
                 `${API_URL}/api/shipping-labels/${orderId}/create`,
                 {},
