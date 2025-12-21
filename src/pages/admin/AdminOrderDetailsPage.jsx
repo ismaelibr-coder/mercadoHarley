@@ -130,17 +130,17 @@ const AdminOrderDetailsPage = () => {
                                 <div>
                                     <p className="text-gray-400 text-sm mb-1">Endereço</p>
                                     <p className="font-medium">
-                                        {order.shippingAddress?.street || 'Rua não informada'}, {order.shippingAddress?.number || 'S/N'}
-                                        {order.shippingAddress?.complement && ` - ${order.shippingAddress.complement}`}
+                                        {order.shipping?.address || order.shippingAddress?.street || 'Rua não informada'}, {order.shipping?.number || order.shippingAddress?.number || 'S/N'}
+                                        {(order.shipping?.complement || order.shippingAddress?.complement) && ` - ${order.shipping?.complement || order.shippingAddress?.complement}`}
                                     </p>
                                     <p className="font-medium">
-                                        {order.shippingAddress?.neighborhood || ''} - {order.shippingAddress?.city || ''}/{order.shippingAddress?.state || ''}
+                                        {order.shipping?.neighborhood || order.shippingAddress?.neighborhood || ''} - {order.shipping?.city || order.shippingAddress?.city || ''}/{order.shipping?.state || order.shippingAddress?.state || ''}
                                     </p>
-                                    <p className="font-medium">{order.shippingAddress?.zipCode || ''}</p>
+                                    <p className="font-medium">{order.shipping?.cep || order.shippingAddress?.zipCode || ''}</p>
                                 </div>
                                 <div>
                                     <p className="text-gray-400 text-sm mb-1">Método de Envio</p>
-                                    <p className="font-medium uppercase">{order.shippingMethod || 'Padrão'}</p>
+                                    <p className="font-medium uppercase">{order.shipping?.method || order.shippingMethod || 'Padrão'}</p>
                                 </div>
                             </div>
                         </div>
