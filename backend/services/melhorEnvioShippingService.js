@@ -77,7 +77,7 @@ export const createShippingLabel = async (orderData) => {
                 name: 'SICK GRIP',
                 phone: '51984442294',
                 email: 'sickgrip.br@gmail.com',
-                document: '00000000000', // CPF/CNPJ
+                document: '529.982.247-25', // CPF válido (use o CPF da empresa/responsável)
                 company_document: '', // CNPJ if company
                 state_register: '',
                 address: 'R. Júlio Verne',
