@@ -95,7 +95,12 @@ const ShippingLabelSection = ({ orderId, shippingData, onUpdate }) => {
             setLoading(true);
             setError('');
 
-            const token = getAuthToken();
+            const token = await getAuthToken();
+            if (!token) {
+                setError('Sessão expirada. Faça login novamente.');
+                return;
+            }
+
             const response = await axios.get(
                 `${API_URL}/api/shipping-labels/${orderId}/label`,
                 {
@@ -121,7 +126,12 @@ const ShippingLabelSection = ({ orderId, shippingData, onUpdate }) => {
             setLoading(true);
             setError('');
 
-            const token = getAuthToken();
+            const token = await getAuthToken();
+            if (!token) {
+                setError('Sessão expirada. Faça login novamente.');
+                return;
+            }
+
             const response = await axios.get(
                 `${API_URL}/api/shipping-labels/${orderId}/tracking`,
                 {

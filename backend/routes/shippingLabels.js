@@ -77,9 +77,12 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
 
         // Step 5: Get shipment details to get tracking code
         const shipmentDetails = await getShipmentDetails(melhorEnvioId);
-        const trackingCode = shipmentDetails.tracking;
+
+        // Melhor Envio returns tracking code in 'protocol' field
+        const trackingCode = shipmentDetails.protocol || shipmentDetails.tracking || null;
 
         console.log('✅ Tracking code:', trackingCode);
+        console.log('📦 Shipment details:', JSON.stringify(shipmentDetails, null, 2));
 
         // Step 6: Update order in Firestore
         const db = getFirestore();
