@@ -301,6 +301,12 @@ export const sendShippingNotification = async (order, trackingCode, estimatedDel
             return;
         }
 
+        // Only send email if we have a valid tracking code
+        if (!trackingCode || trackingCode === 'null' || trackingCode === null) {
+            console.warn('No valid tracking code. Skipping shipping notification email.');
+            return;
+        }
+
         const deliveryDate = estimatedDelivery
             ? new Date(estimatedDelivery).toLocaleDateString('pt-BR', {
                 day: '2-digit',
@@ -313,9 +319,9 @@ export const sendShippingNotification = async (order, trackingCode, estimatedDel
         const trackingUrl = `https://rastreamento.correios.com.br/app/index.php?codigo=${trackingCode}`;
 
         const { data, error } = await getResend()?.emails.send({
-            from: `${APP_NAME} <${EMAIL_FROM}>`,
+            from: `SICK GRIP <${EMAIL_FROM}>`,
             to: [order.customer.email],
-            subject: `🚚 Pedido Enviado #${order.id.slice(0, 8).toUpperCase()} - Código de Rastreio`,
+            subject: `🚚 Pedido Enviado #${order.orderNumber || order.id.slice(0, 8).toUpperCase()} - Código de Rastreio`,
             html: `
                 <!DOCTYPE html>
                 <html>
@@ -325,13 +331,13 @@ export const sendShippingNotification = async (order, trackingCode, estimatedDel
                             <td align="center" style="padding: 40px 20px;">
                                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #333333; border-radius: 8px;">
                                     <tr>
-                                        <td align="center" style="padding: 30px 20px; background-color: #ff6600; border-radius: 8px 8px 0 0;">
-                                            <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">🏍️ MERCADO HARLEY</h1>
+                                        <td align="center" style="padding: 30px 20px; background-color: #DC2626; border-radius: 8px 8px 0 0;">
+                                            <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">🏍️ SICK GRIP</h1>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td style="padding: 40px 30px;">
-                                            <h2 style="color: #ff6600; margin: 0 0 20px 0; font-size: 24px;">Seu Pedido Foi Enviado! 🚚</h2>
+                                            <h2 style="color: #DC2626; margin: 0 0 20px 0; font-size: 24px;">Seu Pedido Foi Enviado! 🚚</h2>
                                             <p style="color: #cccccc; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">Olá ${order.customer.name},</p>
                                             <p style="color: #cccccc; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">Ótimas notícias! Seu pedido já está a caminho.</p>
                                             
@@ -356,7 +362,7 @@ export const sendShippingNotification = async (order, trackingCode, estimatedDel
                                             </table>
 
                                             <div style="background-color: #2a2a2a; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                                                <h4 style="color: #ff6600; margin: 0 0 10px 0; font-size: 16px;">📍 Endereço de Entrega:</h4>
+                                                <h4 style="color: #DC2626; margin: 0 0 10px 0; font-size: 16px;">📍 Endereço de Entrega:</h4>
                                                 <p style="color: #cccccc; margin: 0; line-height: 1.6;">
                                                     ${order.shipping.address}, ${order.shipping.number}<br>
                                                     ${order.shipping.neighborhood} - ${order.shipping.city}/${order.shipping.state}<br>
