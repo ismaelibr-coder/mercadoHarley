@@ -148,9 +148,29 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
                 console.log('📧 Shipping notification email sent with Correios tracking');
             } else {
                 console.log('⚠️ Skipping email - no Correios tracking code yet');
-                message: error.message
-            });
-}
+                console.log('   Admin can manually update tracking code later');
+            }
+        } catch (emailError) {
+            console.error('❌ Error sending shipping email:', emailError);
+        }
+
+        res.json({
+            success: true,
+            melhorEnvioId,
+            trackingCode,
+            correiosTracking,
+            hasCorreiosCode,
+            labelUrl,
+            estimatedDelivery: deliveryDate
+        });
+
+    } catch (error) {
+        console.error('❌ Error creating shipping label:', error);
+        res.status(500).json({
+            error: 'Failed to create shipping label',
+            message: error.message
+        });
+    }
 });
 
 /**
