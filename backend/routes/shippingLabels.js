@@ -75,28 +75,44 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
 
         console.log('✅ Label URL:', labelUrl);
 
-        // Step 5: Get shipment details to get tracking code
-        const shipmentDetails = await getShipmentDetails(melhorEnvioId);
+        // Step 5: Wait for Correios to assign tracking code (they do this after PDF generation)
+        console.log('⏳ Waiting 3 seconds for Correios tracking code assignment...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
-        // Melhor Envio returns tracking code in 'protocol' field
-        const trackingCode = shipmentDetails.protocol || shipmentDetails.tracking || null;
+        // Step 6: Get shipment details to get tracking code
+        let shipmentDetails = await getShipmentDetails(melhorEnvioId);
+        let trackingCode = shipmentDetails.tracking || shipmentDetails.protocol;
+
+        // If tracking is still null, try one more time after another delay
+        if (!shipmentDetails.tracking && shipmentDetails.protocol) {
+            console.log('⏳ Tracking still null, waiting 5 more seconds...');
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            shipmentDetails = await getShipmentDetails(melhorEnvioId);
+            trackingCode = shipmentDetails.tracking || shipmentDetails.protocol;
+        }
 
         console.log('✅ Tracking code:', trackingCode);
+        console.log('   - Correios tracking:', shipmentDetails.tracking);
+        console.log('   - Melhor Envio protocol:', shipmentDetails.protocol);
         console.log('📦 Shipment details:', JSON.stringify(shipmentDetails, null, 2));
 
-        // Step 6: Update order in Firestore
+        // Step 7: Update order in Firestore
         const db = getFirestore();
         await db.collection('orders').doc(orderId).update({
             'shipping.melhorEnvioId': melhorEnvioId,
             'shipping.trackingCode': trackingCode,
+            'shipping.correiosTracking': shipmentDetails.tracking, // Correios code (can be null initially)
+            'shipping.melhorEnvioProtocol': shipmentDetails.protocol, // Melhor Envio ID
             'shipping.labelUrl': labelUrl,
             'shipping.labelCreatedAt': new Date(),
+            'shipping.deliveryMin': shipmentDetails.delivery_min,
+            'shipping.deliveryMax': shipmentDetails.delivery_max,
             status: 'processing'
         });
 
         console.log('✅ Order updated with shipping info');
 
-        // Step 7: Send shipping notification email with tracking code
+        // Step 8: Send shipping notification email with tracking code
         try {
             const estimatedDelivery = shipmentDetails.delivery_range?.max
                 ? new Date(shipmentDetails.delivery_range.max)
