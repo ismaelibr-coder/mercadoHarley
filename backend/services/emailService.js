@@ -332,7 +332,8 @@ export const sendShippingNotification = async (order, trackingCode, estimatedDel
                                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #333333; border-radius: 8px;">
                                     <tr>
                                         <td align="center" style="padding: 30px 20px; background-color: #DC2626; border-radius: 8px 8px 0 0;">
-                                            <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">🏍️ SICK GRIP</h1>
+                                            <img src="https://i.imgur.com/YourLogoURL.png" alt="SICK GRIP" style="max-width: 150px; height: auto; margin-bottom: 10px;" />
+                                            <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">SICK GRIP</h1>
                                         </td>
                                     </tr>
                                     <tr>
@@ -383,7 +384,7 @@ export const sendShippingNotification = async (order, trackingCode, estimatedDel
                                     </tr>
                                     <tr>
                                         <td style="padding: 20px 30px; background-color: #0a0a0a; border-radius: 0 0 8px 8px; border-top: 1px solid #333333;">
-                                            <p style="color: #666666; font-size: 12px; margin: 0; text-align: center;">© ${new Date().getFullYear()} Mercado Harley - Todos os direitos reservados</p>
+                                            <p style="color: #666666; font-size: 12px; margin: 0; text-align: center;">© ${new Date().getFullYear()} SICK GRIP - Todos os direitos reservados</p>
                                         </td>
                                     </tr>
                                 </table>
