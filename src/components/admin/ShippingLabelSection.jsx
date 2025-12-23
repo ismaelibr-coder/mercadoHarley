@@ -183,10 +183,41 @@ const ShippingLabelSection = ({ orderId, shippingData, onUpdate }) => {
                 <div className="mb-6 space-y-3">
                     <div className="bg-gray-800 rounded p-4">
                         <p className="text-gray-400 text-sm mb-1">Código de Rastreio</p>
-                        <p className="text-white font-mono text-lg font-bold">
-                            {hasTracking || 'Aguardando...'}
-                        </p>
+                        {shippingData.hasCorreiosCode ? (
+                            <>
+                                <p className="text-white font-mono text-lg font-bold flex items-center gap-2">
+                                    {shippingData.correiosTracking}
+                                    <span className="text-xs bg-green-600 px-2 py-1 rounded">Correios</span>
+                                </p>
+                                <p className="text-gray-500 text-xs mt-1">
+                                    ID Melhor Envio: {shippingData.melhorEnvioProtocol}
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-white font-mono text-lg font-bold flex items-center gap-2">
+                                    {shippingData.melhorEnvioProtocol || shippingData.trackingCode || 'Aguardando...'}
+                                    <span className="text-xs bg-yellow-600 px-2 py-1 rounded">Processando</span>
+                                </p>
+                                <p className="text-yellow-400 text-xs mt-1">
+                                    ⏳ Aguardando código dos Correios (pode levar até 1 hora)
+                                </p>
+                            </>
+                        )}
                     </div>
+
+                    {shippingData.estimatedDelivery && (
+                        <div className="bg-gray-800 rounded p-4">
+                            <p className="text-gray-400 text-sm mb-1">Previsão de Entrega</p>
+                            <p className="text-white font-medium">
+                                📅 {new Date(shippingData.estimatedDelivery._seconds * 1000).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: 'long',
+                                    year: 'numeric'
+                                })}
+                            </p>
+                        </div>
+                    )}
 
                     {pickupScheduled && (
                         <div className="bg-green-900/20 border border-green-500 rounded p-4">

@@ -75,70 +75,82 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
 
         console.log('✅ Label URL:', labelUrl);
 
-        // Step 5: Wait for Correios to assign tracking code (they do this after PDF generation)
-        console.log('⏳ Waiting 3 seconds for Correios tracking code assignment...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Step 5: Wait and retry to get Correios tracking code
+        // Correios assigns tracking code after PDF generation, but it takes time
+        console.log('⏳ Waiting for Correios to assign tracking code...');
 
-        // Step 6: Get shipment details to get tracking code
-        let shipmentDetails = await getShipmentDetails(melhorEnvioId);
-        let trackingCode = shipmentDetails.tracking || shipmentDetails.protocol;
+        let shipmentDetails = null;
+        let correiosTracking = null;
+        let attempts = 0;
+        const maxAttempts = 3;
+        const delays = [30000, 15000, 15000]; // 30s, then 15s, then 15s
 
-        // If tracking is still null, try one more time after another delay
-        if (!shipmentDetails.tracking && shipmentDetails.protocol) {
-            console.log('⏳ Tracking still null, waiting 5 more seconds...');
-            await new Promise(resolve => setTimeout(resolve, 5000));
+        // Helper to validate Correios tracking code format (2 letters + 9 digits + BR)
+        const isCorreiosCode = (code) => {
+            return code && /^[A-Z]{2}\d{9}BR$/.test(code);
+        };
+
+        while (attempts < maxAttempts && !correiosTracking) {
+            if (attempts > 0) {
+                console.log(`⏳ Attempt ${attempts + 1}/${maxAttempts}: Waiting ${delays[attempts] / 1000}s...`);
+            }
+
+            await new Promise(resolve => setTimeout(resolve, delays[attempts]));
+
             shipmentDetails = await getShipmentDetails(melhorEnvioId);
-            trackingCode = shipmentDetails.tracking || shipmentDetails.protocol;
+
+            if (isCorreiosCode(shipmentDetails.tracking)) {
+                correiosTracking = shipmentDetails.tracking;
+                console.log('✅ Correios tracking code found:', correiosTracking);
+                break;
+            }
+
+            attempts++;
+            console.log(`   - tracking: ${shipmentDetails.tracking || 'null'}`);
+            console.log(`   - protocol: ${shipmentDetails.protocol}`);
         }
 
-        console.log('✅ Tracking code:', trackingCode);
+        // Use Correios code if available, otherwise use Melhor Envio protocol
+        const trackingCode = correiosTracking || shipmentDetails.protocol;
+        const hasCorreiosCode = !!correiosTracking;
+
+        console.log('📦 Final tracking code:', trackingCode);
+        console.log('   - Is Correios code:', hasCorreiosCode);
         console.log('   - Correios tracking:', shipmentDetails.tracking);
         console.log('   - Melhor Envio protocol:', shipmentDetails.protocol);
-        console.log('📦 Shipment details:', JSON.stringify(shipmentDetails, null, 2));
 
-        // Step 7: Update order in Firestore
+        // Calculate estimated delivery date
+        const deliveryDate = new Date();
+        deliveryDate.setDate(deliveryDate.getDate() + (shipmentDetails.delivery_max || 7));
+
+        // Step 6: Update order in Firestore
         const db = getFirestore();
         await db.collection('orders').doc(orderId).update({
             'shipping.melhorEnvioId': melhorEnvioId,
             'shipping.trackingCode': trackingCode,
-            'shipping.correiosTracking': shipmentDetails.tracking, // Correios code (can be null initially)
+            'shipping.correiosTracking': correiosTracking, // Correios code (can be null)
             'shipping.melhorEnvioProtocol': shipmentDetails.protocol, // Melhor Envio ID
+            'shipping.hasCorreiosCode': hasCorreiosCode,
             'shipping.labelUrl': labelUrl,
             'shipping.labelCreatedAt': new Date(),
             'shipping.deliveryMin': shipmentDetails.delivery_min,
             'shipping.deliveryMax': shipmentDetails.delivery_max,
+            'shipping.estimatedDelivery': deliveryDate,
             status: 'processing'
         });
 
         console.log('✅ Order updated with shipping info');
 
-        // Step 8: Send shipping notification email with tracking code
+        // Step 7: Send shipping notification email ONLY if we have Correios tracking code
         try {
-            const estimatedDelivery = shipmentDetails.delivery_range?.max
-                ? new Date(shipmentDetails.delivery_range.max)
-                : null;
-
-            await sendShippingNotification(order, trackingCode, estimatedDelivery);
-            console.log('📧 Shipping notification email sent');
-        } catch (emailError) {
-            console.error('❌ Error sending shipping email:', emailError);
-        }
-
-        res.json({
-            success: true,
-            melhorEnvioId,
-            trackingCode,
-            labelUrl,
-            message: 'Etiqueta criada com sucesso'
-        });
-
-    } catch (error) {
-        console.error('❌ Error creating shipping label:', error);
-        res.status(500).json({
-            error: 'Failed to create shipping label',
-            message: error.message
-        });
-    }
+            if (hasCorreiosCode) {
+                await sendShippingNotification(order, correiosTracking, deliveryDate);
+                console.log('📧 Shipping notification email sent with Correios tracking');
+            } else {
+                console.log('⚠️ Skipping email - no Correios tracking code yet');
+                message: error.message
+            });
+}
 });
 
 /**
