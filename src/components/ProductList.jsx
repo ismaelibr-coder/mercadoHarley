@@ -102,7 +102,7 @@ const ProductList = () => {
 
                                     <div className="flex items-center justify-between mt-auto">
                                         <span className="text-2xl font-bold text-sick-red">
-                                            {product.price}
+                                            R$ {product.price}
                                         </span>
                                         <button
                                             onClick={() => addToCart(product)}
