@@ -12,6 +12,22 @@ const AdminOrderDetailsPage = () => {
     const [error, setError] = useState(null);
     const [updating, setUpdating] = useState(false);
 
+    // Translate payment status to Portuguese
+    const translatePaymentStatus = (status) => {
+        const translations = {
+            'pending': 'Pendente',
+            'approved': 'Aprovado',
+            'authorized': 'Autorizado',
+            'in_process': 'Em Processamento',
+            'in_mediation': 'Em Mediação',
+            'rejected': 'Rejeitado',
+            'cancelled': 'Cancelado',
+            'refunded': 'Reembolsado',
+            'charged_back': 'Estornado'
+        };
+        return translations[status] || status;
+    };
+
     useEffect(() => {
         const fetchOrder = async () => {
             try {
@@ -233,7 +249,7 @@ const AdminOrderDetailsPage = () => {
                                 {order.payment?.status && (
                                     <div>
                                         <p className="text-gray-400 text-sm">Status</p>
-                                        <p className="font-medium capitalize">{order.payment.status}</p>
+                                        <p className="font-medium">{translatePaymentStatus(order.payment.status)}</p>
                                     </div>
                                 )}
                             </div>
