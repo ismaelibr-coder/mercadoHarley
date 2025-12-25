@@ -206,9 +206,9 @@ const ShippingLabelSection = ({ orderId, shippingData, onUpdate }) => {
                         )}
                     </div>
 
-                    {shippingData.estimatedDelivery && (
-                        <div className="bg-gray-800 rounded p-4">
-                            <p className="text-gray-400 text-sm mb-1">Previsão de Entrega</p>
+                    <div className="bg-gray-800 rounded p-4">
+                        <p className="text-gray-400 text-sm mb-1">Previsão de Entrega</p>
+                        {shippingData.estimatedDelivery && shippingData.estimatedDelivery._seconds ? (
                             <p className="text-white font-medium">
                                 📅 {new Date(shippingData.estimatedDelivery._seconds * 1000).toLocaleDateString('pt-BR', {
                                     day: '2-digit',
@@ -216,8 +216,12 @@ const ShippingLabelSection = ({ orderId, shippingData, onUpdate }) => {
                                     year: 'numeric'
                                 })}
                             </p>
-                        </div>
-                    )}
+                        ) : (
+                            <p className="text-gray-500 text-sm italic">
+                                Disponível após gerar a etiqueta
+                            </p>
+                        )}
+                    </div>
 
                     {pickupScheduled && (
                         <div className="bg-green-900/20 border border-green-500 rounded p-4">

@@ -220,12 +220,20 @@ const AdminOrderDetailsPage = () => {
                             <div className="space-y-3">
                                 <div>
                                     <p className="text-gray-400 text-sm">Método</p>
-                                    <p className="font-medium uppercase">{order.paymentMethod}</p>
+                                    <p className="font-medium uppercase">
+                                        {order.payment?.method || order.paymentMethod || 'Não informado'}
+                                    </p>
                                 </div>
-                                {order.payment && (
+                                {order.payment?.paymentId && (
                                     <div>
                                         <p className="text-gray-400 text-sm">ID Transação</p>
-                                        <p className="font-mono text-xs">{order.payment.id}</p>
+                                        <p className="font-mono text-xs">{order.payment.paymentId}</p>
+                                    </div>
+                                )}
+                                {order.payment?.status && (
+                                    <div>
+                                        <p className="text-gray-400 text-sm">Status</p>
+                                        <p className="font-medium capitalize">{order.payment.status}</p>
                                     </div>
                                 )}
                             </div>
