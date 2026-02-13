@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { getFirestore } from './firebaseService.js';
 
 /**
@@ -10,7 +11,7 @@ export const calculateShipping = async (cep, totalWeight) => {
     const db = getFirestore();
 
     // Get state from CEP
-    const state = getStateFromCEP(cep);
+    const state = await getStateFromCEP(cep);
 
     if (!state) {
         throw new Error('CEP inválido');
@@ -40,14 +41,43 @@ export const calculateShipping = async (cep, totalWeight) => {
  * Get Brazilian state from CEP
  * Based on CEP prefix ranges
  */
-const getStateFromCEP = (cep) => {
+const getStateFromCEP = async (cep) => {
     const cleanCEP = cep.replace(/\D/g, '');
 
     if (cleanCEP.length !== 8) {
         return null;
     }
 
-    const prefix = parseInt(cleanCEP.substring(0, 2));
+    // Try ViaCEP first for accurate UF
+    try {
+        const response = await axios.get(`https://viacep.com.br/ws/${cleanCEP}/json/`, {
+            timeout: 4000
+        });
+
+        if (response.data?.uf) {
+            return response.data.uf.toUpperCase();
+        }
+
+        if (response.data?.erro) {
+            return null;
+        }
+    } catch (error) {
+        console.warn('ViaCEP lookup failed, falling back to CEP prefix mapping:', error.message);
+    }
+
+    const prefix = parseInt(cleanCEP.substring(0, 2), 10);
+    const prefix3 = parseInt(cleanCEP.substring(0, 3), 10);
+
+    // More precise 3-digit mappings for overlapping ranges
+    if (prefix3 === 689) return 'AP';
+    if (prefix3 >= 690 && prefix3 <= 692) return 'AM';
+    if (prefix3 === 693) return 'RR';
+    if (prefix3 >= 694 && prefix3 <= 698) return 'AM';
+    if (prefix3 === 699) return 'AC';
+    if (prefix3 >= 660 && prefix3 <= 688) return 'PA';
+    if (prefix3 >= 768 && prefix3 <= 769) return 'RO';
+    if (prefix3 >= 770 && prefix3 <= 779) return 'TO';
+    if (prefix3 >= 790 && prefix3 <= 799) return 'MS';
 
     // CEP to State mapping (official Correios ranges)
     if (prefix >= 1 && prefix <= 19) return 'SP';
@@ -64,7 +94,7 @@ const getStateFromCEP = (cep) => {
     if (prefix >= 64 && prefix <= 64) return 'PI';
     if (prefix >= 65 && prefix <= 65) return 'MA';
     if (prefix >= 66 && prefix <= 68) return 'PA';
-    if (prefix >= 69 && prefix <= 69) return 'AC';
+    if (prefix >= 69 && prefix <= 69) return 'AM';
     if (prefix >= 70 && prefix <= 72) return 'DF';
     if (prefix >= 73 && prefix <= 73) return 'GO';
     if (prefix >= 74 && prefix <= 76) return 'GO';
@@ -73,10 +103,7 @@ const getStateFromCEP = (cep) => {
     if (prefix >= 80 && prefix <= 87) return 'PR';
     if (prefix >= 88 && prefix <= 89) return 'SC';
     if (prefix >= 90 && prefix <= 99) return 'RS';
-    if (prefix >= 69 && prefix <= 69) return 'RO';
-    if (prefix >= 76 && prefix <= 76) return 'RR';
-    if (prefix >= 68 && prefix <= 68) return 'AP';
-    if (prefix >= 69 && prefix <= 69) return 'AM';
+    if (prefix >= 79 && prefix <= 79) return 'MS';
 
     return null;
 };

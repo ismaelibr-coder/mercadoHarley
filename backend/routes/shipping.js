@@ -27,12 +27,20 @@ router.post('/calculate', async (req, res) => {
 
         if (melhorEnvioOptions && melhorEnvioOptions.length > 0) {
             return res.json(melhorEnvioOptions);
-        } else {
-            console.error('Melhor Envio returned no options or failed.');
-            return res.status(503).json({
-                error: 'Não foi possível calcular o frete para este CEP. Verifique se o CEP está correto ou entre em contato conosco.'
-            });
         }
+
+        console.warn('Melhor Envio returned no options or failed. Falling back to shipping rules.');
+
+        // 2. Fallback to internal shipping rules
+        const fallbackOptions = await calculateShipping(cep, parseFloat(weight));
+
+        if (fallbackOptions && fallbackOptions.length > 0) {
+            return res.json(fallbackOptions);
+        }
+
+        return res.status(503).json({
+            error: 'Não foi possível calcular o frete para este CEP. Verifique se o CEP está correto ou entre em contato conosco.'
+        });
     } catch (error) {
         console.error('Error calculating shipping:', error);
 

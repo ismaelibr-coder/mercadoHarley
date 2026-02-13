@@ -91,7 +91,7 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
                 id: `me_${opt.id}`,
                 name: `${opt.company.name} ${opt.name}`,
                 price: parseFloat(opt.price),
-                deliveryTime: opt.delivery_time,
+                deliveryDays: opt.delivery_time,
                 serviceId: opt.id
             }));
 
