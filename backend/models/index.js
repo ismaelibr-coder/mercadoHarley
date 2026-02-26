@@ -1,3 +1,4 @@
+import { sequelize } from '../config/database.js';
 import User from './User.js';
 import Product from './Product.js';
 import Order from './Order.js';
@@ -6,6 +7,7 @@ import ShippingRule from './ShippingRule.js';
 import AuditLog from './AuditLog.js';
 
 export {
+    sequelize,
     User,
     Product,
     Order,
@@ -15,6 +17,7 @@ export {
 };
 
 export default {
+    sequelize,
     User,
     Product,
     Order,
