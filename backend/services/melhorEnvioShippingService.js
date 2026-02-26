@@ -7,7 +7,7 @@ const MELHOR_ENVIO_API_URL = process.env.MELHOR_ENVIO_SANDBOX === 'true'
     ? 'https://sandbox.melhorenvio.com.br/api/v2/me'
     : 'https://melhorenvio.com.br/api/v2/me';
 
-const MELHOR_ENVIO_TOKEN = process.env.MELHOR_ENVIO_API_TOKEN;
+const MELHOR_ENVIO_TOKEN = process.env.MELHOR_ENVIO_TOKEN;
 
 // Log token status on startup
 console.log('🔑 Melhor Envio Configuration:');
