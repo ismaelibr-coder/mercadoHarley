@@ -4,10 +4,36 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { sequelize, User, Product, Order, Banner, ShippingRule, AuditLog } from './models/index.js';
 import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const normalizeString = (value) => {
+    if (typeof value === 'string') return value.trim();
+    if (value === null || value === undefined) return '';
+    return String(value).trim();
+};
+
+const normalizeEmail = (value) => {
+    const email = normalizeString(value).toLowerCase();
+    return email || null;
+};
+
+const normalizeLink = (value) => {
+    if (typeof value === 'string') return value.trim();
+    if (Array.isArray(value)) return normalizeString(value[0]);
+    if (value && typeof value === 'object') return normalizeString(value.url || value.href);
+    return '';
+};
+
+const normalizeImage = (value) => {
+    if (typeof value === 'string') return value.trim();
+    if (Array.isArray(value)) return normalizeString(value[0]);
+    if (value && typeof value === 'object') return normalizeString(value.url || value.src);
+    return '';
+};
 
 /**
  * Convert Firebase timestamp to JavaScript Date
@@ -55,16 +81,23 @@ async function importFirebaseData() {
             
             for (const firebaseUser of users) {
                 try {
+                    const email = normalizeEmail(firebaseUser.email);
+                    if (!email) {
+                        console.warn('   ⚠️  Usuário sem email, ignorado.');
+                        continue;
+                    }
+
                     // Generate a hashed password (Firebase users should reset password on first login)
                     const tempPassword = 'TempPassword123!@#';
                     const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
                     await User.findOrCreate({
-                        where: { email: firebaseUser.email },
+                        where: { email },
                         defaults: {
-                            email: firebaseUser.email,
-                            hashedPassword,
-                            name: firebaseUser.displayName || firebaseUser.email,
+                            id: firebaseUser.id || firebaseUser.uid || uuidv4(),
+                            email,
+                            password: hashedPassword,
+                            name: firebaseUser.displayName || firebaseUser.name || email,
                             phone: firebaseUser.phone || '',
                             cpf: firebaseUser.cpf || '',
                             address: firebaseUser.address || {},
@@ -132,8 +165,19 @@ async function importFirebaseData() {
             for (const firebaseOrder of orders) {
                 try {
                     // Find user by email
+                    const orderEmail = normalizeEmail(
+                        firebaseOrder.customer?.email ||
+                        firebaseOrder.customerEmail ||
+                        firebaseOrder.email
+                    );
+
+                    if (!orderEmail) {
+                        console.warn(`   ⚠️  Pedido ${firebaseOrder.id} sem email do cliente`);
+                        continue;
+                    }
+
                     const user = await User.findOne({
-                        where: { email: firebaseOrder.customerEmail || '' }
+                        where: { email: orderEmail }
                     });
 
                     if (!user) {
@@ -183,11 +227,11 @@ async function importFirebaseData() {
                     await Banner.findOrCreate({
                         where: { id: firebaseBanner.id },
                         defaults: {
-                            id: firebaseBanner.id,
-                            title: firebaseBanner.title,
-                            subtitle: firebaseBanner.subtitle || '',
-                            imageUrl: firebaseBanner.imageUrl || '',
-                            link: firebaseBanner.link || '',
+                            id: firebaseBanner.id || uuidv4(),
+                            title: normalizeString(firebaseBanner.title) || 'Banner',
+                            subtitle: normalizeString(firebaseBanner.subtitle),
+                            image: normalizeImage(firebaseBanner.imageUrl || firebaseBanner.image || firebaseBanner.imageURL),
+                            link: normalizeLink(firebaseBanner.link),
                             active: firebaseBanner.active !== false,
                             displayOrder: firebaseBanner.displayOrder || 0,
                             createdAt: parseFirebaseTimestamp(firebaseBanner.createdAt)
