@@ -18,8 +18,7 @@ export const sequelize = new Sequelize(
         dialect: 'mysql',
         logging: process.env.NODE_ENV === 'development' ? console.log : false,
         dialectOptions: {
-            charset: 'utf8mb4',
-            collate: 'utf8mb4_unicode_ci'
+            charset: 'utf8mb4'
         },
         pool: {
             max: 10,
