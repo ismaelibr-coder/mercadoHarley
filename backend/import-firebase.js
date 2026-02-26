@@ -28,6 +28,20 @@ const normalizeLink = (value) => {
     return '';
 };
 
+const toNumber = (value, fallback = 0) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : fallback;
+};
+
+const calculateSubtotal = (items = []) => {
+    if (!Array.isArray(items)) return 0;
+    return items.reduce((sum, item) => {
+        const price = toNumber(item?.price, 0);
+        const qty = toNumber(item?.quantity, 1);
+        return sum + price * qty;
+    }, 0);
+};
+
 const normalizeImage = (value) => {
     if (typeof value === 'string') return value.trim();
     if (Array.isArray(value)) return normalizeString(value[0]);
@@ -87,6 +101,8 @@ async function importFirebaseData() {
                         continue;
                     }
 
+                    const cpf = normalizeString(firebaseUser.cpf);
+
                     // Generate a hashed password (Firebase users should reset password on first login)
                     const tempPassword = 'TempPassword123!@#';
                     const hashedPassword = await bcrypt.hash(tempPassword, 10);
@@ -99,7 +115,7 @@ async function importFirebaseData() {
                             password: hashedPassword,
                             name: firebaseUser.displayName || firebaseUser.name || email,
                             phone: firebaseUser.phone || '',
-                            cpf: firebaseUser.cpf || '',
+                            cpf: cpf || null,
                             address: firebaseUser.address || {},
                             isAdmin: firebaseUser.isAdmin || false,
                             createdAt: parseFirebaseTimestamp(firebaseUser.createdAt)
@@ -185,17 +201,27 @@ async function importFirebaseData() {
                         continue;
                     }
 
+                    const items = firebaseOrder.items || [];
+                    const subtotal = toNumber(firebaseOrder.subtotal, calculateSubtotal(items));
+                    const discount = toNumber(firebaseOrder.discount, 0);
+                    const shippingPrice = toNumber(firebaseOrder.shipping?.price, 0);
+                    const total = toNumber(firebaseOrder.total, subtotal - discount + shippingPrice);
+
                     await Order.findOrCreate({
                         where: { id: firebaseOrder.id },
                         defaults: {
                             id: firebaseOrder.id,
                             orderNumber: firebaseOrder.orderNumber || `ORD-${Date.now()}`,
                             userId: user.id,
-                            items: firebaseOrder.items || [],
-                            customer: firebaseOrder.customer || {},
-                            shipping: firebaseOrder.shipping || {},
+                            items,
+                            customer: firebaseOrder.customer || { email: orderEmail, name: user.name || '' },
+                            shipping: firebaseOrder.shipping || { price: shippingPrice },
                             payment: firebaseOrder.payment || {},
+                            total,
+                            subtotal,
+                            discount,
                             status: firebaseOrder.status || 'pending',
+                            method: firebaseOrder.payment?.method || firebaseOrder.method || null,
                             paidAt: firebaseOrder.paidAt ? parseFirebaseTimestamp(firebaseOrder.paidAt) : null,
                             shippedAt: firebaseOrder.shippedAt ? parseFirebaseTimestamp(firebaseOrder.shippedAt) : null,
                             deliveredAt: firebaseOrder.deliveredAt ? parseFirebaseTimestamp(firebaseOrder.deliveredAt) : null,
