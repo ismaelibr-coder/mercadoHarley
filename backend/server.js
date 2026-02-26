@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { initializeFirebase } from './services/firebaseService.js';
+import { testDatabaseConnection, syncDatabase } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import paymentsRouter from './routes/payments.js';
 import webhooksRouter from './routes/webhooks.js';
@@ -81,12 +81,21 @@ if (process.env.NODE_ENV === 'production') {
     });
 }
 
-// Initialize Firebase
-try {
-    initializeFirebase();
-} catch (error) {
-    console.error('Failed to initialize Firebase:', error);
-    process.exit(1);
+// Initialize Database
+async function initializeDatabase() {
+    try {
+        console.log('🔄 Testing database connection...');
+        await testDatabaseConnection();
+        
+        console.log('🔄 Syncing database schema...');
+        await syncDatabase({ alter: process.env.NODE_ENV === 'development' });
+        
+        console.log('✅ Database initialized successfully');
+        return true;
+    } catch (error) {
+        console.error('❌ Failed to initialize database:', error);
+        process.exit(1);
+    }
 }
 
 // Routes
@@ -125,17 +134,31 @@ app.use('/api/admin', cleanupRoutes); // Admin cleanup routes
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
-    console.log(`
+async function startServer() {
+    try {
+        // Initialize database first
+        await initializeDatabase();
+        
+        app.listen(PORT, () => {
+            console.log(`
 ╔═══════════════════════════════════════╗
 ║   🏍️  Mercado Harley Backend API    ║
 ║                                       ║
 ║   Server running on port ${PORT}       ║
 ║   Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}
+║   Database: MySQL (${process.env.DB_HOST || 'localhost'})       ║
 ║                                       ║
 ║   Ready to process payments! 💰       ║
 ╚═══════════════════════════════════════╝
-    `);
-});
+            `);
+        });
+    } catch (error) {
+        console.error('❌ Failed to start server:', error);
+        process.exit(1);
+    }
+}
+
+// Start the server
+startServer();
 
 export default app;

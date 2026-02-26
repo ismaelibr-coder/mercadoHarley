@@ -1,35 +1,15 @@
 import express from 'express';
-import { getAllOrders, getOrderById, updateOrderStatus } from '../services/firebaseService.js';
+import { getAllOrders, getOrderById, updateOrderStatus, createOrder } from '../services/databaseService.js';
 import { sendOrderStatusUpdate } from '../services/emailService.js';
-import { verifyToken, isUserAdmin } from '../services/firebaseService.js';
+import { verifyAdmin, authenticate } from '../middleware/auth.js';
+import { auditLog } from '../middleware/auditLog.js';
 
 const router = express.Router();
 
-// Middleware to verify admin
-const verifyAdmin = async (req, res, next) => {
-    try {
-        const token = req.headers.authorization?.split('Bearer ')[1];
-
-        if (!token) {
-            return res.status(401).json({ error: 'No token provided' });
-        }
-
-        const decodedToken = await verifyToken(token);
-        const isAdmin = await isUserAdmin(decodedToken.uid);
-
-        if (!isAdmin) {
-            return res.status(403).json({ error: 'Admin access required' });
-        }
-
-        req.user = decodedToken;
-        next();
-    } catch (error) {
-        console.error('Auth error:', error);
-        res.status(401).json({ error: 'Unauthorized' });
-    }
-};
-
-// GET /api/orders
+/**
+ * GET /api/orders
+ * Get all orders (admin only)
+ */
 router.get('/', verifyAdmin, async (req, res) => {
     try {
         const orders = await getAllOrders();
@@ -40,35 +20,85 @@ router.get('/', verifyAdmin, async (req, res) => {
     }
 });
 
-// GET /api/orders/:id
-router.get('/:id', verifyAdmin, async (req, res) => {
+/**
+ * GET /api/orders/:id
+ * Get order by ID (admin or order owner)
+ */
+router.get('/:id', authenticate, async (req, res) => {
     try {
         const order = await getOrderById(req.params.id);
-        res.json(order);
+
+        // Check if user is admin or order owner
+        if (req.user.isAdmin || order.userId === req.userId) {
+            return res.json(order);
+        }
+
+        res.status(403).json({ error: 'Access denied' });
     } catch (error) {
         console.error('Error fetching order:', error);
+        if (error.message.includes('not found')) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
         res.status(500).json({ error: 'Failed to fetch order' });
     }
 });
 
-// PUT /api/orders/:id/status
-router.put('/:id/status', verifyAdmin, async (req, res) => {
+/**
+ * POST /api/orders
+ * Create order (requires authentication)
+ */
+router.post('/', authenticate, auditLog('CREATE_ORDER'), async (req, res) => {
+    try {
+        const orderData = req.body;
+        orderData.userId = req.userId;
+
+        const order = await createOrder(orderData);
+
+        res.status(201).json({
+            success: true,
+            order,
+            message: 'Order created successfully'
+        });
+    } catch (error) {
+        console.error('Error creating order:', error);
+        res.status(500).json({ error: error.message || 'Failed to create order' });
+    }
+});
+
+/**
+ * PUT /api/orders/:id/status
+ * Update order status (admin only)
+ */
+router.put('/:id/status', verifyAdmin, auditLog('UPDATE_ORDER_STATUS'), async (req, res) => {
     try {
         const { status } = req.body;
         const orderId = req.params.id;
 
-        await updateOrderStatus(orderId, status);
+        if (!status) {
+            return res.status(400).json({ error: 'Status is required' });
+        }
 
-        // Fetch updated order to send email
-        const order = await getOrderById(orderId);
+        const updatedOrder = await updateOrderStatus(orderId, status);
 
         // Send status update email
-        await sendOrderStatusUpdate(order, status);
+        try {
+            await sendOrderStatusUpdate(updatedOrder, status);
+        } catch (emailError) {
+            console.warn('Email sending failed:', emailError);
+            // Don't fail the request if email fails
+        }
 
-        res.json({ message: 'Order status updated successfully' });
+        res.json({
+            success: true,
+            order: updatedOrder,
+            message: 'Order status updated successfully'
+        });
     } catch (error) {
         console.error('Error updating order status:', error);
-        res.status(500).json({ error: 'Failed to update order status' });
+        if (error.message.includes('not found')) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+        res.status(500).json({ error: error.message || 'Failed to update order status' });
     }
 });
 

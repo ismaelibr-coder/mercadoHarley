@@ -1,66 +1,177 @@
 import express from 'express';
-import admin from 'firebase-admin';
-import { sendPasswordReset, sendWelcomeEmail } from '../services/emailService.js';
+import { loginUser, registerUser, refreshAccessToken } from '../services/authService.js';
+import { updateUserProfile } from '../services/databaseService.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// POST /api/auth/forgot-password
-router.post('/forgot-password', async (req, res) => {
+/**
+ * POST /api/auth/register
+ * Register a new user
+ */
+router.post('/register', async (req, res) => {
     try {
-        const { email } = req.body;
+        const { email, password, name, phone, cpf } = req.body;
 
-        if (!email) {
-            return res.status(400).json({ error: 'Email is required' });
+        // Validate input
+        if (!email || !password || !name) {
+            return res.status(400).json({
+                error: 'Email, password, and name are required'
+            });
         }
 
-        // Generate password reset link using Firebase Admin SDK
-        const link = await admin.auth().generatePasswordResetLink(email);
+        const result = await registerUser({
+            email,
+            password,
+            name,
+            phone,
+            cpf
+        });
 
-        // Send email using Resend
-        const result = await sendPasswordReset(email, link);
-
-        if (!result.success) {
-            console.error('Failed to send password reset email:', result.error);
-            return res.status(500).json({ error: 'Failed to send email' });
-        }
-
-        res.json({ message: 'Password reset email sent successfully' });
+        res.status(201).json({
+            success: true,
+            token: result.token,
+            refreshToken: result.refreshToken,
+            user: result.user
+        });
     } catch (error) {
-        console.error('Error in forgot-password:', error);
+        console.error('Register error:', error);
 
-        if (error.code === 'auth/user-not-found') {
-            // For security reasons, we shouldn't reveal if the user exists or not
-            // But for debugging/development it might be useful to know
-            // Let's return success to prevent user enumeration
-            return res.json({ message: 'If the email exists, a reset link has been sent' });
+        if (error.message.includes('already exists')) {
+            return res.status(409).json({ error: 'User already exists' });
         }
 
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: error.message || 'Registration failed' });
     }
 });
 
-// POST /api/auth/welcome
-router.post('/welcome', async (req, res) => {
+/**
+ * POST /api/auth/login
+ * Login user
+ */
+router.post('/login', async (req, res) => {
     try {
-        const { email, displayName } = req.body;
+        const { email, password } = req.body;
 
-        if (!email) {
-            return res.status(400).json({ error: 'Email is required' });
+        if (!email || !password) {
+            return res.status(400).json({
+                error: 'Email and password are required'
+            });
         }
 
-        const result = await sendWelcomeEmail({ email, displayName });
+        const result = await loginUser(email, password);
 
-        if (!result.success) {
-            console.error('Failed to send welcome email:', result.error);
-            // Don't return error to client, just log it
-            return res.json({ message: 'Welcome email failed but registration successful' });
-        }
-
-        res.json({ message: 'Welcome email sent successfully' });
+        res.json({
+            success: true,
+            token: result.token,
+            refreshToken: result.refreshToken,
+            user: result.user
+        });
     } catch (error) {
-        console.error('Error in welcome email:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Login error:', error);
+
+        if (error.message.includes('not found') || error.message.includes('Invalid')) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        res.status(500).json({ error: error.message || 'Login failed' });
     }
+});
+
+/**
+ * POST /api/auth/refresh
+ * Refresh access token
+ */
+router.post('/refresh', async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+
+        if (!refreshToken) {
+            return res.status(400).json({ error: 'Refresh token required' });
+        }
+
+        const result = await refreshAccessToken(refreshToken);
+
+        res.json({
+            success: true,
+            token: result.token
+        });
+    } catch (error) {
+        console.error('Refresh token error:', error);
+        res.status(401).json({ error: 'Invalid refresh token' });
+    }
+});
+
+/**
+ * GET /api/auth/me
+ * Get current user profile (requires authentication)
+ */
+router.get('/me', authenticate, async (req, res) => {
+    try {
+        if (!req.userId) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        // User info is already in req.user from middleware
+        res.json({
+            user: req.user
+        });
+    } catch (error) {
+        console.error('Get profile error:', error);
+        res.status(500).json({ error: 'Failed to get profile' });
+    }
+});
+
+/**
+ * PUT /api/auth/profile
+ * Update user profile (requires authentication)
+ */
+router.put('/profile', authenticate, async (req, res) => {
+    try {
+        if (!req.userId) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const { name, phone, address } = req.body;
+
+        const updatedUser = await updateUserProfile(req.userId, {
+            name,
+            phone,
+            address
+        });
+
+        res.json({
+            success: true,
+            user: {
+                id: updatedUser.id,
+                email: updatedUser.email,
+                name: updatedUser.name,
+                phone: updatedUser.phone,
+                address: updatedUser.address
+            }
+        });
+    } catch (error) {
+        console.error('Update profile error:', error);
+
+        if (error.message.includes('not found')) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.status(500).json({ error: error.message || 'Failed to update profile' });
+    }
+});
+
+/**
+ * POST /api/auth/logout
+ * Logout (client-side should delete tokens)
+ */
+router.post('/logout', authenticate, async (req, res) => {
+    // In a stateless JWT system, logout is handled on the client by deleting tokens
+    // This endpoint can be used for cleanup/logging if needed
+    res.json({
+        success: true,
+        message: 'Logged out successfully'
+    });
 });
 
 export default router;

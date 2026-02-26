@@ -1,4 +1,5 @@
-import { verifyToken } from '../services/firebaseService.js';
+import { verifyToken } from '../services/authService.js';
+import { User } from '../models/index.js';
 
 export const authenticate = async (req, res, next) => {
     try {
@@ -9,9 +10,10 @@ export const authenticate = async (req, res, next) => {
         }
 
         const token = authHeader.split('Bearer ')[1];
-        const decodedToken = await verifyToken(token);
+        const decodedToken = verifyToken(token);
 
         req.user = decodedToken;
+        req.userId = decodedToken.uid;
         next();
     } catch (error) {
         console.error('Authentication error:', error);
@@ -25,8 +27,9 @@ export const optionalAuth = async (req, res, next) => {
 
         if (authHeader && authHeader.startsWith('Bearer ')) {
             const token = authHeader.split('Bearer ')[1];
-            const decodedToken = await verifyToken(token);
+            const decodedToken = verifyToken(token);
             req.user = decodedToken;
+            req.userId = decodedToken.uid;
         }
 
         next();
@@ -35,6 +38,7 @@ export const optionalAuth = async (req, res, next) => {
         next();
     }
 };
+
 export const verifyAdmin = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -44,19 +48,15 @@ export const verifyAdmin = async (req, res, next) => {
         }
 
         const token = authHeader.split('Bearer ')[1];
-        const decodedToken = await verifyToken(token);
+        const decodedToken = verifyToken(token);
 
-        // Verificar se o usuário tem claim de admin ou email autorizado
-        const isAdmin = decodedToken.admin === true ||
-            decodedToken.email?.endsWith('@sickgrip.com.br') ||
-            decodedToken.email === 'admin@sickgrip.com.br';
-
-        if (!isAdmin) {
+        if (!decodedToken.isAdmin) {
             console.warn(`Unauthorized admin access attempt by: ${decodedToken.email}`);
             return res.status(403).json({ error: 'Admin access denied' });
         }
 
         req.user = decodedToken;
+        req.userId = decodedToken.uid;
         next();
     } catch (error) {
         console.error('Admin auth error:', error);
