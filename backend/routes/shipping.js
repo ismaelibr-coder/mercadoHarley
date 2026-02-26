@@ -1,6 +1,6 @@
 import express from 'express';
 import { calculateShipping, getAllShippingRules, createShippingRule, updateShippingRule, deleteShippingRule } from '../services/shippingService.js';
-import { verifyToken, isUserAdmin } from '../services/firebaseService.js';
+import { verifyAdmin, authenticate } from '../middleware/auth.js';
 import { calculateMelhorEnvioShipping } from '../services/melhorEnvioService.js';
 
 const router = express.Router();
@@ -56,20 +56,8 @@ router.post('/calculate', async (req, res) => {
 });
 
 // Get all shipping rules (admin only)
-router.get('/rules', async (req, res) => {
+router.get('/rules', verifyAdmin, async (req, res) => {
     try {
-        const token = req.headers.authorization?.split('Bearer ')[1];
-        if (!token) {
-            return res.status(401).json({ error: 'Token não fornecido' });
-        }
-
-        const decodedToken = await verifyToken(token);
-        const isAdmin = await isUserAdmin(decodedToken.uid);
-
-        if (!isAdmin) {
-            return res.status(403).json({ error: 'Acesso negado' });
-        }
-
         const rules = await getAllShippingRules();
         res.json(rules);
     } catch (error) {
