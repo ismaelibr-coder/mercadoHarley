@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 import { testDatabaseConnection, syncDatabase } from './config/database.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import paymentsRouter from './routes/payments.js';
@@ -69,6 +71,13 @@ const authLimiter = rateLimit({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Static uploads (local file storage)
+const uploadsDir = process.env.UPLOADS_DIR || path.resolve(process.cwd(), '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
 
 // Force HTTPS in production
 if (process.env.NODE_ENV === 'production') {

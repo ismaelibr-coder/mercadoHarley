@@ -1,14 +1,14 @@
 import express from 'express';
 import multer from 'multer';
-import { uploadImage, deleteImage } from '../services/cloudinaryService.js';
-import { verifyToken, isUserAdmin } from '../services/firebaseService.js';
+import { saveImage, deleteImage } from '../services/localUploadService.js';
+import { verifyAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
 const upload = multer({
-    storage: storage,
+    storage,
     limits: {
         fileSize: 10 * 1024 * 1024 // 10MB limit
     },
@@ -22,30 +22,6 @@ const upload = multer({
     }
 });
 
-// Middleware to verify admin
-const verifyAdmin = async (req, res, next) => {
-    try {
-        const token = req.headers.authorization?.split('Bearer ')[1];
-
-        if (!token) {
-            return res.status(401).json({ error: 'No token provided' });
-        }
-
-        const decodedToken = await verifyToken(token);
-        const isAdmin = await isUserAdmin(decodedToken.uid);
-
-        if (!isAdmin) {
-            return res.status(403).json({ error: 'Admin access required' });
-        }
-
-        req.user = decodedToken;
-        next();
-    } catch (error) {
-        console.error('Auth error:', error);
-        res.status(401).json({ error: 'Unauthorized' });
-    }
-};
-
 // POST /api/upload/image - Upload image
 router.post('/image', verifyAdmin, upload.single('image'), async (req, res) => {
     try {
@@ -53,15 +29,12 @@ router.post('/image', verifyAdmin, upload.single('image'), async (req, res) => {
             return res.status(400).json({ error: 'No image file provided' });
         }
 
-        const result = await uploadImage(req.file.buffer);
+        const result = await saveImage(req.file);
 
         res.json({
             success: true,
             url: result.url,
-            publicId: result.publicId,
-            width: result.width,
-            height: result.height,
-            format: result.format
+            filename: result.filename
         });
     } catch (error) {
         console.error('Upload error:', error);
@@ -69,16 +42,16 @@ router.post('/image', verifyAdmin, upload.single('image'), async (req, res) => {
     }
 });
 
-// DELETE /api/upload/image/:publicId - Delete image
-router.delete('/image/:publicId(*)', verifyAdmin, async (req, res) => {
+// DELETE /api/upload/image/:filename - Delete image
+router.delete('/image/:filename', verifyAdmin, async (req, res) => {
     try {
-        const publicId = req.params.publicId;
+        const filename = req.params.filename;
 
-        if (!publicId) {
-            return res.status(400).json({ error: 'No public ID provided' });
+        if (!filename) {
+            return res.status(400).json({ error: 'No filename provided' });
         }
 
-        const result = await deleteImage(publicId);
+        const result = await deleteImage(filename);
 
         res.json({
             success: true,
