@@ -55,22 +55,30 @@ echo -e "${YELLOW}[4/8] Clonando repositório GitHub...${NC}"
 REPO_URL="https://github.com/ismaelibr-coder/mercadoHarley.git"
 APP_DIR="/home/app/mercado-harley"
 
+mkdir -p /home/app
+cd /home/app
+
 if [ ! -d "$APP_DIR" ]; then
-    mkdir -p /home/app
-    cd /home/app
-    git clone $REPO_URL
+    git clone $REPO_URL mercado-harley
     echo -e "${GREEN}✓ Repositório clonado${NC}"
 else
     echo -e "${YELLOW}⚠ Diretório já existe, atualizando...${NC}"
     cd $APP_DIR
     git pull origin main
+    cd /home/app
+fi
+
+# Verificar se o clone foi bem-sucedido
+if [ ! -d "$APP_DIR" ]; then
+    echo -e "${RED}❌ Erro ao clonar repositório!${NC}"
+    exit 1
 fi
 
 # ====================================================
 # 5. INSTALL BACKEND DEPENDENCIES
 # ====================================================
 echo -e "${YELLOW}[5/8] Instalando dependências do backend...${NC}"
-cd $APP_DIR/backend
+cd "$APP_DIR/backend"
 npm install
 
 echo -e "${GREEN}✓ Dependências instaladas${NC}"
@@ -101,7 +109,13 @@ echo "Password: $DB_PASSWORD"
 # ====================================================
 echo -e "${YELLOW}[7/8] Importando schema do banco de dados...${NC}"
 
-mysql -u harley_user -p"$DB_PASSWORD" mercado_harley < $APP_DIR/schema.sql
+SCHEMA_FILE="$APP_DIR/schema.sql"
+if [ ! -f "$SCHEMA_FILE" ]; then
+    echo -e "${RED}❌ Arquivo schema.sql não encontrado em $SCHEMA_FILE${NC}"
+    exit 1
+fi
+
+mysql -u harley_user -p"$DB_PASSWORD" mercado_harley < "$SCHEMA_FILE"
 
 echo -e "${GREEN}✓ Schema importado${NC}"
 
@@ -113,7 +127,7 @@ echo -e "${YELLOW}[8/8] Criando arquivo .env...${NC}"
 # Generate JWT secret
 JWT_SECRET=$(openssl rand -base64 32)
 
-cat > $APP_DIR/backend/.env <<ENV_FILE
+cat > "$APP_DIR/backend/.env" <<ENV_FILE
 # ====================================================
 # DATABASE
 # ====================================================
@@ -175,7 +189,7 @@ echo ""
 # INSTALL FRONTEND DEPENDENCIES
 # ====================================================
 echo -e "${YELLOW}[Bônus] Instalando dependências do frontend...${NC}"
-cd $APP_DIR
+cd "$APP_DIR"
 npm install
 
 echo -e "${GREEN}✓ Frontend pronto${NC}"
