@@ -1,16 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth, db } from '../services/firebase';
-import {
-    onAuthStateChanged,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut,
-    updateProfile,
-    sendPasswordResetEmail
-} from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import axios from 'axios';
 
 const AuthContext = createContext();
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const useAuth = () => {
     return useContext(AuthContext);
@@ -21,103 +13,110 @@ export const AuthProvider = ({ children }) => {
     const [isAdmin, setIsAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    // Real Firebase auth state listener
+    // Check for stored auth token on mount
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            console.log('🔐 AUTH STATE CHANGED:', user ? user.email : 'No user');
-            setCurrentUser(user);
-
-            if (user) {
-                // Check if user has admin role in Firestore
+        const checkAuth = async () => {
+            const token = localStorage.getItem('auth_token');
+            const userData = localStorage.getItem('user_data');
+            
+            if (token && userData) {
                 try {
-                    const userDoc = await getDoc(doc(db, 'users', user.uid));
-                    if (userDoc.exists()) {
-                        setIsAdmin(userDoc.data().isAdmin === true);
-                    } else {
-                        // Create user document if it doesn't exist
-                        await setDoc(doc(db, 'users', user.uid), {
-                            email: user.email,
-                            displayName: user.displayName,
-                            isAdmin: false,
-                            createdAt: new Date()
-                        });
-                        setIsAdmin(false);
-                    }
+                    const user = JSON.parse(userData);
+                    // Simulate Firebase user object for compatibility
+                    const firebaseUser = {
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.name,
+                        getIdToken: async () => token
+                    };
+                    setCurrentUser(firebaseUser);
+                    setIsAdmin(user.isAdmin || false);
                 } catch (error) {
-                    console.error('Error fetching user role:', error);
-                    setIsAdmin(false);
+                    console.error('Error loading stored auth:', error);
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user_data');
                 }
-            } else {
-                setIsAdmin(false);
             }
-
             setLoading(false);
-        });
-        return unsubscribe;
+        };
+
+        checkAuth();
     }, []);
 
     const login = async (email, password) => {
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            return userCredential.user;
+            const response = await axios.post(`${API_URL}/api/auth/login`, {
+                email,
+                password
+            });
+
+            const { token, user } = response.data;
+            
+            // Store token and user data
+            localStorage.setItem('auth_token', token);
+            localStorage.setItem('user_data', JSON.stringify(user));
+
+            // Simulate Firebase user object for compatibility
+            const firebaseUser = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.name,
+                getIdToken: async () => token
+            };
+
+            setCurrentUser(firebaseUser);
+            setIsAdmin(user.isAdmin || false);
+
+            console.log('✅ Login successful:', user.email);
+            return firebaseUser;
         } catch (error) {
-            console.error('Login error:', error);
-            throw error;
+            console.error('❌ Login error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.error || 'Falha ao fazer login. Verifique suas credenciais.');
         }
     };
 
     const register = async (name, email, password, additionalData = {}) => {
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-            // Update user profile with display name
-            await updateProfile(userCredential.user, {
-                displayName: name
-            });
-
-            // Create user document in Firestore with all data
-            await setDoc(doc(db, 'users', userCredential.user.uid), {
-                email: email,
-                displayName: name,
+            const response = await axios.post(`${API_URL}/api/auth/register`, {
+                name,
+                email,
+                password,
                 phone: additionalData.phone || '',
                 cpf: additionalData.cpf || '',
-                address: additionalData.address || {},
-                isAdmin: false,
-                createdAt: new Date(),
-                updatedAt: new Date()
+                address: additionalData.address || {}
             });
 
-            // Refresh the user to get updated profile
-            await userCredential.user.reload();
-            setCurrentUser(auth.currentUser);
+            const { token, user } = response.data;
+            
+            // Store token and user data
+            localStorage.setItem('auth_token', token);
+            localStorage.setItem('user_data', JSON.stringify(user));
 
-            // Send welcome email via backend
-            try {
-                await fetch(`${import.meta.env.VITE_API_URL}/api/auth/welcome`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email: email,
-                        displayName: name
-                    })
-                });
-            } catch (emailError) {
-                console.error('Failed to trigger welcome email:', emailError);
-                // Don't fail registration
-            }
+            // Simulate Firebase user object for compatibility
+            const firebaseUser = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.name,
+                getIdToken: async () => token
+            };
 
-            return userCredential.user;
+            setCurrentUser(firebaseUser);
+            setIsAdmin(user.isAdmin || false);
+
+            return firebaseUser;
         } catch (error) {
             console.error('Registration error:', error);
-            throw error;
+            throw new Error(error.response?.data?.error || 'Falha ao registrar usuário.');
         }
     };
 
     const logout = async () => {
         try {
-            await signOut(auth);
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_data');
+            setCurrentUser(null);
+            setIsAdmin(false);
+            console.log('✅ Logout successful');
         } catch (error) {
             console.error('Logout error:', error);
             throw error;
@@ -126,42 +125,32 @@ export const AuthProvider = ({ children }) => {
 
     const resetPassword = async (email) => {
         try {
-            await sendPasswordResetEmail(auth, email);
+            const response = await axios.post(`${API_URL}/api/auth/forgot-password`, {
+                email
+            });
+            return response.data;
         } catch (error) {
             console.error('Password reset error:', error);
-            throw error;
+            throw new Error(error.response?.data?.error || 'Falha ao enviar email de recuperação.');
         }
     };
 
     const requestPasswordReset = async (email) => {
-        try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/forgot-password`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to send reset email');
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error('Request password reset error:', error);
-            throw error;
-        }
+        return resetPassword(email);
     };
 
     const getUserProfile = async (uid) => {
         try {
-            const userDoc = await getDoc(doc(db, 'users', uid || currentUser?.uid));
-            if (userDoc.exists()) {
-                return userDoc.data();
-            }
-            return null;
+            const token = localStorage.getItem('auth_token');
+            if (!token) return null;
+
+            const response = await axios.get(`${API_URL}/api/auth/profile`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            return response.data;
         } catch (error) {
             console.error('Error fetching user profile:', error);
             return null;
