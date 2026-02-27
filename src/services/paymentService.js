@@ -8,6 +8,11 @@ const MP_PUBLIC_KEY = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
 let mercadoPago = null;
 
 export const initMercadoPago = () => {
+    if (!MP_PUBLIC_KEY) {
+        console.warn('Mercado Pago public key não configurada; SDK não será inicializado');
+        return null;
+    }
+
     if (typeof window !== 'undefined' && window.MercadoPago) {
         try {
             mercadoPago = new window.MercadoPago(MP_PUBLIC_KEY);

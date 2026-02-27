@@ -212,8 +212,11 @@ const CheckoutPage = () => {
 
     // Initialize Mercado Pago SDK
     useEffect(() => {
+        if (userType === 'pavilhao') {
+            return;
+        }
         initMercadoPago();
-    }, []);
+    }, [userType]);
 
     // Calculate shipping when CEP changes
     useEffect(() => {

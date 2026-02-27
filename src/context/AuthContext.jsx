@@ -149,13 +149,13 @@ export const AuthProvider = ({ children }) => {
             const token = localStorage.getItem('auth_token');
             if (!token) return null;
 
-            const response = await axios.get(`${API_URL}/api/auth/profile`, {
+            const response = await axios.get(`${API_URL}/api/auth/me`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            
-            return response.data;
+
+            return response.data?.user || null;
         } catch (error) {
             console.error('Error fetching user profile:', error);
             return null;
