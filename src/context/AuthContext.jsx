@@ -11,6 +11,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [userType, setUserType] = useState('customer');
     const [loading, setLoading] = useState(true);
 
     // Check for stored auth token on mount
@@ -27,10 +28,12 @@ export const AuthProvider = ({ children }) => {
                         uid: user.uid,
                         email: user.email,
                         displayName: user.name,
-                        getIdToken: async () => token
+                        getIdToken: async () => token,
+                        userType: user.userType || 'customer'
                     };
                     setCurrentUser(firebaseUser);
                     setIsAdmin(user.isAdmin || false);
+                    setUserType(user.userType || 'customer');
                 } catch (error) {
                     console.error('Error loading stored auth:', error);
                     localStorage.removeItem('auth_token');
@@ -61,11 +64,13 @@ export const AuthProvider = ({ children }) => {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.name,
-                getIdToken: async () => token
+                getIdToken: async () => token,
+                userType: user.userType || 'customer'
             };
 
             setCurrentUser(firebaseUser);
             setIsAdmin(user.isAdmin || false);
+            setUserType(user.userType || 'customer');
 
             console.log('✅ Login successful:', user.email);
             return firebaseUser;
@@ -161,6 +166,7 @@ export const AuthProvider = ({ children }) => {
         currentUser,
         user: currentUser, // Add alias for consistency
         isAdmin,
+        userType,
         loading,
         login,
         register,

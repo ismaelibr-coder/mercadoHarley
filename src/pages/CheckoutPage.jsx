@@ -10,7 +10,7 @@ import { calculateShipping } from '../services/shippingService';
 
 const CheckoutPage = () => {
     const { cartItems, cartTotal, clearCart } = useCart();
-    const { currentUser, loading: authLoading, getUserProfile } = useAuth();
+    const { currentUser, loading: authLoading, getUserProfile, userType } = useAuth();
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
@@ -19,6 +19,7 @@ const CheckoutPage = () => {
     const [orderId, setOrderId] = useState(null);
     const [userProfile, setUserProfile] = useState(null);
     const [useSavedAddress, setUseSavedAddress] = useState(true);
+    const [sellerName, setSellerName] = useState('');
 
     const [formData, setFormData] = useState({
         name: '',
@@ -437,6 +438,167 @@ const CheckoutPage = () => {
                 <button onClick={() => navigate('/')} className="text-sick-red hover:underline">
                     Voltar para a loja
                 </button>
+            </div>
+        );
+    }
+
+    // PAVILHÃO CHECKOUT - Interface Simplificada
+    if (userType === 'pavilhao' || currentUser?.userType === 'pavilhao') {
+        const handlePavilhaoCheckout = async (e) => {
+            e.preventDefault();
+            
+            if (!sellerName.trim()) {
+                alert('Por favor, insira o nome do vendedor');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const orderNumber = `HD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+                
+                const orderData = {
+                    orderNumber,
+                    userId: currentUser?.uid || 'pavilhao',
+                    userEmail: currentUser?.email || 'pavilhao@sickgrip.com.br',
+                    items: cartItems.map(item => ({
+                        id: item.id,
+                        name: item.name,
+                        price: 0, // Always zero for pavilhao
+                        quantity: item.quantity,
+                        image: item.image
+                    })),
+                    customer: {
+                        name: 'Pavilhão',
+                        email: 'pavilhao@sickgrip.com.br',
+                        phone: ''
+                    },
+                    shipping: {
+                        method: 'withdrawal',
+                        cost: 0,
+                        address: 'Pavilhão Oficina - R. Júlio Verne, 788',
+                        city: 'Porto Alegre',
+                        state: 'RS',
+                        neighborhood: 'Santa Maria Goretti'
+                    },
+                    payment: {
+                        method: 'cash',
+                        status: 'completed'
+                    },
+                    sellerName: sellerName,
+                    orderType: 'pavilhao',
+                    subtotal: 0,
+                    discount: 0,
+                    total: 0
+                };
+
+                const token = localStorage.getItem('auth_token');
+                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(orderData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Erro ao criar pedido');
+                }
+
+                const result = await response.json();
+                clearCart();
+                setOrderId(result.order.id);
+                navigate(`/order-confirmation/${result.order.id}`);
+            } catch (error) {
+                console.error('Erro ao processar pedido:', error);
+                alert(`Erro ao processar pedido: ${error.message}`);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        return (
+            <div className="bg-black min-h-screen py-12">
+                <div className="container mx-auto px-4">
+                    <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-8 uppercase">
+                        Venda Pavilhão
+                    </h1>
+
+                    <div className="max-w-2xl mx-auto">
+                        {/* Formulário Simplificado */}
+                        <div className="bg-gray-900 p-8 rounded-lg border border-gray-800 mb-8">
+                            <div className="mb-8">
+                                <h2 className="text-2xl font-bold text-white mb-4">📍 Local de Retirada</h2>
+                                <div className="bg-gray-800 p-4 rounded border border-gray-700">
+                                    <p className="text-white font-semibold">Pavilhão Oficina</p>
+                                    <p className="text-gray-400 text-sm">R. Júlio Verne, 788</p>
+                                    <p className="text-gray-400 text-sm">Santa Maria Goretti, Porto Alegre - RS</p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handlePavilhaoCheckout} className="space-y-6">
+                                {/* Produtos */}
+                                <div>
+                                    <h2 className="text-2xl font-bold text-white mb-4">📦 Produtos</h2>
+                                    <div className="space-y-3">
+                                        {cartItems.map(item => (
+                                            <div key={item.id} className="flex items-center justify-between p-4 bg-gray-800 rounded border border-gray-700">
+                                                <div className="flex items-center gap-4">
+                                                    <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded" />
+                                                    <div>
+                                                        <p className="text-white font-medium">{item.name}</p>
+                                                        <p className="text-gray-400 text-sm">Qtd: {item.quantity}</p>
+                                                    </div>
+                                                </div>
+                                                <p className="text-sick-red font-bold">R$ 0,00</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Campo do Vendedor */}
+                                <div>
+                                    <label className="block text-white font-bold mb-3">👤 Nome do Vendedor *</label>
+                                    <input
+                                        type="text"
+                                        value={sellerName}
+                                        onChange={(e) => setSellerName(e.target.value)}
+                                        placeholder="Digite o nome do vendedor"
+                                        className="w-full bg-black border border-gray-700 rounded p-4 text-white focus:border-sick-red focus:outline-none transition-colors text-lg"
+                                        required
+                                    />
+                                    <p className="text-gray-400 text-sm mt-2">Este nome será registrado para auditoria</p>
+                                </div>
+
+                                {/* Resumo Total */}
+                                <div className="bg-gray-800 p-4 rounded border border-gray-700">
+                                    <div className="flex justify-between text-lg font-bold">
+                                        <span className="text-white">Total:</span>
+                                        <span className="text-sick-red">R$ 0,00</span>
+                                    </div>
+                                </div>
+
+                                {/* Botão Submit */}
+                                <button
+                                    type="submit"
+                                    disabled={loading || !sellerName.trim()}
+                                    className="w-full bg-sick-red text-white py-4 rounded font-bold text-lg hover:bg-orange-700 transition-colors uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {loading ? '⏳ Processando...' : '✅ Finalizar Pedido'}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/')}
+                                    className="w-full bg-gray-800 text-white py-3 rounded font-bold border border-gray-700 hover:border-gray-600 transition-colors"
+                                >
+                                    Voltar para a Loja
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }

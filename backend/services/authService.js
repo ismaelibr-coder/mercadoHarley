@@ -97,7 +97,8 @@ export const loginUser = async (email, password) => {
                 uid: user.id,
                 email: user.email,
                 name: user.name,
-                isAdmin: user.isAdmin
+                isAdmin: user.isAdmin,
+                userType: user.userType || 'customer'
             }
         };
     } catch (error) {
@@ -133,7 +134,8 @@ export const registerUser = async (userData) => {
             name,
             phone,
             cpf,
-            isAdmin: false
+            isAdmin: false,
+            userType: 'customer'
         });
 
         const token = generateToken(user.id, user.email, user.isAdmin);
@@ -146,7 +148,8 @@ export const registerUser = async (userData) => {
                 uid: user.id,
                 email: user.email,
                 name: user.name,
-                isAdmin: user.isAdmin
+                isAdmin: user.isAdmin,
+                userType: user.userType || 'customer'
             }
         };
     } catch (error) {
