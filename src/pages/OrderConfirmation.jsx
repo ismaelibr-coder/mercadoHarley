@@ -91,7 +91,7 @@ const OrderConfirmation = () => {
                                 Pedido #{order.orderNumber}
                             </h2>
                             <p className="text-gray-400">
-                                {new Date(order.createdAt?.seconds * 1000 || Date.now()).toLocaleDateString('pt-BR', {
+                                {new Date(order.createdAt || Date.now()).toLocaleDateString('pt-BR', {
                                     day: '2-digit',
                                     month: 'long',
                                     year: 'numeric',

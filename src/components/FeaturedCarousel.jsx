@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { db } from '../services/firebase';
 import { Link } from 'react-router-dom';
 
 const FeaturedCarousel = () => {
@@ -12,33 +10,25 @@ const FeaturedCarousel = () => {
     useEffect(() => {
         const fetchFeaturedProducts = async () => {
             try {
-                const q = query(
-                    collection(db, 'products'),
-                    where('featuredCarousel', '==', true),
-                    limit(5)
-                );
-                const querySnapshot = await getDocs(q);
-                const productsData = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                // Se não houver produtos em destaque, carrega produtos normais como fallback
+                const API_URL = import.meta.env.VITE_API_URL || 'https://www.sickgrip.com.br';
+                
+                // Fetch featured products from API
+                const response = await fetch(`${API_URL}/api/products?featured=true&limit=5`);
+                const data = await response.json();
+                
+                let productsData = data.products || data || [];
+                
+                // If no featured products, fetch regular products as fallback
                 if (productsData.length === 0) {
-                    const fallbackQ = query(
-                        collection(db, 'products'),
-                        limit(5)
-                    );
-                    const fallbackSnapshot = await getDocs(fallbackQ);
-                    const fallbackData = fallbackSnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    setProducts(fallbackData);
-                } else {
-                    setProducts(productsData);
+                    const fallbackResponse = await fetch(`${API_URL}/api/products?limit=5`);
+                    const fallbackData = await fallbackResponse.json();
+                    productsData = fallbackData.products || fallbackData || [];
                 }
+                
+                setProducts(productsData);
             } catch (error) {
                 console.error("Error fetching featured products:", error);
+                setProducts([]); // Set empty array on error instead of throwing
             } finally {
                 setLoading(false);
             }
