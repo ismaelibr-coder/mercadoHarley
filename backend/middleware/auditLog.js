@@ -1,4 +1,5 @@
-import { getFirestore } from 'firebase-admin/firestore';
+import { AuditLog } from '../models/index.js';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Audit log middleware for tracking administrative actions
@@ -11,21 +12,21 @@ export const auditLog = (action) => async (req, res, next) => {
         // Log após resposta bem-sucedida (status < 400)
         if (res.statusCode < 400) {
             const logEntry = {
+                id: `audit_${uuidv4()}`,
                 action,
-                user: req.user?.email || 'anonymous',
                 userId: req.user?.uid || null,
-                timestamp: new Date(),
-                ip: req.ip || req.connection.remoteAddress,
-                userAgent: req.get('user-agent'),
-                method: req.method,
-                path: req.path,
-                statusCode: res.statusCode
+                resource: req.path.split('/')[2] || null,
+                resourceId: req.params?.id || null,
+                changes: {
+                    method: req.method,
+                    statusCode: res.statusCode,
+                    ip: req.ip || req.connection.remoteAddress,
+                    userAgent: req.get('user-agent')
+                }
             };
 
-            // Salvar log no Firestore (não bloquear resposta)
-            getFirestore()
-                .collection('audit_logs')
-                .add(logEntry)
+            // Salvar log no MySQL (não bloquear resposta)
+            AuditLog.create(logEntry)
                 .catch(error => {
                     console.error('Error saving audit log:', error);
                 });
@@ -42,15 +43,22 @@ export const auditLog = (action) => async (req, res, next) => {
  */
 export const auditAuthFailure = async (email, reason, req) => {
     try {
-        await getFirestore().collection('audit_logs').add({
+        await AuditLog.create({
+            id: `audit_${uuidv4()}`,
             action: 'AUTH_FAILURE',
-            email,
-            reason,
-            timestamp: new Date(),
-            ip: req.ip || req.connection.remoteAddress,
-            userAgent: req.get('user-agent')
+            userId: null,
+            resource: 'auth',
+            resourceId: email,
+            changes: {
+                reason,
+                ip: req.ip || req.connection.remoteAddress,
+                userAgent: req.get('user-agent')
+            }
         });
     } catch (error) {
+        console.error('Error saving auth failure audit log:', error);
+    }
+};
         console.error('Error saving auth failure log:', error);
     }
 };
