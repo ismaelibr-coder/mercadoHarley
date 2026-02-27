@@ -110,6 +110,7 @@ export const createOrder = async (orderData) => {
                 finalOrderData.discount = subtotal + shippingCost;
                 finalOrderData.total = 0;
                 finalOrderData.orderType = 'pavilhao';
+                finalOrderData.status = 'paid'; // Mark as paid automatically for pavilhao
                 
                 // Force withdrawal shipping option
                 if (finalOrderData.shipping) {
@@ -178,6 +179,19 @@ export const getAllOrders = async () => {
         return orders;
     } catch (error) {
         console.error('Error fetching orders:', error);
+        throw error;
+    }
+};
+
+export const getOrdersByUserId = async (userId) => {
+    try {
+        const orders = await Order.findAll({
+            where: { userId },
+            order: [['createdAt', 'DESC']]
+        });
+        return orders;
+    } catch (error) {
+        console.error('Error fetching user orders:', error);
         throw error;
     }
 };

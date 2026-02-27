@@ -15,7 +15,7 @@ const ProductList = () => {
 
     const loadProducts = async () => {
         try {
-            console.log('🔍 Fetching products from Firestore...');
+            console.log('🔍 Fetching products from API...');
             const data = await getAllProducts();
             console.log('📦 Products received:', data);
 

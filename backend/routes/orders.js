@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllOrders, getOrderById, updateOrderStatus, createOrder } from '../services/databaseService.js';
+import { getAllOrders, getOrderById, updateOrderStatus, createOrder, getOrdersByUserId } from '../services/databaseService.js';
 import { sendOrderStatusUpdate } from '../services/emailService.js';
 import { verifyAdmin, authenticate } from '../middleware/auth.js';
 import { auditLog } from '../middleware/auditLog.js';
@@ -8,12 +8,13 @@ const router = express.Router();
 
 /**
  * GET /api/orders
- * Get all orders (admin only)
+ * Get orders for authenticated user (or all orders if admin)
  */
-router.get('/', verifyAdmin, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
     try {
-        const orders = await getAllOrders();
-        res.json(orders);
+        const isAdmin = req.user?.isAdmin || false;
+        const orders = isAdmin ? await getAllOrders() : await getOrdersByUserId(req.userId);
+        res.json({ orders });
     } catch (error) {
         console.error('Error fetching orders:', error);
         res.status(500).json({ error: 'Failed to fetch orders' });

@@ -204,7 +204,11 @@ const OrderConfirmation = () => {
                             {order.items.map((item, index) => (
                                 <div key={index} className="flex gap-4 bg-black border border-gray-800 rounded p-4">
                                     <div className="w-20 h-20 bg-gray-800 rounded overflow-hidden flex-shrink-0">
-                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                        <img
+                                            src={item.image || item.imageUrl || '/images/placeholder-product.jpg'}
+                                            alt={item.name}
+                                            className="w-full h-full object-cover"
+                                        />
                                     </div>
                                     <div className="flex-1">
                                         <h4 className="text-white font-bold mb-1">{item.name}</h4>
@@ -212,7 +216,7 @@ const OrderConfirmation = () => {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-harley-orange font-bold">
-                                            R$ {item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            R$ {Number(item.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                         </p>
                                     </div>
                                 </div>
