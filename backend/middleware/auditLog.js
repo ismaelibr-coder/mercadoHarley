@@ -59,6 +59,3 @@ export const auditAuthFailure = async (email, reason, req) => {
         console.error('Error saving auth failure audit log:', error);
     }
 };
-        console.error('Error saving auth failure log:', error);
-    }
-};
