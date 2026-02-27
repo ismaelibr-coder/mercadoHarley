@@ -230,3 +230,91 @@ export const getDashboardMetrics = async () => {
         throw error;
     }
 };
+
+/**
+ * Get sales report: Pavilhão vs Online
+ * @param {string} startDate - Start date (YYYY-MM-DD)
+ * @param {string} endDate - End date (YYYY-MM-DD)
+ * @returns {Promise<Object>} - Sales comparison report
+ */
+export const getSalesReportPavilhaoVsOnline = async (startDate, endDate) => {
+    try {
+        const { Order } = await import('../models/index.js');
+        const { Op } = await import('sequelize');
+
+        const start = new Date(startDate + 'T00:00:00Z');
+        const end = new Date(endDate + 'T23:59:59Z');
+
+        // Get all orders in the date range
+        const orders = await Order.findAll({
+            where: {
+                createdAt: {
+                    [Op.between]: [start, end]
+                }
+            },
+            attributes: ['id', 'orderNumber', 'orderType', 'subtotal', 'discount', 'total', 'status', 'sellerName', 'createdAt']
+        });
+
+        // Separate by type
+        const pavilhaoOrders = orders.filter(o => o.orderType === 'pavilhao');
+        const onlineOrders = orders.filter(o => o.orderType !== 'pavilhao' || !o.orderType);
+
+        // Calculate metrics
+        const calcMetrics = (orderList) => {
+            const totalItems = orderList.length;
+            const totalSubtotal = orderList.reduce((sum, o) => sum + (parseFloat(o.subtotal) || 0), 0);
+            const totalDiscount = orderList.reduce((sum, o) => sum + (parseFloat(o.discount) || 0), 0);
+            const totalRevenue = orderList.reduce((sum, o) => sum + (parseFloat(o.total) || 0), 0);
+
+            return {
+                totalOrders: totalItems,
+                totalSubtotal: parseFloat(totalSubtotal.toFixed(2)),
+                totalDiscount: parseFloat(totalDiscount.toFixed(2)),
+                totalRevenue: parseFloat(totalRevenue.toFixed(2)),
+                averageOrderValue: totalItems > 0 ? parseFloat((totalRevenue / totalItems).toFixed(2)) : 0
+            };
+        };
+
+        const pavilhaoMetrics = calcMetrics(pavilhaoOrders);
+        const onlineMetrics = calcMetrics(onlineOrders);
+
+        // Group pavilhao by seller
+        const sellerSales = {};
+        pavilhaoOrders.forEach(order => {
+            const seller = order.sellerName || 'Sem informação';
+            if (!sellerSales[seller]) {
+                sellerSales[seller] = [];
+            }
+            sellerSales[seller].push(order);
+        });
+
+        const sellerMetrics = Object.entries(sellerSales).map(([sellerName, orders]) => {
+            const metrics = calcMetrics(orders);
+            return {
+                seller: sellerName,
+                ...metrics
+            };
+        }).sort((a, b) => b.totalOrders - a.totalOrders);
+
+        return {
+            period: {
+                startDate,
+                endDate
+            },
+            pavilhao: pavilhaoMetrics,
+            online: onlineMetrics,
+            comparison: {
+                pavilhaoPercentage: onlineMetrics.totalOrders + pavilhaoMetrics.totalOrders > 0 
+                    ? parseFloat(((pavilhaoMetrics.totalOrders / (onlineMetrics.totalOrders + pavilhaoMetrics.totalOrders)) * 100).toFixed(2))
+                    : 0,
+                onlinePercentage: onlineMetrics.totalOrders + pavilhaoMetrics.totalOrders > 0
+                    ? parseFloat(((onlineMetrics.totalOrders / (onlineMetrics.totalOrders + pavilhaoMetrics.totalOrders)) * 100).toFixed(2))
+                    : 0
+            },
+            sellerBreakdown: sellerMetrics
+        };
+    } catch (error) {
+        console.error('Error getting sales report:', error);
+        throw error;
+    }
+};

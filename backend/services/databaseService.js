@@ -98,16 +98,37 @@ export const createOrder = async (orderData) => {
             );
         }
 
-        // 2. Create order
+        // 2. Apply pavilhao discount if user is pavilhao type
+        let finalOrderData = { ...orderData };
+        if (orderData.userId) {
+            const user = await User.findByPk(orderData.userId, { transaction });
+            if (user && user.userType === 'pavilhao') {
+                // Apply 100% discount for pavilhao user
+                const subtotal = parseFloat(orderData.subtotal) || 0;
+                const shippingCost = orderData.shipping?.cost ? parseFloat(orderData.shipping.cost) : 0;
+                
+                finalOrderData.discount = subtotal + shippingCost;
+                finalOrderData.total = 0;
+                finalOrderData.orderType = 'pavilhao';
+                
+                // Force withdrawal shipping option
+                if (finalOrderData.shipping) {
+                    finalOrderData.shipping.method = 'withdrawal';
+                    finalOrderData.shipping.cost = 0;
+                }
+            }
+        }
+
+        // 3. Create order
         const order = await Order.create(
             {
                 id: `ord_${uuidv4()}`,
-                ...orderData
+                ...finalOrderData
             },
             { transaction }
         );
 
-        // 3. Log audit
+        // 4. Log audit
         if (orderData.userId) {
             await AuditLog.create(
                 {
@@ -116,7 +137,7 @@ export const createOrder = async (orderData) => {
                     action: 'CREATE_ORDER',
                     resource: 'Order',
                     resourceId: order.id,
-                    changes: { created: true }
+                    changes: { created: true, orderType: order.orderType }
                 },
                 { transaction }
             );

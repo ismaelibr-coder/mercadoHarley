@@ -2,7 +2,8 @@ import express from 'express';
 import {
     getDashboardMetrics,
     getSalesByPeriod,
-    getBestSellingProducts
+    getBestSellingProducts,
+    getSalesReportPavilhaoVsOnline
 } from '../services/analyticsService.js';
 import { verifyAdmin } from '../middleware/auth.js';
 
@@ -53,6 +54,37 @@ router.get('/best-sellers', verifyAdmin, async (req, res) => {
     } catch (error) {
         console.error('Error getting best sellers:', error);
         res.status(500).json({ error: 'Failed to get best sellers' });
+    }
+});
+
+// GET /api/analytics/pavilhao-report?startDate=2024-01-01&endDate=2024-01-31
+router.get('/pavilhao-report', verifyAdmin, async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+
+        if (!startDate || !endDate) {
+            return res.status(400).json({
+                error: 'startDate and endDate are required (YYYY-MM-DD format)'
+            });
+        }
+
+        // Validate date format
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+            return res.status(400).json({
+                error: 'Invalid date format. Use YYYY-MM-DD'
+            });
+        }
+
+        const report = await getSalesReportPavilhaoVsOnline(startDate, endDate);
+
+        res.json({
+            success: true,
+            data: report
+        });
+    } catch (error) {
+        console.error('Error getting pavilhao report:', error);
+        res.status(500).json({ error: 'Failed to get pavilhao report' });
     }
 });
 

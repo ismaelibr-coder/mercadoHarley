@@ -52,6 +52,22 @@ router.post('/', authenticate, auditLog('CREATE_ORDER'), async (req, res) => {
         const orderData = req.body;
         orderData.userId = req.userId;
 
+        // Get user to check if it's a pavilhao user
+        const { User } = await import('../models/index.js');
+        const user = await User.findByPk(req.userId);
+
+        // If pavilhao user, require sellerName
+        if (user && user.userType === 'pavilhao') {
+            if (!orderData.sellerName || orderData.sellerName.trim() === '') {
+                return res.status(400).json({
+                    error: 'Campo "Nome do Vendedor" é obrigatório para vendas no pavilhão'
+                });
+            }
+            orderData.orderType = 'pavilhao';
+        } else {
+            orderData.orderType = 'online';
+        }
+
         const order = await createOrder(orderData);
 
         res.status(201).json({

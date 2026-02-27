@@ -13,10 +13,12 @@ CREATE TABLE IF NOT EXISTS users (
     cpf VARCHAR(14) UNIQUE,
     address JSON,
     isAdmin BOOLEAN DEFAULT FALSE,
+    userType VARCHAR(50) DEFAULT 'customer' COMMENT 'Type: customer, pavilhao, admin',
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_email (email),
-    INDEX idx_isAdmin (isAdmin)
+    INDEX idx_isAdmin (isAdmin),
+    INDEX idx_userType (userType)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -55,6 +57,8 @@ CREATE TABLE IF NOT EXISTS orders (
     discount DECIMAL(10, 2) DEFAULT 0,
     status VARCHAR(50) DEFAULT 'pending',
     method VARCHAR(50),
+    sellerName VARCHAR(255) COMMENT 'Nome do vendedor (para vendas pavilhão)',
+    orderType VARCHAR(50) DEFAULT 'online' COMMENT 'Type: online, pavilhao',
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     paidAt TIMESTAMP NULL,
@@ -64,7 +68,8 @@ CREATE TABLE IF NOT EXISTS orders (
     INDEX idx_userId (userId),
     INDEX idx_status (status),
     INDEX idx_orderNumber (orderNumber),
-    INDEX idx_createdAt (createdAt)
+    INDEX idx_createdAt (createdAt),
+    INDEX idx_orderType (orderType)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================

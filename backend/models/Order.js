@@ -56,6 +56,17 @@ export const Order = sequelize.define('Order', {
     method: {
         type: DataTypes.STRING(50)
     },
+    sellerName: {
+        type: DataTypes.STRING(255),
+        allowNull: true
+    },
+    orderType: {
+        type: DataTypes.STRING(50),
+        defaultValue: 'online',
+        validate: {
+            isIn: [['online', 'pavilhao']]
+        }
+    },
     createdAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW

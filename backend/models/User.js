@@ -38,6 +38,13 @@ export const User = sequelize.define('User', {
         type: DataTypes.BOOLEAN,
         defaultValue: false
     },
+    userType: {
+        type: DataTypes.STRING(50),
+        defaultValue: 'customer',
+        validate: {
+            isIn: [['customer', 'pavilhao', 'admin']]
+        }
+    },
     createdAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW
