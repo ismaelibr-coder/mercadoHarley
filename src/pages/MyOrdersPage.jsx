@@ -147,8 +147,13 @@ const MyOrdersPage = () => {
                                 {order.items && order.items.length > 0 && (
                                     <div className="mt-4 pt-4 border-t border-gray-800 flex gap-2 overflow-x-auto">
                                         {order.items.slice(0, 5).map((item, index) => (
-                                            <div key={index} className="w-12 h-12 bg-gray-800 rounded overflow-hidden flex-shrink-0" title={item.name}>
-                                                <img src={item.image} alt={item.name} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
+                                            <div key={index} className="w-12 h-12 bg-gray-800 rounded overflow-hidden flex-shrink-0" title={item.name || 'Produto'}>
+                                                <img 
+                                                    src={item.image || item.imageUrl || '/images/placeholder-product.jpg'} 
+                                                    alt={item.name || 'Produto'} 
+                                                    className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                                                    onError={(e) => { e.target.src = '/images/placeholder-product.jpg'; }}
+                                                />
                                             </div>
                                         ))}
                                         {order.items.length > 5 && (

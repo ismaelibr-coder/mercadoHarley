@@ -484,3 +484,70 @@ export const sendPasswordReset = async (email, link) => {
     }
 };
 
+/**
+ * Send a temporary password to a user by email
+ * @param {string} email - User email
+ * @param {string} tempPassword - Temporary password to send
+ */
+export const sendTemporaryPassword = async (email, tempPassword) => {
+    try {
+        if (!process.env.RESEND_API_KEY) {
+            console.warn('RESEND_API_KEY not found. Skipping temporary password email.');
+            return { success: false, reason: 'no_api_key' };
+        }
+
+        const { data, error } = await getResend()?.emails.send({
+            from: `${APP_NAME} <${EMAIL_FROM}>`,
+            to: [email],
+            subject: `Senha temporária - ${APP_NAME}`,
+            html: `
+                <!DOCTYPE html>
+                <html>
+                <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#000;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#000;">
+                        <tr>
+                            <td align="center" style="padding:40px 20px;">
+                                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#1a1a1a;border:1px solid #333;border-radius:8px;">
+                                    <tr>
+                                        <td align="center" style="padding:30px 20px;background-color:#ff6600;border-radius:8px 8px 0 0;">
+                                            <h1 style="margin:0;color:#fff;font-size:24px;">${APP_NAME}</h1>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:30px;">
+                                            <h2 style="color:#ff6600;margin:0 0 10px 0;">Senha Temporária</h2>
+                                            <p style="color:#ccc;margin:0 0 16px 0;">Uma senha temporária foi gerada para sua conta. Faça login e altere sua senha imediatamente.</p>
+                                            <div style="background:#111;padding:16px;border-radius:6px;margin:12px 0;">
+                                                <p style="color:#fff;font-size:18px;margin:0;word-break:break-all;"><strong>${tempPassword}</strong></p>
+                                            </div>
+                                            <p style="color:#999;margin:0 0 12px 0;">Para alterar sua senha, acesse: <a href="${FRONTEND_URL}/login" style="color:#ff6600">Acessar</a></p>
+                                            <p style="color:#666;font-size:12px;margin-top:12px;">Se você não solicitou essa alteração, entre em contato com o suporte imediatamente.</p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:16px;background:#0a0a0a;border-radius:0 0 8px 8px;text-align:center;color:#666;font-size:12px;">
+                                            © ${new Date().getFullYear()} ${APP_NAME}
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+            `
+        });
+
+        if (error) {
+            console.error('Error sending temporary password email:', error);
+            return { success: false, error };
+        }
+
+        console.log('Temporary password email sent successfully:', data);
+        return { success: true, data };
+    } catch (err) {
+        console.error('Exception sending temporary password email:', err);
+        return { success: false, error: err };
+    }
+};
+

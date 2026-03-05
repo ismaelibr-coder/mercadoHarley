@@ -102,7 +102,9 @@ export const createOrder = async (orderData) => {
         let finalOrderData = { ...orderData };
         if (orderData.userId) {
             const user = await User.findByPk(orderData.userId, { transaction });
+                        console.log('🔍 Creating order for user:', { userId: orderData.userId, userType: user?.userType });
             if (user && user.userType === 'pavilhao') {
+                                console.log('✅ PAVILHAO USER DETECTED - Setting status to PAID');
                 // Apply 100% discount for pavilhao user
                 const subtotal = parseFloat(orderData.subtotal) || 0;
                 const shippingCost = orderData.shipping?.cost ? parseFloat(orderData.shipping.cost) : 0;
@@ -111,11 +113,14 @@ export const createOrder = async (orderData) => {
                 finalOrderData.total = 0;
                 finalOrderData.orderType = 'pavilhao';
                 finalOrderData.status = 'paid'; // Mark as paid automatically for pavilhao
+                                console.log('📝 finalOrderData before create:', { status: finalOrderData.status, orderType: finalOrderData.orderType, total: finalOrderData.total });
                 
                 // Force withdrawal shipping option
                 if (finalOrderData.shipping) {
                     finalOrderData.shipping.method = 'withdrawal';
                     finalOrderData.shipping.cost = 0;
+                            } else {
+                                console.log('ℹ️  Regular order - user type:', user?.userType);
                 }
             }
         }
@@ -128,6 +133,8 @@ export const createOrder = async (orderData) => {
             },
             { transaction }
         );
+
+        console.log('✅ Order created:', { id: order.id, status: order.status, orderType: order.orderType, total: order.total });
 
         // 4. Log audit
         if (orderData.userId) {

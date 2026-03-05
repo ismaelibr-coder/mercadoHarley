@@ -1,7 +1,10 @@
 import express from 'express';
-import { loginUser, registerUser, refreshAccessToken } from '../services/authService.js';
+import crypto from 'crypto';
+import { loginUser, registerUser, refreshAccessToken, hashPassword } from '../services/authService.js';
 import { updateUserProfile } from '../services/databaseService.js';
 import { authenticate } from '../middleware/auth.js';
+import { User } from '../models/index.js';
+import { sendTemporaryPassword } from '../services/emailService.js';
 
 const router = express.Router();
 
@@ -172,6 +175,41 @@ router.post('/logout', authenticate, async (req, res) => {
         success: true,
         message: 'Logged out successfully'
     });
+});
+
+/**
+ * POST /api/auth/forgot-password
+ * Gera uma senha temporária e envia por email ao usuário
+ */
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        const user = await User.findOne({ where: { email: String(email).toLowerCase() } });
+
+        // Não revelar se o usuário existe ou não
+        if (!user) {
+            return res.json({ success: true, message: 'Se o email existir, você receberá instruções para redefinir a senha.' });
+        }
+
+        // Gerar senha temporária
+        const tempPassword = crypto.randomBytes(8).toString('hex');
+        const hashed = await hashPassword(tempPassword);
+
+        await user.update({ password: hashed, updatedAt: new Date() });
+
+        // Tentar enviar email com a senha temporária
+        const result = await sendTemporaryPassword(user.email, tempPassword);
+
+        res.json({ success: true, emailSent: result?.success || false });
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: error.message || 'Failed to process request' });
+    }
 });
 
 export default router;

@@ -140,15 +140,18 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
             // Check for specific errors
             if (apiError.errors?.['to.postal_code']) {
                 console.error('CEP de destino inválido:', normalizeCep(toCep));
-                throw new Error('CEP de destino inválido. Verifique se o CEP está correto.');
+                console.warn('⚠️ Melhor Envio: CEP inválido, fazendo fallback para regras internas');
+                return null;
             }
             if (apiError.errors?.['from.postal_code']) {
                 console.error('CEP de origem inválido:', normalizeCep(fromCep));
+                            return null;
             }
-        } else if (error.message) {
+        } else if (error.message && error.message.includes('muito pesado')) {
             // Re-throw our custom errors
             console.error('❌ Shipping Error:', error.message);
-            throw error;
+            console.warn('⚠️ Melhor Envio: Erro de peso/dimensões, fazendo fallback para regras internas');
+            return null;
         } else {
             console.error('❌ Melhor Envio Error:', error);
         }
