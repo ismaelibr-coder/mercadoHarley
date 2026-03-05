@@ -1,3 +1,42 @@
+# Deploy (Produção)
+
+Passos resumidos para subir a aplicação em produção.
+
+1) Backend (no VPS)
+- Garanta que `/home/app/mercado-harley/backend/.env` esteja configurado corretamente (DB, `RESEND_API_KEY`, `JWT_SECRET`, `PORT=3001`).
+- Copie `backend/ecosystem.config.js` para o diretório `backend/` no servidor.
+- No VPS, rode:
+```bash
+cd /home/app/mercado-harley/backend
+pm2 start ecosystem.config.js --env production --update-env
+pm2 save
+```
+
+2) Frontend
+- Localmente ou via CI, gere o build:
+```bash
+npm ci
+npm run build
+```
+- Para fazer deploy manual via `rsync`:
+```bash
+DEPLOY_HOST=example.com DEPLOY_USER=root DEPLOY_PATH=/var/www/site \
+  ./scripts/deploy-frontend.sh
+```
+
+3) Deploy automatizado (opcional)
+- Você pode usar `./scripts/deploy-backend.sh` para puxar o `main` no VPS e reiniciar o PM2 (requer SSH com chave configurada):
+```bash
+DEPLOY_HOST=187.77.62.63 DEPLOY_USER=root DEPLOY_PATH=/home/app/mercado-harley ./scripts/deploy-backend.sh
+```
+
+4) Verificações pós-deploy
+- Verifique logs: `pm2 logs mercado-harley-backend --lines 200`
+- Teste `POST /api/auth/forgot-password` para confirmar envio de e-mail.
+- No frontend, faça login com a senha temporária e confirme `localStorage.getItem('auth_token')` existe.
+
+5) Segurança
+- Revogue ou rotacione chaves expostas (Resend). Mantenha chaves em variáveis de ambiente seguras.
 # Guia de Deploy - Mercado Harley 🚀
 
 Este guia vai te ajudar a colocar o Mercado Harley no ar em produção! Vamos usar **Vercel** para o Frontend e **Render** para o Backend.
