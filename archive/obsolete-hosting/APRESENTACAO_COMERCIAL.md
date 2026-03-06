@@ -1,5 +1,5 @@
-# 🏍️ MERCADO HARLEY
-## Plataforma E-commerce Premium para Peças e Acessórios Harley-Davidson
+# SICK GRIP
+## Plataforma E-commerce Premium para Peças e Acessórios
 
 ![Mercado Harley Logo](file:///C:/Users/ismaelr/.gemini/antigravity/brain/591e37dd-7fa6-491f-bae4-53e54935c1a1/mercado_harley_logo_1763957098273.png)
 
@@ -7,7 +7,7 @@
 
 ## 📋 Sumário Executivo
 
-O **Mercado Harley** é uma plataforma de e-commerce completa e moderna, desenvolvida especificamente para o mercado de peças e acessórios Harley-Davidson. Com tecnologia de ponta e design premium, oferece uma experiência de compra incomparável para entusiastas de motocicletas.
+O **SickGrip** é uma plataforma de e-commerce completa e moderna, desenvolvida para e-commerces de peças e acessórios com foco em qualidade e personalização. Com tecnologia de ponta e design premium, oferece uma experiência de compra incomparável para entusiastas.
 
 ### 🎯 Proposta de Valor
 
