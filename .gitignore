@@ -44,3 +44,9 @@ firebase-service-account.json
 tmp/
 backend/firebase-export/
 src/context/AuthContext.jsx.backup
+# Ignore sensitive and generated files
+backend/firebase-service-account.json
+backend/.env
+backend/firebase-export/
+uploads/
+dist/
