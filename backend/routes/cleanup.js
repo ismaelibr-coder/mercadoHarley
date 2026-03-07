@@ -1,6 +1,6 @@
 import express from 'express';
-import { db } from '../services/firebaseService.js';
-import { verifyToken, isUserAdmin } from '../services/firebaseService.js';
+import { Order, Product, User } from '../models/index.js';
+import { verifyAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -9,21 +9,8 @@ const router = express.Router();
  * Limpa dados de teste do banco (produtos e pedidos)
  * ATENÇÃO: Esta ação é IRREVERSÍVEL!
  */
-router.delete('/cleanup-database', async (req, res) => {
+router.delete('/cleanup-database', verifyAdmin, async (req, res) => {
     try {
-        // Verificar autenticação
-        const token = req.headers.authorization?.split('Bearer ')[1];
-        if (!token) {
-            return res.status(401).json({ error: 'Token não fornecido' });
-        }
-
-        const decodedToken = await verifyToken(token);
-        const isAdmin = await isUserAdmin(decodedToken.uid);
-
-        if (!isAdmin) {
-            return res.status(403).json({ error: 'Acesso negado. Apenas administradores podem limpar o banco.' });
-        }
-
         // Verificar confirmação
         const { confirm } = req.body;
         if (confirm !== 'DELETE_ALL_DATA') {
@@ -37,46 +24,18 @@ router.delete('/cleanup-database', async (req, res) => {
 
         const deletedData = {
             products: 0,
-            orders: 0,
-            banners: 0
+            orders: 0
         };
 
         // Deletar todos os produtos
         console.log('🗑️ Deletando produtos...');
-        const productsSnapshot = await db.collection('products').get();
-        const productsBatch = db.batch();
-        productsSnapshot.docs.forEach(doc => {
-            productsBatch.delete(doc.ref);
-            deletedData.products++;
-        });
-        await productsBatch.commit();
+        deletedData.products = await Product.destroy({ where: {}, truncate: false });
         console.log(`✅ ${deletedData.products} produtos deletados`);
 
         // Deletar todos os pedidos
         console.log('🗑️ Deletando pedidos...');
-        const ordersSnapshot = await db.collection('orders').get();
-        const ordersBatch = db.batch();
-        ordersSnapshot.docs.forEach(doc => {
-            ordersBatch.delete(doc.ref);
-            deletedData.orders++;
-        });
-        await ordersBatch.commit();
+        deletedData.orders = await Order.destroy({ where: {}, truncate: false });
         console.log(`✅ ${deletedData.orders} pedidos deletados`);
-
-        // Deletar banners (se existir)
-        console.log('🗑️ Deletando banners...');
-        try {
-            const bannersSnapshot = await db.collection('banners').get();
-            const bannersBatch = db.batch();
-            bannersSnapshot.docs.forEach(doc => {
-                bannersBatch.delete(doc.ref);
-                deletedData.banners++;
-            });
-            await bannersBatch.commit();
-            console.log(`✅ ${deletedData.banners} banners deletados`);
-        } catch (error) {
-            console.log('ℹ️ Coleção banners não existe ou já está vazia');
-        }
 
         console.log('🎉 Limpeza concluída com sucesso!');
 

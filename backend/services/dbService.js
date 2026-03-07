@@ -132,6 +132,37 @@ export const getAllProducts = async () => {
   return rows.map(r => r.toJSON());
 };
 
+export const getProductById = async (productId) => {
+  const p = await Product.findByPk(productId);
+  if (!p) throw new Error('Product not found');
+  return p.toJSON();
+};
+
+export const updateProduct = async (productId, productData) => {
+  const p = await Product.findByPk(productId);
+  if (!p) throw new Error('Product not found');
+  await p.update(productData);
+  return p.toJSON();
+};
+
+export const deleteProduct = async (productId) => {
+  const p = await Product.findByPk(productId);
+  if (!p) throw new Error('Product not found');
+  await p.destroy();
+};
+
+export const getOrdersByUserId = async (userId) => {
+  const rows = await Order.findAll({ where: { userId }, order: [['createdAt', 'DESC']] });
+  return rows.map(r => r.toJSON());
+};
+
+export const updateUserProfile = async (userId, updates) => {
+  const u = await User.findByPk(userId);
+  if (!u) throw new Error('User not found');
+  await u.update(updates);
+  return u.toJSON();
+};
+
 // Banner helpers
 export const getAllBanners = async () => {
   const rows = await Banner.findAll({ order: [['displayOrder','ASC']] });
@@ -193,12 +224,17 @@ export default {
   createOrder,
   getOrderById,
   getAllOrders,
+  getOrdersByUserId,
   updateOrderStatus,
   updateOrderPayment,
   findOrderByPaymentId,
   isUserAdmin,
   createProduct,
   getAllProducts,
+  getProductById,
+  updateProduct,
+  deleteProduct,
+  updateUserProfile,
   getAllBanners,
   getActiveBanners,
   getActiveBannersByType,

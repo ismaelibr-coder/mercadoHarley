@@ -1,7 +1,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import { loginUser, registerUser, refreshAccessToken, hashPassword, comparePassword } from '../services/authService.js';
-import { updateUserProfile } from '../services/databaseService.js';
+import { updateUserProfile } from '../services/dbService.js';
 import { authenticate } from '../middleware/auth.js';
 import { User } from '../models/index.js';
 import { sendTemporaryPassword } from '../services/emailService.js';

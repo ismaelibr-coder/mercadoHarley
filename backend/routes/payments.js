@@ -9,7 +9,7 @@ import {
     createOrder as createOrderInFirestore,
     updateOrderPayment,
     getOrderById
-} from '../services/firebaseService.js';
+} from '../services/dbService.js';
 import { sendOrderConfirmation } from '../services/emailService.js';
 import { optionalAuth } from '../middleware/auth.js';
 

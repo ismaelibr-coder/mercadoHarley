@@ -1,5 +1,5 @@
 import express from 'express';
-import { createProduct, getAllProducts, getProductById, updateProduct, deleteProduct } from '../services/databaseService.js';
+import { createProduct, getAllProducts, getProductById, updateProduct, deleteProduct } from '../services/dbService.js';
 import { validateProduct } from '../middleware/validation.js';
 import { verifyAdmin } from '../middleware/auth.js';
 import { auditLog } from '../middleware/auditLog.js';

@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllOrders, getOrderById, updateOrderStatus, createOrder, getOrdersByUserId } from '../services/databaseService.js';
+import { getAllOrders, getOrderById, updateOrderStatus, createOrder, getOrdersByUserId } from '../services/dbService.js';
 import { sendOrderStatusUpdate } from '../services/emailService.js';
 import { verifyAdmin, authenticate } from '../middleware/auth.js';
 import { auditLog } from '../middleware/auditLog.js';
