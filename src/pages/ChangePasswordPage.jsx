@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, CheckCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import SEO from '../components/SEO';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const ChangePasswordPage = () => {
     const { currentUser } = useAuth();
@@ -48,40 +49,35 @@ const ChangePasswordPage = () => {
         }
 
         try {
-            // Reautenticar usuário com senha atual
-            const credential = EmailAuthProvider.credential(
-                currentUser.email,
-                formData.currentPassword
-            );
-            await reauthenticateWithCredential(currentUser, credential);
+            // Call backend endpoint to change password (requires current password)
+            const token = localStorage.getItem('auth_token');
+            const resp = await fetch(`${API_URL}/api/auth/change-password`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({ currentPassword: formData.currentPassword, newPassword: formData.newPassword })
+            });
 
-            // Atualizar senha
-            await updatePassword(currentUser, formData.newPassword);
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                const msg = err.error || err.message || 'Erro ao alterar senha.';
+                setError(msg);
+                setLoading(false);
+                return;
+            }
 
             setSuccess(true);
-            setFormData({
-                currentPassword: '',
-                newPassword: '',
-                confirmPassword: ''
-            });
+            setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
 
             // Redirecionar após 2 segundos
             setTimeout(() => {
                 navigate('/');
             }, 2000);
-
         } catch (err) {
-            let errorMessage = 'Erro ao alterar senha.';
-
-            if (err.code === 'auth/wrong-password') {
-                errorMessage = 'Senha atual incorreta.';
-            } else if (err.code === 'auth/weak-password') {
-                errorMessage = 'A nova senha é muito fraca.';
-            } else if (err.code === 'auth/requires-recent-login') {
-                errorMessage = 'Por segurança, faça login novamente antes de alterar a senha.';
-            }
-
-            setError(errorMessage);
+            console.error('Change password error:', err);
+            setError('Erro ao alterar senha. Tente novamente.');
         } finally {
             setLoading(false);
         }

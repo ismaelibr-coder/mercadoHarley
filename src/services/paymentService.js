@@ -29,12 +29,9 @@ export const initMercadoPago = () => {
 // Get auth token from Firebase
 const getAuthToken = async () => {
     try {
-        const auth = window.firebase?.auth();
-        const user = auth?.currentUser;
-        if (user) {
-            return await user.getIdToken();
-        }
-        return null;
+        // Use JWT token stored in localStorage (AuthContext)
+        const token = localStorage.getItem('auth_token');
+        return token || null;
     } catch (error) {
         console.error('Error getting auth token:', error);
         return null;

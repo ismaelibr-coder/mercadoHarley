@@ -35,6 +35,11 @@ app.set('trust proxy', 1);
 // Middleware
 // CORS - TEMPORARILY PERMISSIVE FOR DEBUGGING
 console.log('🔧 Applying CORS middleware (allow all origins)...');
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', version: '1.0.0', uptime: process.uptime() });
+});
+
 app.use(cors());
 app.options('*', cors()); // Enable pre-flight for all routes
 console.log('✅ CORS middleware applied successfully');

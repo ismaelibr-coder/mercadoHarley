@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { auth } from './firebase';
 
 const envUrl = import.meta.env.VITE_API_URL;
 const API_URL = (envUrl && envUrl.startsWith('http')) ? envUrl : 'http://localhost:3001';
@@ -10,7 +9,7 @@ const API_URL = (envUrl && envUrl.startsWith('http')) ? envUrl : 'http://localho
  */
 export const getAllBanners = async () => {
     try {
-        const token = await auth.currentUser?.getIdToken();
+        const token = localStorage.getItem('auth_token');
 
         if (!token) {
             throw new Error('User not authenticated');
@@ -50,7 +49,7 @@ export const getActiveBanners = async () => {
  */
 export const getBannerById = async (id) => {
     try {
-        const token = await auth.currentUser?.getIdToken();
+        const token = localStorage.getItem('auth_token');
 
         if (!token) {
             throw new Error('User not authenticated');
@@ -76,7 +75,7 @@ export const getBannerById = async (id) => {
  */
 export const createBanner = async (data) => {
     try {
-        const token = await auth.currentUser?.getIdToken();
+        const token = localStorage.getItem('auth_token');
 
         if (!token) {
             throw new Error('User not authenticated');
@@ -103,7 +102,7 @@ export const createBanner = async (data) => {
  */
 export const updateBanner = async (id, data) => {
     try {
-        const token = await auth.currentUser?.getIdToken();
+        const token = localStorage.getItem('auth_token');
 
         if (!token) {
             throw new Error('User not authenticated');
@@ -129,7 +128,7 @@ export const updateBanner = async (id, data) => {
  */
 export const deleteBanner = async (id) => {
     try {
-        const token = await auth.currentUser?.getIdToken();
+        const token = localStorage.getItem('auth_token');
 
         if (!token) {
             throw new Error('User not authenticated');

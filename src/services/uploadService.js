@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { auth } from './firebase';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -10,7 +9,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
  */
 export const uploadImage = async (file) => {
     try {
-        const token = await auth.currentUser?.getIdToken();
+        const token = localStorage.getItem('auth_token');
 
         if (!token) {
             throw new Error('User not authenticated');
@@ -40,7 +39,7 @@ export const uploadImage = async (file) => {
  */
 export const deleteImage = async (publicId) => {
     try {
-        const token = await auth.currentUser?.getIdToken();
+        const token = localStorage.getItem('auth_token');
 
         if (!token) {
             throw new Error('User not authenticated');

@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { auth } from './firebase';
 
 const envUrl = import.meta.env.VITE_API_URL;
 const API_URL = (envUrl && envUrl.startsWith('http')) ? envUrl : 'http://localhost:3001';
@@ -10,7 +9,7 @@ const API_URL = (envUrl && envUrl.startsWith('http')) ? envUrl : 'http://localho
  */
 export const getMetrics = async () => {
     try {
-        const token = await auth.currentUser?.getIdToken();
+        const token = localStorage.getItem('auth_token');
 
         if (!token) {
             throw new Error('User not authenticated');
@@ -37,7 +36,7 @@ export const getMetrics = async () => {
  */
 export const getSalesChart = async (period = 'day', limit = 30) => {
     try {
-        const token = await auth.currentUser?.getIdToken();
+        const token = localStorage.getItem('auth_token');
 
         if (!token) {
             throw new Error('User not authenticated');
@@ -64,7 +63,7 @@ export const getSalesChart = async (period = 'day', limit = 30) => {
  */
 export const getBestSellers = async (limit = 10) => {
     try {
-        const token = await auth.currentUser?.getIdToken();
+        const token = localStorage.getItem('auth_token');
 
         if (!token) {
             throw new Error('User not authenticated');

@@ -9,16 +9,22 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 export const calculateShipping = async (cep, weight, dimensions) => {
     // Free shipping for test user
     try {
-        const auth = window.firebase?.auth();
-        const user = auth?.currentUser;
-
-        if (user && user.email === 'ismael.ibr@gmail.com') {
-            return [{
-                name: 'Frete Grátis (Teste)',
-                price: 0,
-                deliveryTime: '1-2 dias úteis',
-                service: 'FREE_TEST'
-            }];
+        // Check local stored user (AuthContext stores `user_data` after login)
+        const userData = localStorage.getItem('user_data');
+        if (userData) {
+            try {
+                const u = JSON.parse(userData);
+                if (u && u.email === 'ismael.ibr@gmail.com') {
+                    return [{
+                        name: 'Frete Grátis (Teste)',
+                        price: 0,
+                        deliveryTime: '1-2 dias úteis',
+                        service: 'FREE_TEST'
+                    }];
+                }
+            } catch (e) {
+                // ignore parse errors
+            }
         }
     } catch (error) {
         console.log('Could not check user for free shipping:', error);

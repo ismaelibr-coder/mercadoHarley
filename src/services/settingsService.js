@@ -1,7 +1,4 @@
-import { db } from './firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-
-const SETTINGS_DOC_REF = doc(db, 'settings', 'filters');
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const DEFAULT_SETTINGS = {
     categories: [
@@ -53,27 +50,30 @@ const DEFAULT_SETTINGS = {
 
 export const getFilterSettings = async () => {
     try {
-        const docSnap = await getDoc(SETTINGS_DOC_REF);
-        if (docSnap.exists()) {
-            return { ...DEFAULT_SETTINGS, ...docSnap.data() };
-        } else {
-            // Initialize with defaults if not exists
-            await setDoc(SETTINGS_DOC_REF, DEFAULT_SETTINGS);
-            return DEFAULT_SETTINGS;
+        // Try backend endpoint first
+        const resp = await fetch(`${API_URL}/api/settings/filters`);
+        if (resp.ok) {
+            const data = await resp.json();
+            return { ...DEFAULT_SETTINGS, ...data };
         }
+        console.warn('Settings endpoint not available, using defaults');
+        return DEFAULT_SETTINGS;
     } catch (error) {
-        // Silent fail - use defaults if Firestore is not accessible (expected for public users)
-        console.warn("⚠️ Using default filter settings (Firestore not accessible)");
+        console.warn('Settings fetch failed, using defaults', error);
         return DEFAULT_SETTINGS;
     }
 };
 
 export const updateFilterSettings = async (newSettings) => {
     try {
-        await setDoc(SETTINGS_DOC_REF, newSettings, { merge: true });
-        return true;
+        const resp = await fetch(`${API_URL}/api/settings/filters`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newSettings)
+        });
+        return resp.ok;
     } catch (error) {
-        console.error("Error updating settings:", error);
+        console.error('Error updating settings via API:', error);
         return false;
     }
 };

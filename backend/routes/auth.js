@@ -1,6 +1,6 @@
 import express from 'express';
 import crypto from 'crypto';
-import { loginUser, registerUser, refreshAccessToken, hashPassword } from '../services/authService.js';
+import { loginUser, registerUser, refreshAccessToken, hashPassword, comparePassword } from '../services/authService.js';
 import { updateUserProfile } from '../services/databaseService.js';
 import { authenticate } from '../middleware/auth.js';
 import { User } from '../models/index.js';
@@ -212,4 +212,32 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
+/**
+ * PUT /api/auth/change-password
+ * Change authenticated user's password (requires current password)
+ */
+router.put('/change-password', authenticate, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!req.userId) return res.status(401).json({ error: 'Not authenticated' });
+        if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both current and new passwords are required' });
+
+        const user = await User.findByPk(req.userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const valid = await comparePassword(currentPassword, user.password);
+        if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+
+        const hashed = await hashPassword(newPassword);
+        await user.update({ password: hashed, updatedAt: new Date() });
+
+        res.json({ success: true, message: 'Password changed successfully' });
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({ error: 'Failed to change password' });
+    }
+});
+
 export default router;
+

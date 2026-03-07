@@ -1,3 +1,4 @@
+// Archived backup of upload-logo.js — preserved for reference only
 const cloudinary = require('cloudinary').v2;
 require('dotenv').config();
 
@@ -7,7 +8,7 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const logoPath = 'C:/Users/ismaelr/.gemini/antigravity/brain/8225c6fb-1c01-441b-b629-92640e3994d6/uploaded_image_1766454357051.png';
+const logoPath = 'path/to/old/logo.png';
 
 cloudinary.uploader.upload(logoPath, {
     folder: 'sickgrip',

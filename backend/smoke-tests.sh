@@ -4,8 +4,9 @@ set -euo pipefail
 BASE="http://127.0.0.1:3001"
 HDR="X-Forwarded-Proto: https"
 
-echo "==> Health"
-curl -sS -i -H "$HDR" "$BASE/api/health" || curl -sS -i -H "$HDR" "$BASE/health" || echo "health: NOK"
+echo "==> Health (/api/health then /health)"
+curl -sS -i -H "$HDR" "$BASE/api/health" || true
+curl -sS -i -H "$HDR" "$BASE/health" || echo "health: NOK"
 
 echo "==> Root"
 curl -sS -i -H "$HDR" "$BASE/" || echo "root: NOK"
@@ -13,8 +14,11 @@ curl -sS -i -H "$HDR" "$BASE/" || echo "root: NOK"
 echo "==> Products"
 curl -sS -i -H "$HDR" "$BASE/api/products" || echo "products: NOK"
 
-echo "==> Banners"
-curl -sS -i -H "$HDR" "$BASE/api/banner" || curl -sS -i -H "$HDR" "$BASE/api/banners" || echo "banners: NOK"
+echo "==> Banners (/api/banner and /api/banners)"
+echo "-- GET /api/banner --"
+curl -sS -i -H "$HDR" "$BASE/api/banner" || true
+echo "\n-- GET /api/banners --"
+curl -sS -i -H "$HDR" "$BASE/api/banners" || echo "banners: NOK"
 
 echo "==> (Opcional) Criar pedido — ajustar payload antes de usar"
 # Exemplo de uso para criar um pedido (descomente e ajuste se quiser testar)
