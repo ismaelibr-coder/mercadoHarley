@@ -1,5 +1,4 @@
-import { db } from './firebaseService.js';
-import admin from 'firebase-admin';
+import { Banner } from '../models/index.js';
 
 /**
  * Get all banners ordered by priority
@@ -7,18 +6,9 @@ import admin from 'firebase-admin';
  */
 export const getAllBanners = async () => {
     try {
-        const bannersSnapshot = await db.collection('banners')
-            .orderBy('order', 'asc')
-            .get();
-
-        const banners = [];
-        bannersSnapshot.forEach(doc => {
-            banners.push({
-                id: doc.id,
-                ...doc.data()
-            });
+        const banners = await Banner.findAll({
+            order: [['displayOrder', 'ASC']]
         });
-
         return banners;
     } catch (error) {
         console.error('Error getting all banners:', error);
@@ -32,20 +22,11 @@ export const getAllBanners = async () => {
  */
 export const getActiveBanners = async () => {
     try {
-        const bannersSnapshot = await db.collection('banners')
-            .where('active', '==', true)
-            .get();
-
-        const banners = [];
-        bannersSnapshot.forEach(doc => {
-            banners.push({
-                id: doc.id,
-                ...doc.data()
-            });
+        const banners = await Banner.findAll({
+            where: { active: true },
+            order: [['displayOrder', 'ASC']]
         });
-
-        // Sort by order in memory to avoid Firestore composite index requirement
-        return banners.sort((a, b) => (a.order || 0) - (b.order || 0));
+        return banners;
     } catch (error) {
         console.error('Error getting active banners:', error);
         throw error;
@@ -59,21 +40,14 @@ export const getActiveBanners = async () => {
  */
 export const getActiveBannersByType = async (displayType) => {
     try {
-        const bannersSnapshot = await db.collection('banners')
-            .where('active', '==', true)
-            .where('displayType', '==', displayType)
-            .get();
-
-        const banners = [];
-        bannersSnapshot.forEach(doc => {
-            banners.push({
-                id: doc.id,
-                ...doc.data()
-            });
+        const banners = await Banner.findAll({
+            where: {
+                active: true,
+                displayType: displayType
+            },
+            order: [['displayOrder', 'ASC']]
         });
-
-        // Sort by order in memory
-        return banners.sort((a, b) => (a.order || 0) - (b.order || 0));
+        return banners;
     } catch (error) {
         console.error('Error getting active banners by type:', error);
         throw error;
@@ -87,16 +61,13 @@ export const getActiveBannersByType = async (displayType) => {
  */
 export const getBannerById = async (id) => {
     try {
-        const bannerDoc = await db.collection('banners').doc(id).get();
-
-        if (!bannerDoc.exists) {
+        const banner = await Banner.findByPk(id);
+        
+        if (!banner) {
             throw new Error('Banner not found');
         }
 
-        return {
-            id: bannerDoc.id,
-            ...bannerDoc.data()
-        };
+        return banner;
     } catch (error) {
         console.error('Error getting banner:', error);
         throw error;
@@ -110,26 +81,17 @@ export const getBannerById = async (id) => {
  */
 export const createBanner = async (data) => {
     try {
-        const bannerData = {
+        const banner = await Banner.create({
             title: data.title,
-            image: data.image,
-            link: {
-                type: data.link.type, // 'category', 'product', 'external'
-                value: data.link.value
-            },
-            displayType: data.displayType || 'carousel', // 'carousel' or 'hero'
-            order: data.order || 0,
-            active: data.active !== undefined ? data.active : true,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        };
+            imageUrl: data.image,
+            linkType: data.link.type,
+            linkValue: data.link.value,
+            displayType: data.displayType || 'carousel',
+            displayOrder: data.order || 0,
+            active: data.active !== undefined ? data.active : true
+        });
 
-        const bannerRef = await db.collection('banners').add(bannerData);
-
-        return {
-            id: bannerRef.id,
-            ...bannerData
-        };
+        return banner;
     } catch (error) {
         console.error('Error creating banner:', error);
         throw error;
@@ -144,25 +106,25 @@ export const createBanner = async (data) => {
  */
 export const updateBanner = async (id, data) => {
     try {
-        const bannerRef = db.collection('banners').doc(id);
-        const bannerDoc = await bannerRef.get();
+        const banner = await Banner.findByPk(id);
 
-        if (!bannerDoc.exists) {
+        if (!banner) {
             throw new Error('Banner not found');
         }
 
-        const updateData = {
-            ...data,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        };
+        const updateData = {};
+        if (data.title !== undefined) updateData.title = data.title;
+        if (data.image !== undefined) updateData.imageUrl = data.image;
+        if (data.link !== undefined) {
+            updateData.linkType = data.link.type;
+            updateData.linkValue = data.link.value;
+        }
+        if (data.displayType !== undefined) updateData.displayType = data.displayType;
+        if (data.order !== undefined) updateData.displayOrder = data.order;
+        if (data.active !== undefined) updateData.active = data.active;
 
-        await bannerRef.update(updateData);
-
-        return {
-            id,
-            ...bannerDoc.data(),
-            ...updateData
-        };
+        await banner.update(updateData);
+        return banner;
     } catch (error) {
         console.error('Error updating banner:', error);
         throw error;
@@ -176,14 +138,13 @@ export const updateBanner = async (id, data) => {
  */
 export const deleteBanner = async (id) => {
     try {
-        const bannerRef = db.collection('banners').doc(id);
-        const bannerDoc = await bannerRef.get();
+        const banner = await Banner.findByPk(id);
 
-        if (!bannerDoc.exists) {
+        if (!banner) {
             throw new Error('Banner not found');
         }
 
-        await bannerRef.delete();
+        await banner.destroy();
     } catch (error) {
         console.error('Error deleting banner:', error);
         throw error;

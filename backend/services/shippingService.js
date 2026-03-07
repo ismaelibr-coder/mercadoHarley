@@ -1,5 +1,7 @@
 import axios from 'axios';
-import { getFirestore } from './firebaseService.js';
+import { ShippingRule } from '../models/index.js';
+import { Op } from 'sequelize';
+import sequelize from '../config/database.js';
 
 /**
  * Calculate shipping options based on CEP and total weight
@@ -8,8 +10,6 @@ import { getFirestore } from './firebaseService.js';
  * @returns {Promise<Array>} Array of shipping options
  */
 export const calculateShipping = async (cep, totalWeight) => {
-    const db = getFirestore();
-
     // Get state from CEP
     const state = await getStateFromCEP(cep);
 
@@ -17,24 +17,23 @@ export const calculateShipping = async (cep, totalWeight) => {
         throw new Error('CEP inválido');
     }
 
-    // Find matching shipping rules
-    // Note: Firestore requires an index for array-contains + inequality.
-    // We'll query by state and filter weights in memory.
-    const rulesSnapshot = await db.collection('shippingRules')
-        .where('states', 'array-contains', state)
-        .get();
+    // Find matching shipping rules using JSON_CONTAINS for MySQL JSON column
+    const rules = await ShippingRule.findAll({
+        where: sequelize.where(
+            sequelize.fn('JSON_CONTAINS', sequelize.col('states'), sequelize.literal(`'"${state}"'`)),
+            1
+        )
+    });
 
-    const options = rulesSnapshot.docs
-        .map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }))
-        .filter(rule => rule.minWeight <= totalWeight && rule.maxWeight >= totalWeight);
+    // Filter by weight range
+    const options = rules.filter(rule => 
+        parseFloat(rule.minWeight) <= totalWeight && parseFloat(rule.maxWeight) >= totalWeight
+    );
 
     // Sort by price (cheapest first)
-    options.sort((a, b) => a.price - b.price);
+    options.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
 
-    return options;
+    return options.map(rule => rule.toJSON());
 };
 
 /**
@@ -112,42 +111,36 @@ const getStateFromCEP = async (cep) => {
  * Create a new shipping rule
  */
 export const createShippingRule = async (ruleData) => {
-    const db = getFirestore();
-    const docRef = await db.collection('shippingRules').add({
-        ...ruleData,
-        createdAt: new Date(),
-        updatedAt: new Date()
-    });
-    return docRef.id;
+    const rule = await ShippingRule.create(ruleData);
+    return rule.id;
 };
 
 /**
  * Get all shipping rules
  */
 export const getAllShippingRules = async () => {
-    const db = getFirestore();
-    const snapshot = await db.collection('shippingRules').get();
-    return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-    }));
+    const rules = await ShippingRule.findAll();
+    return rules.map(rule => rule.toJSON());
 };
 
 /**
  * Update a shipping rule
  */
 export const updateShippingRule = async (id, ruleData) => {
-    const db = getFirestore();
-    await db.collection('shippingRules').doc(id).update({
-        ...ruleData,
-        updatedAt: new Date()
-    });
+    const rule = await ShippingRule.findByPk(id);
+    if (!rule) {
+        throw new Error('Shipping rule not found');
+    }
+    await rule.update(ruleData);
 };
 
 /**
  * Delete a shipping rule
  */
 export const deleteShippingRule = async (id) => {
-    const db = getFirestore();
-    await db.collection('shippingRules').doc(id).delete();
+    const rule = await ShippingRule.findByPk(id);
+    if (!rule) {
+        throw new Error('Shipping rule not found');
+    }
+    await rule.destroy();
 };

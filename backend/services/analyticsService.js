@@ -1,5 +1,6 @@
-import { db } from './firebaseService.js';
-import admin from 'firebase-admin';
+import { Order } from '../models/index.js';
+import { Op } from 'sequelize';
+import sequelize from '../config/database.js';
 
 /**
  * Get sales metrics for dashboard
@@ -9,30 +10,35 @@ import admin from 'firebase-admin';
  */
 export const getSalesMetrics = async (startDate, endDate) => {
     try {
-        const ordersSnapshot = await db.collection('orders')
-            .where('createdAt', '>=', startDate)
-            .where('createdAt', '<=', endDate)
-            .get();
+        const orders = await Order.findAll({
+            where: {
+                createdAt: {
+                    [Op.between]: [startDate, endDate]
+                },
+                paymentStatus: 'paid'
+            },
+            attributes: ['total', 'items']
+        });
 
         let totalSales = 0;
         let netRevenue = 0;
-        let orderCount = 0;
+        const orderCount = orders.length;
 
-        ordersSnapshot.forEach(doc => {
-            const order = doc.data();
-            // Only count paid orders in dashboard metrics
-            if (order.status === 'paid') {
-                totalSales += order.total || 0;
-                orderCount++;
+        orders.forEach(order => {
+            totalSales += parseFloat(order.total) || 0;
 
-                // Calculate Net Revenue based on profit margin
-                if (order.items && Array.isArray(order.items)) {
-                    order.items.forEach(item => {
+            // Calculate Net Revenue based on profit margin
+            if (order.items && typeof order.items === 'string') {
+                try {
+                    const items = JSON.parse(order.items);
+                    items.forEach(item => {
                         const profitMargin = item.profitMargin || 0; // %
                         const itemTotal = (item.price * item.quantity) || 0;
                         const itemProfit = itemTotal * (profitMargin / 100);
                         netRevenue += itemProfit;
                     });
+                } catch (e) {
+                    console.warn('Error parsing items JSON:', e);
                 }
             }
         });
@@ -57,11 +63,13 @@ export const getSalesMetrics = async (startDate, endDate) => {
  */
 export const getPendingOrdersCount = async () => {
     try {
-        const pendingSnapshot = await db.collection('orders')
-            .where('status', '==', 'pending')
-            .get();
+        const count = await Order.count({
+            where: {
+                status: 'pending'
+            }
+        });
 
-        return pendingSnapshot.size;
+        return count;
     } catch (error) {
         console.error('Error getting pending orders:', error);
         throw error;
@@ -88,21 +96,24 @@ export const getSalesByPeriod = async (period = 'day', limit = 30) => {
             startDate = new Date(now.getTime() - (limit * 30 * 24 * 60 * 60 * 1000));
         }
 
-        const ordersSnapshot = await db.collection('orders')
-            .where('createdAt', '>=', startDate)
-            .orderBy('createdAt', 'asc')
-            .get();
+        const orders = await Order.findAll({
+            where: {
+                createdAt: {
+                    [Op.gte]: startDate
+                },
+                status: {
+                    [Op.ne]: 'cancelled'
+                }
+            },
+            order: [['createdAt', 'ASC']],
+            attributes: ['createdAt', 'total']
+        });
 
         // Group orders by period
         const salesByPeriod = {};
 
-        ordersSnapshot.forEach(doc => {
-            const order = doc.data();
-
-            // Filter out cancelled orders
-            if (order.status === 'cancelled') return;
-
-            const orderDate = order.createdAt.toDate();
+        orders.forEach(order => {
+            const orderDate = new Date(order.createdAt);
 
             let periodKey;
             if (period === 'day') {
@@ -119,11 +130,11 @@ export const getSalesByPeriod = async (period = 'day', limit = 30) => {
                 salesByPeriod[periodKey] = {
                     date: periodKey,
                     sales: 0,
-                    orders: 0
+               orders: 0
                 };
             }
 
-            salesByPeriod[periodKey].sales += order.total || 0;
+            salesByPeriod[periodKey].sales += parseFloat(order.total) || 0;
             salesByPeriod[periodKey].orders++;
         });
 
@@ -144,33 +155,45 @@ export const getSalesByPeriod = async (period = 'day', limit = 30) => {
  */
 export const getBestSellingProducts = async (limit = 10) => {
     try {
-        const ordersSnapshot = await db.collection('orders').get();
+        const orders = await Order.findAll({
+            where: {
+                status: {
+                    [Op.ne]: 'cancelled'
+                }
+            },
+            attributes: ['items']
+        });
 
         const productSales = {};
 
         // Aggregate product sales
-        ordersSnapshot.forEach(doc => {
-            const order = doc.data();
-
-            // Filter out cancelled orders
-            if (order.status === 'cancelled') return;
-
-            if (order.items && Array.isArray(order.items)) {
-                order.items.forEach(item => {
-                    if (!productSales[item.id]) {
-                        productSales[item.id] = {
-                            id: item.id,
-                            name: item.name,
-                            image: item.image,
-                            quantitySold: 0,
-                            revenue: 0
-                        };
-                    }
-
-                    productSales[item.id].quantitySold += item.quantity || 0;
-                    productSales[item.id].revenue += (item.price * item.quantity) || 0;
-                });
+        orders.forEach(order => {
+            let items = [];
+            if (order.items && typeof order.items === 'string') {
+                try {
+                    items = JSON.parse(order.items);
+                } catch (e) {
+                    console.warn('Error parsing items JSON:', e);
+                    return;
+                }
+            } else if (Array.isArray(order.items)) {
+                items = order.items;
             }
+
+            items.forEach(item => {
+                if (!productSales[item.id]) {
+                    productSales[item.id] = {
+                        id: item.id,
+                        name: item.name,
+                        image: item.image,
+                        quantitySold: 0,
+                        revenue: 0
+                    };
+                }
+
+                productSales[item.id].quantitySold += item.quantity || 0;
+                productSales[item.id].revenue += (item.price * item.quantity) || 0;
+            });
         });
 
         // Convert to array, sort by revenue, and limit
