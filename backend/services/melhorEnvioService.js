@@ -91,7 +91,7 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
                 id: `me_${opt.id}`,
                 name: `${opt.company.name} ${opt.name}`,
                 price: parseFloat(opt.price),
-                deliveryDays: opt.delivery_time,
+                deliveryTime: opt.delivery_time, // Frontend expects deliveryTime
                 serviceId: opt.id
             }));
 
@@ -136,6 +136,19 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
                 errors: apiError.errors,
                 message: apiError.message
             });
+
+            // Check for authentication errors
+            if (error.response.status === 401) {
+                console.error('🔐 Authentication Error Details:');
+                console.error('   - Token configured:', !!token);
+                console.error('   - Token length:', token?.length || 0);
+                console.error('   - Response:', JSON.stringify(apiError, null, 2));
+                console.error('   - Possible causes:');
+                console.error('     1. Token expired or invalid');
+                console.error('     2. Token missing required scopes: shipping-calculate');
+                console.error('     3. Account inactive or in wrong mode (sandbox vs production)');
+                console.error('     4. Need to generate new token at: https://melhorenvio.com.br/painel/gerenciar/tokens');
+            }
 
             // Check for specific errors
             if (apiError.errors?.['to.postal_code']) {

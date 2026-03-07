@@ -86,7 +86,7 @@ const AdminOrdersPage = () => {
         const searchLower = searchTerm.toLowerCase();
         const dateString = order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString() : '';
         const statusLabel = getStatusLabel(order.status).toLowerCase();
-        const totalString = order.total?.toFixed(2) || '';
+        const totalString = parseFloat(order.total || 0).toFixed(2);
 
         const matchesSearch =
             order.orderNumber?.toLowerCase().includes(searchLower) ||
@@ -194,7 +194,7 @@ const AdminOrdersPage = () => {
                                             {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString() : new Date().toLocaleDateString()}
                                         </td>
                                         <td className="p-4 text-harley-orange font-bold">
-                                            R$ {order.total?.toFixed(2)}
+                                            R$ {parseFloat(order.total || 0).toFixed(2)}
                                         </td>
                                         <td className="p-4">
                                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase border ${getStatusColor(order.status)}`}>

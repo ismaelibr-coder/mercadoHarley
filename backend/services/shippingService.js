@@ -33,7 +33,17 @@ export const calculateShipping = async (cep, totalWeight) => {
     // Sort by price (cheapest first)
     options.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
 
-    return options.map(rule => rule.toJSON());
+    return options.map(rule => {
+        const data = rule.toJSON();
+        return {
+            id: data.id,
+            name: data.name,
+            price: parseFloat(data.price), // Ensure price is number
+            deliveryTime: data.deliveryDays, // Frontend expects deliveryTime
+            minWeight: parseFloat(data.minWeight),
+            maxWeight: parseFloat(data.maxWeight)
+        };
+    });
 };
 
 /**

@@ -14,32 +14,35 @@ export const getSalesMetrics = async (startDate, endDate) => {
             where: {
                 createdAt: {
                     [Op.between]: [startDate, endDate]
-                },
-                paymentStatus: 'paid'
+                }
             },
-            attributes: ['total', 'items']
+            attributes: ['total', 'items', 'payment']
+        });
+
+        // Filter paid orders - payment status is inside payment JSON field
+        const paidOrders = orders.filter(order => {
+            const paymentStatus = order.payment?.status;
+            return paymentStatus === 'paid' || paymentStatus === 'approved';
         });
 
         let totalSales = 0;
         let netRevenue = 0;
-        const orderCount = orders.length;
+        const orderCount = paidOrders.length;
 
-        orders.forEach(order => {
+        paidOrders.forEach(order => {
             totalSales += parseFloat(order.total) || 0;
 
             // Calculate Net Revenue based on profit margin
-            if (order.items && typeof order.items === 'string') {
-                try {
-                    const items = JSON.parse(order.items);
-                    items.forEach(item => {
-                        const profitMargin = item.profitMargin || 0; // %
-                        const itemTotal = (item.price * item.quantity) || 0;
-                        const itemProfit = itemTotal * (profitMargin / 100);
-                        netRevenue += itemProfit;
-                    });
-                } catch (e) {
-                    console.warn('Error parsing items JSON:', e);
-                }
+            const items = order.items;
+            if (items) {
+                // items is already parsed as JSON by Sequelize
+                const itemsArray = Array.isArray(items) ? items : [];
+                itemsArray.forEach(item => {
+                    const profitMargin = item.profitMargin || 0; // %
+                    const itemTotal = (item.price * item.quantity) || 0;
+                    const itemProfit = itemTotal * (profitMargin / 100);
+                    netRevenue += itemProfit;
+                });
             }
         });
 

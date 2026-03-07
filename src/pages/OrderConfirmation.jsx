@@ -254,12 +254,12 @@ const OrderConfirmation = () => {
                             {order.discount > 0 && (
                                 <div className="flex justify-between text-harley-orange">
                                     <span>Desconto PIX (5%)</span>
-                                    <span>- R$ {order.discount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                    <span>- R$ {parseFloat(order.discount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                 </div>
                             )}
                             <div className="flex justify-between text-white font-bold text-xl pt-2 border-t border-gray-800">
                                 <span>Total</span>
-                                <span>R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                <span>R$ {parseFloat(order.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                             </div>
                         </div>
                     </div>
