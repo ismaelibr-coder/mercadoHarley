@@ -22,7 +22,7 @@ router.post('/calculate', async (req, res) => {
             });
         }
 
-        // Try Melhor Envio API first
+        // Use ONLY Melhor Envio API (no fallback to manual rules)
         const melhorEnvioOptions = await calculateMelhorEnvioShipping(cep, parseFloat(weight), dimensions);
 
         if (melhorEnvioOptions && melhorEnvioOptions.length > 0) {
@@ -30,22 +30,11 @@ router.post('/calculate', async (req, res) => {
             return res.json(melhorEnvioOptions);
         }
 
-        // Fallback to manual rules if Melhor Envio fails (TEMPORARY until token is fixed)
-        console.warn('⚠️ Melhor Envio failed, falling back to manual shipping rules');
-        console.warn('⚠️ ACTION REQUIRED: Update MELHOR_ENVIO_TOKEN in .env with valid token');
-        console.warn('⚠️ Get new token at: https://melhorenvio.com.br/painel/gerenciar/tokens');
-        
-        const manualOptions = await calculateShipping(cep, parseFloat(weight));
-        
-        if (manualOptions && manualOptions.length > 0) {
-            console.log('📦 Using manual shipping rules as fallback');
-            return res.json(manualOptions);
-        }
-
-        // If both methods fail, return error
-        console.error('❌ Both Melhor Envio and manual rules failed');
+        // If Melhor Envio fails, return error (no fallback)
+        console.error('❌ Melhor Envio API failed or returned no options');
+        console.error('⚠️ Verifique o token em: https://melhorenvio.com.br/painel/gerenciar/tokens');
         return res.status(503).json({
-            error: 'Não foi possível calcular o frete no momento. Por favor, tente novamente em alguns instantes ou entre em contato conosco para consultar o valor do frete.'
+            error: 'Não foi possível calcular o frete. Verifique se o token do Melhor Envio está configurado corretamente.'
         });
     } catch (error) {
         console.error('Error calculating shipping:', error);

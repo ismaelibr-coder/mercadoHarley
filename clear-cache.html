@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Limpando Cache - SICK GRIP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            max-width: 600px;
+        }
+        h1 { color: #FF6B00; }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #FF6B00;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status {
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        .success { color: #4CAF50; }
+        .warning { color: #FFC107; }
+        button {
+            background: #FF6B00;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #ff8533;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpando Cache</h1>
+        <div class="loader"></div>
+        <div id="status" class="status">Iniciando limpeza...</div>
+        <div id="details"></div>
+        <button id="reload" style="display:none;" onclick="location.href='/'">Ir para o Site</button>
+    </div>
+
+    <script>
+        const status = document.getElementById('status');
+        const details = document.getElementById('details');
+        const reloadBtn = document.getElementById('reload');
+
+        async function clearEverything() {
+            let steps = [];
+
+            // Step 1: Unregister service workers
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                    steps.push('✅ Service Workers removidos: ' + registrations.length);
+                } else {
+                    steps.push('⚠️ Service Workers não suportados');
+                }
+            } catch (e) {
+                steps.push('❌ Erro ao remover Service Workers: ' + e.message);
+            }
+
+            // Step 2: Clear all caches
+            try {
+                if ('caches' in window) {
+                    const names = await caches.keys();
+                    for (let name of names) {
+                        await caches.delete(name);
+                    }
+                    steps.push('✅ Caches limpos: ' + names.length);
+                } else {
+                    steps.push('⚠️ Cache API não suportada');
+                }
+            } catch (e) {
+                steps.push('❌ Erro ao limpar caches: ' + e.message);
+            }
+
+            // Step 3: Clear localStorage
+            try {
+                localStorage.clear();
+                steps.push('✅ LocalStorage limpo');
+            } catch (e) {
+                steps.push('⚠️ Erro ao limpar localStorage: ' + e.message);
+            }
+
+            // Step 4: Clear sessionStorage
+            try {
+                sessionStorage.clear();
+                steps.push('✅ SessionStorage limpo');
+            } catch (e) {
+                steps.push('⚠️ Erro ao limpar sessionStorage: ' + e.message);
+            }
+
+            // Step 5: Clear IndexedDB
+            try {
+                if ('indexedDB' in window) {
+                    const dbs = await indexedDB.databases();
+                    for (let db of dbs) {
+                        indexedDB.deleteDatabase(db.name);
+                    }
+                    steps.push('✅ IndexedDB limpo: ' + dbs.length);
+                }
+            } catch (e) {
+                steps.push('⚠️ IndexedDB: ' + e.message);
+            }
+
+            // Display results
+            status.innerHTML = '<span class="success">✅ Limpeza Concluída!</span>';
+            details.innerHTML = '<div style="text-align: left; margin: 20px auto; max-width: 400px;">' + 
+                steps.map(s => '<div style="margin: 5px 0;">' + s + '</div>').join('') + 
+                '</div>';
+            
+            reloadBtn.style.display = 'inline-block';
+
+            // Auto redirect after 3 seconds
+            setTimeout(() => {
+                status.innerHTML += '<br><span class="warning">Redirecionando em 3 segundos...</span>';
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 3000);
+            }, 1000);
+        }
+
+        // Run immediately
+        clearEverything();
+    </script>
+</body>
+</html>
