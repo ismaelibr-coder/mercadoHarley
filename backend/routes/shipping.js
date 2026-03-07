@@ -22,24 +22,17 @@ router.post('/calculate', async (req, res) => {
             });
         }
 
-        // 1. Try Melhor Envio (External API)
+        // ONLY use Melhor Envio API - no fallback to manual rules
         const melhorEnvioOptions = await calculateMelhorEnvioShipping(cep, parseFloat(weight), dimensions);
 
         if (melhorEnvioOptions && melhorEnvioOptions.length > 0) {
             return res.json(melhorEnvioOptions);
         }
 
-        console.warn('Melhor Envio returned no options or failed. Falling back to shipping rules.');
-
-        // 2. Fallback to internal shipping rules
-        const fallbackOptions = await calculateShipping(cep, parseFloat(weight));
-
-        if (fallbackOptions && fallbackOptions.length > 0) {
-            return res.json(fallbackOptions);
-        }
-
+        // If Melhor Envio fails, return error (DO NOT use fallback)
+        console.error('❌ Melhor Envio failed to return shipping options');
         return res.status(503).json({
-            error: 'Não foi possível calcular o frete para este CEP. Verifique se o CEP está correto ou entre em contato conosco.'
+            error: 'Não foi possível calcular o frete no momento. Por favor, tente novamente em alguns instantes ou entre em contato conosco para consultar o valor do frete.'
         });
     } catch (error) {
         console.error('Error calculating shipping:', error);
