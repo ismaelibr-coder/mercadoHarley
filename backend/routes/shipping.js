@@ -22,15 +22,28 @@ router.post('/calculate', async (req, res) => {
             });
         }
 
-        // ONLY use Melhor Envio API - no fallback to manual rules
+        // Try Melhor Envio API first
         const melhorEnvioOptions = await calculateMelhorEnvioShipping(cep, parseFloat(weight), dimensions);
 
         if (melhorEnvioOptions && melhorEnvioOptions.length > 0) {
+            console.log('✅ Using Melhor Envio shipping options');
             return res.json(melhorEnvioOptions);
         }
 
-        // If Melhor Envio fails, return error (DO NOT use fallback)
-        console.error('❌ Melhor Envio failed to return shipping options');
+        // Fallback to manual rules if Melhor Envio fails (TEMPORARY until token is fixed)
+        console.warn('⚠️ Melhor Envio failed, falling back to manual shipping rules');
+        console.warn('⚠️ ACTION REQUIRED: Update MELHOR_ENVIO_TOKEN in .env with valid token');
+        console.warn('⚠️ Get new token at: https://melhorenvio.com.br/painel/gerenciar/tokens');
+        
+        const manualOptions = await calculateShipping(cep, parseFloat(weight));
+        
+        if (manualOptions && manualOptions.length > 0) {
+            console.log('📦 Using manual shipping rules as fallback');
+            return res.json(manualOptions);
+        }
+
+        // If both methods fail, return error
+        console.error('❌ Both Melhor Envio and manual rules failed');
         return res.status(503).json({
             error: 'Não foi possível calcular o frete no momento. Por favor, tente novamente em alguns instantes ou entre em contato conosco para consultar o valor do frete.'
         });

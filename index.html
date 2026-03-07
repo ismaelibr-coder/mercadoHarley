@@ -73,19 +73,42 @@
   
   <!-- Clear service worker cache -->
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for(let registration of registrations) {
-          registration.unregister();
+    // Force clear all caches on page load
+    (async function forceCacheClear() {
+      // Unregister all service workers
+      if ('serviceWorker' in navigator) {
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (let registration of registrations) {
+            await registration.unregister();
+            console.log('Service worker unregistered');
+          }
+        } catch (e) {
+          console.error('Error unregistering service workers:', e);
         }
-      });
-    }
-    // Clear all caches
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        for (let name of names) caches.delete(name);
-      });
-    }
+      }
+      
+      // Clear all caches
+      if ('caches' in window) {
+        try {
+          const names = await caches.keys();
+          for (let name of names) {
+            await caches.delete(name);
+            console.log('Cache deleted:', name);
+          }
+        } catch (e) {
+          console.error('Error clearing caches:', e);
+        }
+      }
+      
+      // Force reload without cache if this is first load
+      const hasReloaded = sessionStorage.getItem('cache-cleared');
+      if (!hasReloaded) {
+        sessionStorage.setItem('cache-cleared', 'true');
+        console.log('First load detected - forcing hard reload');
+        window.location.reload(true);
+      }
+    })();
   </script>
 </head>
 
