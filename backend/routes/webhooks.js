@@ -5,8 +5,6 @@ import { sendOrderStatusUpdate } from '../services/emailService.js';
 
 const router = express.Router();
 
-const router = express.Router();
-
 // Mercado Pago webhook
 router.post('/mercadopago', async (req, res) => {
     try {
