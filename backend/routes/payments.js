@@ -6,7 +6,7 @@ import {
     getPaymentStatus
 } from '../services/mercadoPagoService.js';
 import {
-    createOrder as createOrderInFirestore,
+    createOrder as createOrderRecord,
     updateOrderPayment,
     getOrderById
 } from '../services/dbService.js';
@@ -32,8 +32,8 @@ router.post('/pix', optionalAuth, async (req, res, next) => {
             orderData.orderNumber = generateOrderNumber();
         }
 
-        // Create order in Firestore first
-        const order = await createOrderInFirestore({
+        // Create order in database first
+        const order = await createOrderRecord({
             ...orderData,
             userId: req.user?.uid || 'guest',
             userEmail: req.user?.email || orderData.customer.email,
@@ -82,8 +82,8 @@ router.post('/boleto', optionalAuth, async (req, res, next) => {
             orderData.orderNumber = generateOrderNumber();
         }
 
-        // Create order in Firestore
-        const order = await createOrderInFirestore({
+        // Create order in database
+        const order = await createOrderRecord({
             ...orderData,
             userId: req.user?.uid || 'guest',
             userEmail: req.user?.email || orderData.customer.email,
@@ -135,8 +135,8 @@ router.post('/credit-card', optionalAuth, async (req, res, next) => {
             orderData.orderNumber = generateOrderNumber();
         }
 
-        // Create order in Firestore
-        const order = await createOrderInFirestore({
+        // Create order in database
+        const order = await createOrderRecord({
             ...orderData,
             userId: req.user?.uid || 'guest',
             userEmail: req.user?.email || orderData.customer.email,

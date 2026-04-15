@@ -64,7 +64,7 @@ const MyOrdersPage = () => {
 
     const formatDate = (timestamp) => {
         if (!timestamp) return '';
-        // Handle Firebase Timestamp or Date object
+        // Handle Date or timestamp object
         const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
         return new Intl.DateTimeFormat('pt-BR', {
             day: '2-digit',

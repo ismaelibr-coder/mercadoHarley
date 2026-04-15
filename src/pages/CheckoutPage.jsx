@@ -200,7 +200,7 @@ const CheckoutPage = () => {
 
                     console.log('✅ Form data updated with profile');
                 } else {
-                    console.log('No profile found in Firestore');
+                    console.log('No profile found');
                 }
             } else {
                 console.log('User is not logged in');

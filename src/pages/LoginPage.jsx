@@ -26,7 +26,7 @@ const LoginPage = () => {
             await login(formData.email, formData.password);
             navigate(from, { replace: true });
         } catch (err) {
-            // Firebase error handling
+            // Auth error handling
             let errorMessage = 'Falha ao fazer login. Verifique suas credenciais.';
 
             if (err.code === 'auth/user-not-found') {

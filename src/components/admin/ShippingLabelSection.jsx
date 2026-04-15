@@ -11,7 +11,7 @@ const ShippingLabelSection = ({ orderId, shippingData, onUpdate }) => {
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-    // Get auth token from Firebase user
+    // Get auth token from authenticated user
     const getAuthToken = async () => {
         try {
             if (!currentUser) {
@@ -19,7 +19,7 @@ const ShippingLabelSection = ({ orderId, shippingData, onUpdate }) => {
                 return null;
             }
 
-            // Get fresh token from Firebase
+            // Get fresh token from auth context
             const token = await currentUser.getIdToken();
             return token;
         } catch (error) {

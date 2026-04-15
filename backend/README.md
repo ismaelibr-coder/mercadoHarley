@@ -6,15 +6,14 @@ Backend server for Mercado Harley e-commerce with real Mercado Pago payment inte
 
 - ✅ Real Mercado Pago payment processing (PIX, Boleto, Credit Card)
 - ✅ Webhook handling for automatic order status updates
-- ✅ Firebase integration for order management
-- ✅ User authentication with Firebase Auth
+- ✅ MySQL/Sequelize integration for order management
+- ✅ User authentication with JWT + banco de dados
 - ✅ CORS configured for frontend
 - ✅ Error handling middleware
 
 ## 📋 Prerequisites
 
 - Node.js 18+ installed
-- Firebase project with Firestore
 - Mercado Pago account with API credentials
 
 ## 🔧 Setup Instructions
@@ -26,26 +25,17 @@ cd backend
 npm install
 ```
 
-### 2. Configure Firebase Service Account
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select your project
-3. Go to **Project Settings** > **Service Accounts**
-4. Click **Generate New Private Key**
-5. Save the JSON file as `firebase-service-account.json` in the `backend` folder
-
-### 3. Configure Environment Variables
+### 2. Configure Environment Variables
 
 The `.env` file is already configured with your Mercado Pago credentials. Make sure it contains:
 
 ```env
 PORT=3001
 MP_ACCESS_TOKEN=your_access_token_here
-FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 FRONTEND_URL=http://localhost:5173
 ```
 
-### 4. Start the Server
+### 3. Start the Server
 
 ```bash
 npm run dev
@@ -110,12 +100,12 @@ For production deployment:
 
 ## 🐛 Troubleshooting
 
-### Firebase Error
+### Banco de dados
 
-If you see "Firebase not initialized":
-- Make sure `firebase-service-account.json` exists
-- Check the path in `.env` is correct
-- Verify the JSON file is valid
+If you see connection errors:
+- Verify MySQL is running
+- Check the credentials in `.env`
+- Confirm the database exists and the schema was applied
 
 ### Mercado Pago Error
 

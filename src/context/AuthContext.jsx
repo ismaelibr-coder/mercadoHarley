@@ -22,22 +22,46 @@ export const AuthProvider = ({ children }) => {
             
             if (token && userData) {
                 try {
-                    const user = JSON.parse(userData);
-                    // Simulate Firebase user object for compatibility
-                    const firebaseUser = {
+                    const response = await axios.get(`${API_URL}/api/auth/me`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const user = response.data?.user || JSON.parse(userData);
+
+                    // Simulate auth user object for compatibility
+                    const authUser = {
                         uid: user.uid,
                         email: user.email,
                         displayName: user.name,
                         getIdToken: async () => token,
                         userType: user.userType || 'customer'
                     };
-                    setCurrentUser(firebaseUser);
+                    setCurrentUser(authUser);
                     setIsAdmin(user.isAdmin || false);
                     setUserType(user.userType || 'customer');
+
+                    localStorage.setItem('user_data', JSON.stringify(user));
                 } catch (error) {
-                    console.error('Error loading stored auth:', error);
-                    localStorage.removeItem('auth_token');
-                    localStorage.removeItem('user_data');
+                    try {
+                        const user = JSON.parse(userData);
+                        const authUser = {
+                            uid: user.uid,
+                            email: user.email,
+                            displayName: user.name,
+                            getIdToken: async () => token,
+                            userType: user.userType || 'customer'
+                        };
+
+                        setCurrentUser(authUser);
+                        setIsAdmin(user.isAdmin || false);
+                        setUserType(user.userType || 'customer');
+                    } catch (fallbackError) {
+                        console.error('Error loading stored auth:', fallbackError);
+                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('user_data');
+                    }
                 }
             }
             setLoading(false);
@@ -59,8 +83,8 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('auth_token', token);
             localStorage.setItem('user_data', JSON.stringify(user));
 
-            // Simulate Firebase user object for compatibility
-            const firebaseUser = {
+            // Simulate auth user object for compatibility
+            const authUser = {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.name,
@@ -68,12 +92,12 @@ export const AuthProvider = ({ children }) => {
                 userType: user.userType || 'customer'
             };
 
-            setCurrentUser(firebaseUser);
+            setCurrentUser(authUser);
             setIsAdmin(user.isAdmin || false);
             setUserType(user.userType || 'customer');
 
             console.log('✅ Login successful:', user.email);
-            return firebaseUser;
+            return authUser;
         } catch (error) {
             console.error('❌ Login error:', error.response?.data || error.message);
             throw new Error(error.response?.data?.error || 'Falha ao fazer login. Verifique suas credenciais.');
@@ -97,18 +121,18 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('auth_token', token);
             localStorage.setItem('user_data', JSON.stringify(user));
 
-            // Simulate Firebase user object for compatibility
-            const firebaseUser = {
+            // Simulate auth user object for compatibility
+            const authUser = {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.name,
                 getIdToken: async () => token
             };
 
-            setCurrentUser(firebaseUser);
+            setCurrentUser(authUser);
             setIsAdmin(user.isAdmin || false);
 
-            return firebaseUser;
+            return authUser;
         } catch (error) {
             console.error('Registration error:', error);
             throw new Error(error.response?.data?.error || 'Falha ao registrar usuário.');

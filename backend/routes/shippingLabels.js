@@ -1,5 +1,6 @@
 import express from 'express';
 import { getOrderById } from '../services/dbService.js';
+import { Order } from '../models/index.js';
 import { verifyAdmin } from '../middleware/auth.js';
 import {
     createShippingLabel,
@@ -99,19 +100,26 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
         const deliveryDate = new Date();
         deliveryDate.setDate(deliveryDate.getDate() + (shipmentDetails.delivery_max || 7));
 
-        // Step 6: Update order in Firestore
-        const db = getFirestore();
-        await db.collection('orders').doc(orderId).update({
-            'shipping.melhorEnvioId': melhorEnvioId,
-            'shipping.trackingCode': trackingCode,
-            'shipping.correiosTracking': correiosTracking, // Correios code (can be null)
-            'shipping.melhorEnvioProtocol': shipmentDetails.protocol, // Melhor Envio ID
-            'shipping.hasCorreiosCode': hasCorreiosCode,
-            'shipping.labelUrl': labelUrl,
-            'shipping.labelCreatedAt': new Date(),
-            'shipping.deliveryMin': shipmentDetails.delivery_min,
-            'shipping.deliveryMax': shipmentDetails.delivery_max,
-            'shipping.estimatedDelivery': deliveryDate,
+        // Step 6: Update order in database
+        const orderRecord = await Order.findByPk(orderId);
+        if (!orderRecord) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        await orderRecord.update({
+            shipping: {
+                ...(orderRecord.shipping || {}),
+                melhorEnvioId,
+                trackingCode,
+                correiosTracking, // Correios code (can be null)
+                melhorEnvioProtocol: shipmentDetails.protocol, // Melhor Envio ID
+                hasCorreiosCode,
+                labelUrl,
+                labelCreatedAt: new Date(),
+                deliveryMin: shipmentDetails.delivery_min,
+                deliveryMax: shipmentDetails.delivery_max,
+                estimatedDelivery: deliveryDate
+            },
             status: 'processing'
         });
 
@@ -176,10 +184,17 @@ router.post('/:orderId/pickup', verifyAdmin, async (req, res) => {
         console.log('✅ Pickup requested:', pickupResult);
 
         // Update order status
-        const db = getFirestore();
-        await db.collection('orders').doc(orderId).update({
-            'shipping.pickupScheduled': true,
-            'shipping.pickupDate': new Date(),
+        const orderRecord = await Order.findByPk(orderId);
+        if (!orderRecord) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        await orderRecord.update({
+            shipping: {
+                ...(orderRecord.shipping || {}),
+                pickupScheduled: true,
+                pickupDate: new Date()
+            },
             status: 'shipped'
         });
 

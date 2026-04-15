@@ -109,7 +109,7 @@ const RegisterPage = () => {
             alert("Cadastro realizado com sucesso! Bem-vindo ao SICK GRIP.");
             navigate('/');
         } catch (err) {
-            // Firebase error handling
+            // Auth error handling
             let errorMessage = 'Erro ao criar conta. Tente novamente.';
 
             if (err.code === 'auth/email-already-in-use') {

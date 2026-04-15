@@ -1,5 +1,5 @@
 import express from 'express';
-import { Order, Product, User } from '../models/index.js';
+import { Order, Product, Banner } from '../models/index.js';
 import { verifyAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -59,29 +59,11 @@ router.delete('/cleanup-database', verifyAdmin, async (req, res) => {
  * GET /api/admin/cleanup-database/preview
  * Mostra quantos registros serão deletados (preview)
  */
-router.get('/cleanup-database/preview', async (req, res) => {
+router.get('/cleanup-database/preview', verifyAdmin, async (req, res) => {
     try {
-        const token = req.headers.authorization?.split('Bearer ')[1];
-        if (!token) {
-            return res.status(401).json({ error: 'Token não fornecido' });
-        }
-
-        const decodedToken = await verifyToken(token);
-        const isAdmin = await isUserAdmin(decodedToken.uid);
-
-        if (!isAdmin) {
-            return res.status(403).json({ error: 'Acesso negado' });
-        }
-
-        const productsCount = (await db.collection('products').get()).size;
-        const ordersCount = (await db.collection('orders').get()).size;
-
-        let bannersCount = 0;
-        try {
-            bannersCount = (await db.collection('banners').get()).size;
-        } catch (error) {
-            // Coleção não existe
-        }
+        const productsCount = await Product.count();
+        const ordersCount = await Order.count();
+        const bannersCount = await Banner.count();
 
         res.json({
             preview: {
