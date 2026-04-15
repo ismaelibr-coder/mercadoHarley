@@ -43,7 +43,7 @@ EOF
     export SSH_ASKPASS_REQUIRE=force
     export DISPLAY="${DISPLAY:-dummy:0}"
 
-    SSH_CMD=(ssh -n -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=accept-new)
+    SSH_CMD=(ssh -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=accept-new)
     echo "sshpass não encontrado; usando fallback SSH_ASKPASS."
   else
     SSH_CMD=(sshpass -p "${DEPLOY_PASSWORD}" ssh -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=accept-new)
