@@ -29,7 +29,8 @@ router.post('/image', verifyAdmin, upload.single('image'), async (req, res) => {
             return res.status(400).json({ error: 'No image file provided' });
         }
 
-        const result = await saveImage(req.file);
+        const uploadBaseUrl = process.env.UPLOADS_BASE_URL || `${req.protocol}://${req.get('host')}/uploads`;
+        const result = await saveImage(req.file, { baseUrl: uploadBaseUrl });
 
         res.json({
             success: true,

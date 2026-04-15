@@ -111,38 +111,69 @@ export const isUserAdmin = async (uid) => {
   return u ? !!u.isAdmin : false;
 };
 
+const normalizeProductOutput = (product) => {
+  const normalized = product?.toJSON ? product.toJSON() : { ...product };
+  const images = Array.isArray(normalized.images) ? normalized.images.filter(Boolean) : [];
+
+  return {
+    ...normalized,
+    images,
+    image: normalized.image || images[0] || null
+  };
+};
+
+const normalizeProductInput = (productData = {}, currentImages = []) => {
+  const providedImages = Array.isArray(productData.images) ? productData.images.filter(Boolean) : [];
+  const fallbackImage = typeof productData.image === 'string' ? productData.image.trim() : '';
+
+  const images = providedImages.length > 0
+    ? providedImages
+    : (fallbackImage ? [fallbackImage] : currentImages);
+
+  return {
+    ...productData,
+    images
+  };
+};
+
 export const createProduct = async (productData) => {
   const id = productData.id || `prod_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+  const normalizedInput = normalizeProductInput(productData);
+
   const p = await Product.create({
     id,
-    name: productData.name,
-    price: productData.price,
-    stock: productData.stock || 0,
-    images: productData.images || [],
-    dimensions: productData.dimensions || null,
-    weight: productData.weight || null,
-    description: productData.description || null,
-    category: productData.category || null
+    name: normalizedInput.name,
+    price: normalizedInput.price,
+    stock: normalizedInput.stock || 0,
+    images: normalizedInput.images,
+    dimensions: normalizedInput.dimensions || null,
+    weight: normalizedInput.weight || null,
+    description: normalizedInput.description || null,
+    category: normalizedInput.category || null
   });
-  return p.toJSON();
+  return normalizeProductOutput(p);
 };
 
 export const getAllProducts = async () => {
   const rows = await Product.findAll({ order: [['createdAt','DESC']] });
-  return rows.map(r => r.toJSON());
+  return rows.map(normalizeProductOutput);
 };
 
 export const getProductById = async (productId) => {
   const p = await Product.findByPk(productId);
   if (!p) throw new Error('Product not found');
-  return p.toJSON();
+  return normalizeProductOutput(p);
 };
 
 export const updateProduct = async (productId, productData) => {
   const p = await Product.findByPk(productId);
   if (!p) throw new Error('Product not found');
-  await p.update(productData);
-  return p.toJSON();
+
+  const currentImages = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+  const normalizedInput = normalizeProductInput(productData, currentImages);
+
+  await p.update(normalizedInput);
+  return normalizeProductOutput(p);
 };
 
 export const deleteProduct = async (productId) => {

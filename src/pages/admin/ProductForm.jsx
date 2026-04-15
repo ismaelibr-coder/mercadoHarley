@@ -79,7 +79,7 @@ const ProductForm = () => {
             setFormData({
                 name: product.name || '',
                 price: product.price || '',
-                image: product.image || '',
+                image: product.image || product.images?.[0] || '',
                 category: product.category || '',
                 partType: product.partType || '',
                 partner: product.partner || '',
@@ -137,6 +137,7 @@ const ProductForm = () => {
         try {
             const productData = {
                 ...formData,
+                images: formData.image ? [formData.image] : [],
                 price: parseFloat(formData.price.replace(',', '.')) || 0,
                 rating: parseInt(formData.rating),
                 stock: parseInt(formData.stock) || 0,

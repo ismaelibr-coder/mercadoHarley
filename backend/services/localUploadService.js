@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const uploadsDir = process.env.UPLOADS_DIR || path.resolve(process.cwd(), '../uploads');
-const uploadsBaseUrl = process.env.UPLOADS_BASE_URL
+const fallbackUploadsBaseUrl = process.env.UPLOADS_BASE_URL
     || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/uploads`;
 
 const ensureUploadsDir = async () => {
@@ -31,11 +31,12 @@ const buildFilename = (file) => {
     return `${Date.now()}-${token}${ext}`;
 };
 
-export const saveImage = async (file) => {
+export const saveImage = async (file, options = {}) => {
     await ensureUploadsDir();
 
     const filename = buildFilename(file);
     const filePath = path.join(uploadsDir, filename);
+    const uploadsBaseUrl = options.baseUrl || fallbackUploadsBaseUrl;
 
     await fs.writeFile(filePath, file.buffer);
 

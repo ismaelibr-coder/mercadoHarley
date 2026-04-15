@@ -2,11 +2,17 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://www.sickgrip.com.br';
 
+const normalizeProduct = (product) => ({
+    ...product,
+    image: product?.image || product?.images?.[0] || '/images/placeholder-product.jpg'
+});
+
 // Get all products
 export const getAllProducts = async () => {
     try {
         const response = await axios.get(`${API_URL}/api/products`);
-        return response.data.products || response.data || [];
+        const products = response.data.products || response.data || [];
+        return products.map(normalizeProduct);
     } catch (error) {
         console.error('Error fetching products:', error);
         throw error;
@@ -17,7 +23,8 @@ export const getAllProducts = async () => {
 export const getProductsByCategory = async (category) => {
     try {
         const response = await axios.get(`${API_URL}/api/products?category=${category}`);
-        return response.data.products || response.data || [];
+        const products = response.data.products || response.data || [];
+        return products.map(normalizeProduct);
     } catch (error) {
         console.error('Error fetching products by category:', error);
         throw error;
@@ -28,7 +35,7 @@ export const getProductsByCategory = async (category) => {
 export const getProductById = async (id) => {
     try {
         const response = await axios.get(`${API_URL}/api/products/${id}`);
-        return response.data.product || response.data;
+        return normalizeProduct(response.data.product || response.data);
     } catch (error) {
         console.error('Error fetching product:', error);
         throw error;
