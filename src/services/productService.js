@@ -4,7 +4,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://www.sickgrip.com.br';
 
 const normalizeProduct = (product) => ({
     ...product,
-    image: product?.image || product?.images?.[0] || '/images/placeholder-product.jpg'
+    image: product?.image || product?.images?.[0] || '/images/sickgrip-logo.png'
 });
 
 // Get all products
