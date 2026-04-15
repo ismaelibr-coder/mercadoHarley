@@ -75,10 +75,34 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Static uploads (local file storage)
-const uploadsDir = process.env.UPLOADS_DIR || path.resolve(process.cwd(), '../uploads');
+let uploadsDir = process.env.UPLOADS_DIR;
+
+if (!uploadsDir) {
+    const possiblePaths = [
+        path.resolve(process.cwd(), '../uploads'),
+        path.resolve(process.cwd(), './uploads'),
+        '/var/www/mercadoHarley/repo/uploads',
+        '/var/www/mercadoHarley/uploads'
+    ];
+    
+    for (const candidate of possiblePaths) {
+        if (fs.existsSync(candidate)) {
+            uploadsDir = candidate;
+            console.log(`✅ Found uploads directory: ${uploadsDir}`);
+            break;
+        }
+    }
+}
+
+if (!uploadsDir) {
+    uploadsDir = path.resolve(process.cwd(), '../uploads');
+}
+
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
+
+console.log(`📁 Serving uploads from: ${uploadsDir}`);
 app.use('/uploads', express.static(uploadsDir));
 
 // Force HTTPS in production
