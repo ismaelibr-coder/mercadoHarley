@@ -7,20 +7,35 @@ export const validateProduct = (req, res, next) => {
     const schema = Joi.object({
         name: Joi.string().min(3).max(200).required(),
         description: Joi.string().max(2000).required(),
-        price: Joi.string().pattern(/^R\$ [\d.,]+$/).required(),
+        price: Joi.alternatives().try(
+            Joi.number().positive(),
+            Joi.string().pattern(/^R\$\s?[\d.,]+$/),
+            Joi.string().pattern(/^\d+(?:[.,]\d{1,2})?$/)
+        ).required(),
         category: Joi.string().required(),
         partType: Joi.string().allow('', null).optional(),
         partner: Joi.string().allow('', null).optional(),
-        images: Joi.array().items(Joi.string().uri()).min(1).required(),
+        image: Joi.string().uri().allow('', null).optional(),
+        images: Joi.array().items(Joi.string().uri()).optional(),
         stock: Joi.number().integer().min(0).required(),
         weight: Joi.number().positive().allow(0).optional(),
         width: Joi.number().positive().allow(0).optional(),
         height: Joi.number().positive().allow(0).optional(),
         length: Joi.number().positive().allow(0).optional(),
+        dimensions: Joi.object({
+            weight: Joi.number().positive().allow(0).optional(),
+            width: Joi.number().positive().allow(0).optional(),
+            height: Joi.number().positive().allow(0).optional(),
+            length: Joi.number().positive().allow(0).optional()
+        }).optional(),
         featured: Joi.boolean().optional(),
+        featuredCarousel: Joi.boolean().optional(),
         new: Joi.boolean().optional(),
-        rating: Joi.number().min(0).max(5).optional()
-    });
+        rating: Joi.number().min(0).max(5).optional(),
+        condition: Joi.string().allow('', null).optional(),
+        profitMargin: Joi.number().allow(0).optional(),
+        specs: Joi.array().items(Joi.string().allow('')).optional()
+    }).unknown(true);
 
     const { error } = schema.validate(req.body);
     if (error) {
