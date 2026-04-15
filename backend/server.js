@@ -71,14 +71,6 @@ const limiter = rateLimit({
     legacyHeaders: false,
 });
 
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 5, // 5 tentativas de login
-    message: 'Muitas tentativas de autenticação, tente novamente mais tarde.',
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -143,7 +135,7 @@ app.use('/api/shipping', limiter, shippingRouter);
 app.use('/api/upload', limiter, uploadRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/banners', bannerRoutes);
-app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/orders', limiter, orderRoutes);
 app.use('/api/shipping-labels', limiter, shippingLabelsRouter);
 app.use('/api/settings', settingsRouter);

@@ -1,5 +1,6 @@
 import express from 'express';
 import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 import { loginUser, registerUser, refreshAccessToken, hashPassword, comparePassword } from '../services/authService.js';
 import { updateUserProfile } from '../services/dbService.js';
 import { authenticate } from '../middleware/auth.js';
@@ -7,6 +8,19 @@ import { User } from '../models/index.js';
 import { sendTemporaryPassword } from '../services/emailService.js';
 
 const router = express.Router();
+
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 10,
+    message: 'Muitas tentativas de autenticação, tente novamente mais tarde.',
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    keyGenerator: (req) => {
+        const email = String(req.body?.email || '').trim().toLowerCase();
+        return `${req.ip}:${email}`;
+    }
+});
 
 /**
  * POST /api/auth/register
@@ -52,7 +66,7 @@ router.post('/register', async (req, res) => {
  * POST /api/auth/login
  * Login user
  */
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
 
