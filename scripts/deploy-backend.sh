@@ -4,20 +4,45 @@ set -euo pipefail
 # Deploy backend on remote host and restart PM2 using ecosystem config.
 # Usage:
 # DEPLOY_HOST=your.host DEPLOY_USER=root DEPLOY_PATH=/home/app/mercado-harley ./scripts/deploy-backend.sh
+# Optional:
+# DEPLOY_PORT=22 DEPLOY_PASSWORD=secret BACKEND_SUBDIR=backend PM2_APP_NAME=mercado-harley-backend
 
 if [ -z "${DEPLOY_HOST:-}" ] || [ -z "${DEPLOY_USER:-}" ] || [ -z "${DEPLOY_PATH:-}" ]; then
   echo "DEPLOY_HOST, DEPLOY_USER and DEPLOY_PATH must be set. Aborting."
   exit 1
 fi
 
-echo "Deploying backend to ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}..."
+DEPLOY_PORT="${DEPLOY_PORT:-22}"
+DEPLOY_PASSWORD="${DEPLOY_PASSWORD:-}"
+BACKEND_SUBDIR="${BACKEND_SUBDIR:-backend}"
+PM2_APP_NAME="${PM2_APP_NAME:-mercado-harley-backend}"
+
+echo "Deploying backend to ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH} (port ${DEPLOY_PORT})..."
+
+SSH_CMD=(ssh -p "${DEPLOY_PORT}")
+
+if [ -n "${DEPLOY_PASSWORD}" ]; then
+  if ! command -v sshpass >/dev/null 2>&1; then
+    echo "DEPLOY_PASSWORD was provided, but sshpass is not installed."
+    echo "Install sshpass or use SSH key authentication."
+    exit 1
+  fi
+  SSH_CMD=(sshpass -p "${DEPLOY_PASSWORD}" ssh -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=accept-new)
+fi
 
 # Use ssh to run a robust sequence on the remote server. Pass DEPLOY_PATH as arg ($1) to avoid heredoc variable expansion issues.
-ssh "${DEPLOY_USER}@${DEPLOY_HOST}" bash -s -- "${DEPLOY_PATH}" <<'REMOTE'
+"${SSH_CMD[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" bash -s -- "${DEPLOY_PATH}" "${BACKEND_SUBDIR}" "${PM2_APP_NAME}" <<'REMOTE'
 set -euo pipefail
 
 TARGET_DIR="$1"
+BACKEND_SUBDIR="$2"
+PM2_APP_NAME="$3"
+
 cd "$TARGET_DIR"
+
+if [ -n "$BACKEND_SUBDIR" ] && [ -d "$BACKEND_SUBDIR" ]; then
+  cd "$BACKEND_SUBDIR"
+fi
 
 git fetch origin main
 git reset --hard origin/main
@@ -30,15 +55,21 @@ export npm_config_production=false
 npm ci --omit=dev --no-audit --no-fund || npm install --omit=dev --no-audit --no-fund
 
 # Restart with PM2 using CommonJS ecosystem first, fallback to other options
-pm2 stop mercado-harley-backend || true
-pm2 delete mercado-harley-backend || true
+pm2 stop "$PM2_APP_NAME" || true
+pm2 delete "$PM2_APP_NAME" || true
 if pm2 start ecosystem.config.cjs --env production --update-env; then
   echo "Started via ecosystem.config.cjs"
 else
-  pm2 start ecosystem.config.js --env production --update-env || pm2 start server.js --name mercado-harley-backend --env production --update-env
+  pm2 start ecosystem.config.js --env production --update-env || pm2 start server.js --name "$PM2_APP_NAME" --env production --update-env
 fi
 
 pm2 save || true
+
+echo "\nPM2 status:"
+pm2 list | grep -E "$PM2_APP_NAME|online|errored" || true
+
+echo "\nHealth check:"
+curl -s -o /dev/null -w "HTTP %{http_code}\n" http://127.0.0.1:3001/api/health || true
 REMOTE
 
 echo "Backend deployed and restarted on ${DEPLOY_HOST}"

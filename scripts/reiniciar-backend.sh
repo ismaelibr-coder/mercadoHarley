@@ -32,7 +32,7 @@ echo "🧪 Testando endpoints:"
 echo ""
 
 echo "1️⃣ Health check..."
-curl -s -o /dev/null -w "Status: %{http_code}\n" http://127.0.0.1:3001/health || echo "❌ Falhou"
+curl -s -o /dev/null -w "Status: %{http_code}\n" http://127.0.0.1:3001/api/health || echo "❌ Falhou"
 
 echo "2️⃣ Banners (refatorado)..."
 curl -s -o /dev/null -w "Status: %{http_code}\n" http://127.0.0.1:3001/api/banners || echo "❌ Falhou"
