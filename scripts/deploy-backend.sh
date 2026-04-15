@@ -20,14 +20,34 @@ PM2_APP_NAME="${PM2_APP_NAME:-mercado-harley-backend}"
 echo "Deploying backend to ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH} (port ${DEPLOY_PORT})..."
 
 SSH_CMD=(ssh -p "${DEPLOY_PORT}")
+ASKPASS_FILE=""
+
+cleanup() {
+  if [ -n "${ASKPASS_FILE}" ] && [ -f "${ASKPASS_FILE}" ]; then
+    rm -f "${ASKPASS_FILE}" || true
+  fi
+}
+
+trap cleanup EXIT
 
 if [ -n "${DEPLOY_PASSWORD}" ]; then
   if ! command -v sshpass >/dev/null 2>&1; then
-    echo "DEPLOY_PASSWORD was provided, but sshpass is not installed."
-    echo "Install sshpass or use SSH key authentication."
-    exit 1
+    ASKPASS_FILE="$(mktemp)"
+    cat > "${ASKPASS_FILE}" <<EOF
+#!/usr/bin/env sh
+echo '${DEPLOY_PASSWORD}'
+EOF
+    chmod 700 "${ASKPASS_FILE}"
+
+    export SSH_ASKPASS="${ASKPASS_FILE}"
+    export SSH_ASKPASS_REQUIRE=force
+    export DISPLAY="${DISPLAY:-dummy:0}"
+
+    SSH_CMD=(ssh -n -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=accept-new)
+    echo "sshpass não encontrado; usando fallback SSH_ASKPASS."
+  else
+    SSH_CMD=(sshpass -p "${DEPLOY_PASSWORD}" ssh -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=accept-new)
   fi
-  SSH_CMD=(sshpass -p "${DEPLOY_PASSWORD}" ssh -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=accept-new)
 fi
 
 # Use ssh to run a robust sequence on the remote server. Pass DEPLOY_PATH as arg ($1) to avoid heredoc variable expansion issues.
