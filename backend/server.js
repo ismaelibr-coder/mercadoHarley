@@ -103,6 +103,8 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 console.log(`📁 Serving uploads from: ${uploadsDir}`);
+app.use('/api/uploads', express.static(uploadsDir));
+// Also try /uploads in case nginx allows it
 app.use('/uploads', express.static(uploadsDir));
 
 // Force HTTPS in production

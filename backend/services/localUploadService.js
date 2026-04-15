@@ -37,12 +37,15 @@ export const saveImage = async (file, options = {}) => {
     const filename = buildFilename(file);
     const filePath = path.join(uploadsDir, filename);
     const uploadsBaseUrl = options.baseUrl || fallbackUploadsBaseUrl;
+    
+    // Normalize URL to use /api/uploads path which works through nginx
+    const url = uploadsBaseUrl.replace(/\/uploads$/, '/api/uploads') + `/${filename}`;
 
     await fs.writeFile(filePath, file.buffer);
 
     return {
         filename,
-        url: `${uploadsBaseUrl}/${filename}`,
+        url,
         path: filePath
     };
 };
