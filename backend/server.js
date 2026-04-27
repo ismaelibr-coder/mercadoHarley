@@ -78,19 +78,29 @@ app.use(express.urlencoded({ extended: true }));
 let uploadsDir = process.env.UPLOADS_DIR;
 
 if (!uploadsDir) {
-    const possiblePaths = [
-        path.resolve(process.cwd(), '../uploads'),
-        path.resolve(process.cwd(), './uploads'),
-        '/var/www/mercadoHarley/repo/uploads',
-        '/var/www/mercadoHarley/uploads'
-    ];
-    
-    for (const candidate of possiblePaths) {
-        if (fs.existsSync(candidate)) {
-            uploadsDir = candidate;
-            console.log(`✅ Found uploads directory: ${uploadsDir}`);
-            break;
+    const countFiles = (dirPath) => {
+        try {
+            if (!fs.existsSync(dirPath)) return -1;
+            return fs.readdirSync(dirPath).length;
+        } catch (error) {
+            return -1;
         }
+    };
+
+    const possiblePaths = [
+        '/var/www/mercadoHarley/repo/uploads',
+        '/var/www/mercadoHarley/uploads',
+        path.resolve(process.cwd(), '../uploads'),
+        path.resolve(process.cwd(), './uploads')
+    ];
+
+    const existingPaths = possiblePaths
+        .filter(candidate => fs.existsSync(candidate))
+        .sort((a, b) => countFiles(b) - countFiles(a));
+
+    if (existingPaths.length > 0) {
+        uploadsDir = existingPaths[0];
+        console.log(`✅ Found uploads directory: ${uploadsDir}`);
     }
 }
 

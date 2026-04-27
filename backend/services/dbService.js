@@ -125,6 +125,7 @@ const normalizeProductOutput = (product) => {
 const normalizeProductInput = (productData = {}, currentImages = []) => {
   const providedImages = Array.isArray(productData.images) ? productData.images.filter(Boolean) : [];
   const fallbackImage = typeof productData.image === 'string' ? productData.image.trim() : '';
+  const providedSpecs = Array.isArray(productData.specs) ? productData.specs.filter(Boolean) : [];
 
   const images = providedImages.length > 0
     ? providedImages
@@ -132,7 +133,8 @@ const normalizeProductInput = (productData = {}, currentImages = []) => {
 
   return {
     ...productData,
-    images
+    images,
+    specs: providedSpecs
   };
 };
 
@@ -149,7 +151,15 @@ export const createProduct = async (productData) => {
     dimensions: normalizedInput.dimensions || null,
     weight: normalizedInput.weight || null,
     description: normalizedInput.description || null,
-    category: normalizedInput.category || null
+    category: normalizedInput.category || null,
+    partType: normalizedInput.partType || null,
+    partner: normalizedInput.partner || null,
+    condition: normalizedInput.condition || null,
+    rating: normalizedInput.rating || 5,
+    profitMargin: normalizedInput.profitMargin || 0,
+    featured: !!normalizedInput.featured,
+    featuredCarousel: !!normalizedInput.featuredCarousel,
+    specs: normalizedInput.specs || []
   });
   return normalizeProductOutput(p);
 };

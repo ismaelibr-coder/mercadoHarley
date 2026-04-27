@@ -35,6 +35,35 @@ export const Product = sequelize.define('Product', {
     category: {
         type: DataTypes.STRING(100)
     },
+    partType: {
+        type: DataTypes.STRING(100)
+    },
+    partner: {
+        type: DataTypes.STRING(100)
+    },
+    condition: {
+        type: DataTypes.STRING(30)
+    },
+    rating: {
+        type: DataTypes.INTEGER,
+        defaultValue: 5
+    },
+    profitMargin: {
+        type: DataTypes.DECIMAL(5, 2),
+        defaultValue: 0
+    },
+    featured: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    featuredCarousel: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    specs: {
+        type: DataTypes.JSON,
+        defaultValue: []
+    },
     createdAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW

@@ -13,11 +13,35 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }) => {
     const { currentUser } = useAuth();
+
+    const normalizeLegacyPrice = (rawPrice) => {
+        if (typeof rawPrice === 'string') {
+            const sanitized = rawPrice.replace('R$', '').replace(/\s/g, '');
+            if (/^\d{5,}$/.test(sanitized)) {
+                return (Number(sanitized) / 100).toFixed(2);
+            }
+            return rawPrice;
+        }
+
+        if (typeof rawPrice === 'number' && Number.isInteger(rawPrice) && rawPrice >= 10000) {
+            return (rawPrice / 100).toFixed(2);
+        }
+
+        return rawPrice;
+    };
+
+    const normalizeCartItems = (items = []) => (
+        items.map(item => ({
+            ...item,
+            price: normalizeLegacyPrice(item.price)
+        }))
+    );
+
     const [cartItems, setCartItems] = useState(() => {
         // Get cart specific to current user
         const userId = currentUser?.uid || 'guest';
         const savedCart = localStorage.getItem(`mercado-harley-cart-${userId}`);
-        return savedCart ? JSON.parse(savedCart) : [];
+        return savedCart ? normalizeCartItems(JSON.parse(savedCart)) : [];
     });
     const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -31,7 +55,7 @@ export const CartProvider = ({ children }) => {
     useEffect(() => {
         const userId = currentUser?.uid || 'guest';
         const savedCart = localStorage.getItem(`mercado-harley-cart-${userId}`);
-        setCartItems(savedCart ? JSON.parse(savedCart) : []);
+        setCartItems(savedCart ? normalizeCartItems(JSON.parse(savedCart)) : []);
     }, [currentUser?.uid]);
 
     const addToCart = (product) => {
@@ -112,6 +136,11 @@ export const CartProvider = ({ children }) => {
 
         // Remove any non numeric (except dot and minus)
         s = s.replace(/[^0-9.-]/g, '');
+
+        // Legacy centavos format (e.g. 129900 should be 1299.00)
+        if (/^\d{5,}$/.test(s)) {
+            return (parseFloat(s) || 0) / 100;
+        }
 
         return parseFloat(s) || 0;
     };
