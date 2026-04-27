@@ -42,7 +42,8 @@ export const Product = sequelize.define('Product', {
         type: DataTypes.STRING(100)
     },
     condition: {
-        type: DataTypes.STRING(30)
+        type: DataTypes.STRING(30),
+        field: 'product_condition'
     },
     rating: {
         type: DataTypes.INTEGER,
