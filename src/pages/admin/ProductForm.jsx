@@ -31,6 +31,8 @@ const ProductForm = () => {
 
     const [loading, setLoading] = useState(false);
     const [partners, setPartners] = useState(['Outros']); // Default fallback
+    const [partTypes, setPartTypes] = useState(PART_TYPES);
+    const [categories, setCategories] = useState(['Peças','Vestuário','Acessórios']);
     const [formData, setFormData] = useState({
         name: '',
         price: '',
@@ -48,8 +50,7 @@ const ProductForm = () => {
         weight: '',
         height: '',
         width: '',
-        length: '',
-        specs: ['', '', '', '']
+        length: ''
     });
 
     // Load partners from settings
@@ -94,8 +95,23 @@ const ProductForm = () => {
                 height: product.dimensions?.height || '',
                 width: product.dimensions?.width || '',
                 length: product.dimensions?.length || '',
-                specs: product.specs || ['', '', '', '']
+                // specs removed from form
             });
+
+            // Ensure partner appears in the partners list so the select shows it
+            if (product.partner && !partners.includes(product.partner)) {
+                setPartners(prev => [product.partner, ...prev]);
+            }
+
+            // Ensure part type appears in the list
+            if (product.partType && !partTypes.includes(product.partType)) {
+                setPartTypes(prev => [product.partType, ...prev]);
+            }
+
+            // Ensure category appears in categories
+            if (product.category && !categories.includes(product.category)) {
+                setCategories(prev => [product.category, ...prev]);
+            }
         } catch (error) {
             console.error('Error loading product:', error);
             alert('Erro ao carregar produto.');
@@ -124,11 +140,7 @@ const ProductForm = () => {
         }).format(number);
     };
 
-    const handleSpecChange = (index, value) => {
-        const newSpecs = [...formData.specs];
-        newSpecs[index] = value;
-        setFormData(prev => ({ ...prev, specs: newSpecs }));
-    };
+    // specs removed
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -148,7 +160,7 @@ const ProductForm = () => {
                     width: parseFloat(formData.width) || 0,
                     length: parseFloat(formData.length) || 0
                 },
-                specs: formData.specs.filter(spec => spec.trim() !== '')
+                // specs removed from submission
             };
 
             // Remove flat dimension fields before saving to clean up data structure
@@ -232,7 +244,7 @@ const ProductForm = () => {
                                 className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-sick-red focus:outline-none"
                             >
                                 <option value="">Selecione o tipo de peça</option>
-                                {PART_TYPES.map(t => (
+                                {partTypes.map(t => (
                                     <option key={t} value={t}>{t}</option>
                                 ))}
                             </select>
@@ -247,9 +259,9 @@ const ProductForm = () => {
                                 className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-sick-red focus:outline-none"
                             >
                                 <option value="">Selecione uma categoria</option>
-                                <option value="Peças">Peças</option>
-                                <option value="Vestuário">Vestuário</option>
-                                <option value="Acessórios">Acessórios</option>
+                                {categories.map(c => (
+                                    <option key={c} value={c}>{c}</option>
+                                ))}
                             </select>
                         </div>
                         <div>
@@ -437,19 +449,7 @@ const ProductForm = () => {
                         />
                     </div>
 
-                    <div className="mb-6">
-                        <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Especificações Técnicas</label>
-                        {formData.specs.map((spec, index) => (
-                            <input
-                                key={index}
-                                type="text"
-                                value={spec}
-                                onChange={(e) => handleSpecChange(index, e.target.value)}
-                                placeholder={`Especificação ${index + 1}`}
-                                className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-sick-red focus:outline-none mb-3"
-                            />
-                        ))}
-                    </div>
+                    {/* Especificações Técnicas removidas */}
 
                     {/* Checkboxes de Destaque */}
                     <div className="border-t border-gray-800 pt-6 mt-6">

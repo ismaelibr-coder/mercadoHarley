@@ -95,11 +95,29 @@ export const CartProvider = ({ children }) => {
         setCartItems([]);
     };
 
+    const parsePrice = (raw) => {
+        if (typeof raw === 'number') return raw;
+        if (!raw || typeof raw !== 'string') return 0;
+
+        // Remove currency symbol and trim
+        let s = raw.replace('R$','').trim();
+
+        // If string contains both '.' and ',' assume PT-BR format: '1.234,56'
+        if (s.includes('.') && s.includes(',')) {
+            s = s.replace(/\./g, '').replace(',', '.');
+        } else if (s.includes(',')) {
+            // If only comma present, it's decimal separator: '1234,56'
+            s = s.replace(',', '.');
+        }
+
+        // Remove any non numeric (except dot and minus)
+        s = s.replace(/[^0-9.-]/g, '');
+
+        return parseFloat(s) || 0;
+    };
+
     const cartTotal = cartItems.reduce((total, item) => {
-        // Handle price as both number and string
-        const price = typeof item.price === 'number'
-            ? item.price
-            : parseFloat(item.price.replace('R$ ', '').replace('.', '').replace(',', '.'));
+        const price = parsePrice(item.price);
         return total + price * item.quantity;
     }, 0);
 
