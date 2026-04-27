@@ -24,6 +24,25 @@ const PART_TYPES = [
     'Outros'
 ];
 
+const inferPartTypeFromName = (name = '') => {
+    const normalizedName = name.toLowerCase();
+    if (normalizedName.includes('pneu')) return 'Pneus';
+    if (normalizedName.includes('escap')) return 'Escapamento';
+    if (normalizedName.includes('guid')) return 'Guidão';
+    if (normalizedName.includes('banco')) return 'Banco';
+    if (normalizedName.includes('farol') || normalizedName.includes('led')) return 'Iluminação';
+    if (normalizedName.includes('filtro')) return 'Filtro de Ar';
+    return 'Outros';
+};
+
+const normalizeCondition = (value) => {
+    if (!value) return 'Novo';
+    const normalized = value.toString().trim().toLowerCase();
+    if (normalized === 'novo' || normalized === 'new') return 'Novo';
+    if (normalized === 'usado' || normalized === 'used') return 'Usado';
+    return 'Novo';
+};
+
 const ProductForm = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -77,18 +96,24 @@ const ProductForm = () => {
     const loadProduct = async () => {
         try {
             const product = await getProductById(id);
+
+            const resolvedPartner = product.partner || product.marca || product.brand || 'Outros';
+            const resolvedPartType = product.partType || product.part_type || inferPartTypeFromName(product.name);
+            const resolvedCondition = normalizeCondition(product.condition || product.product_condition);
+            const resolvedProfitMargin = product.profitMargin ?? product.profit_margin ?? '0';
+
             setFormData({
                 name: product.name || '',
                 price: product.price || '',
                 image: product.image || product.images?.[0] || '',
                 category: product.category || '',
-                partType: product.partType || '',
-                partner: product.partner || '',
-                condition: product.condition || '',
+                partType: resolvedPartType,
+                partner: resolvedPartner,
+                condition: resolvedCondition,
                 rating: product.rating || 5,
                 stock: product.stock || 10,
                 description: product.description || '',
-                profitMargin: product.profitMargin || '',
+                profitMargin: resolvedProfitMargin,
                 featured: product.featured || false,
                 featuredCarousel: product.featuredCarousel || false,
                 weight: product.dimensions?.weight || '',
@@ -99,13 +124,13 @@ const ProductForm = () => {
             });
 
             // Ensure partner appears in the partners list so the select shows it
-            if (product.partner && !partners.includes(product.partner)) {
-                setPartners(prev => [product.partner, ...prev]);
+            if (resolvedPartner && !partners.includes(resolvedPartner)) {
+                setPartners(prev => [resolvedPartner, ...prev]);
             }
 
             // Ensure part type appears in the list
-            if (product.partType && !partTypes.includes(product.partType)) {
-                setPartTypes(prev => [product.partType, ...prev]);
+            if (resolvedPartType && !partTypes.includes(resolvedPartType)) {
+                setPartTypes(prev => [resolvedPartType, ...prev]);
             }
 
             // Ensure category appears in categories
