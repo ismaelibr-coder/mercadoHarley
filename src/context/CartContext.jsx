@@ -16,9 +16,17 @@ export const CartProvider = ({ children }) => {
 
     const normalizeLegacyPrice = (rawPrice) => {
         if (typeof rawPrice === 'string') {
-            const sanitized = rawPrice.replace('R$', '').replace(/\s/g, '');
-            if (/^\d{5,}$/.test(sanitized)) {
-                return (Number(sanitized) / 100).toFixed(2);
+            const sanitized = rawPrice
+                .replace('R$', '')
+                .replace(/\s/g, '')
+                .replace(',', '.');
+
+            // Legacy centavos in string format: "114500" or "114500.00"
+            if (/^\d{5,}(\.\d{1,2})?$/.test(sanitized)) {
+                const numericValue = Number(sanitized);
+                if (Number.isFinite(numericValue) && Number.isInteger(numericValue)) {
+                    return (numericValue / 100).toFixed(2);
+                }
             }
             return rawPrice;
         }
@@ -137,9 +145,12 @@ export const CartProvider = ({ children }) => {
         // Remove any non numeric (except dot and minus)
         s = s.replace(/[^0-9.-]/g, '');
 
-        // Legacy centavos format (e.g. 129900 should be 1299.00)
-        if (/^\d{5,}$/.test(s)) {
-            return (parseFloat(s) || 0) / 100;
+        // Legacy centavos format (e.g. 129900 or 129900.00 should be 1299.00)
+        if (/^\d{5,}(\.\d{1,2})?$/.test(s)) {
+            const numericValue = parseFloat(s) || 0;
+            if (Number.isInteger(numericValue)) {
+                return numericValue / 100;
+            }
         }
 
         return parseFloat(s) || 0;
