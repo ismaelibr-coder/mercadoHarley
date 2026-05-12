@@ -22,7 +22,8 @@ router.post('/calculate', async (req, res) => {
             });
         }
 
-        // Use ONLY Melhor Envio API (no fallback to manual rules)
+        // Try Melhor Envio API first
+        console.log('📦 Attempting Melhor Envio shipping calculation...');
         const melhorEnvioOptions = await calculateMelhorEnvioShipping(cep, parseFloat(weight), dimensions);
 
         if (melhorEnvioOptions && melhorEnvioOptions.length > 0) {
@@ -30,12 +31,28 @@ router.post('/calculate', async (req, res) => {
             return res.json(melhorEnvioOptions);
         }
 
-        // If Melhor Envio fails, return error (no fallback)
-        console.error('❌ Melhor Envio API failed or returned no options');
-        console.error('⚠️ Verifique o token em: https://melhorenvio.com.br/painel/gerenciar/tokens');
-        return res.status(503).json({
-            error: 'Não foi possível calcular o frete. Verifique se o token do Melhor Envio está configurado corretamente.'
-        });
+        // Fallback to manual shipping rules if Melhor Envio fails
+        console.warn('⚠️ Melhor Envio API failed or returned no options. Using fallback manual rules...');
+        try {
+            const manualRules = await calculateShipping(cep, parseFloat(weight));
+            
+            if (manualRules && manualRules.length > 0) {
+                console.log('✅ Using manual shipping rules as fallback');
+                return res.json(manualRules);
+            }
+
+            // No shipping options available from either source
+            console.error('❌ No shipping options available from Melhor Envio or manual rules');
+            return res.status(503).json({
+                error: 'Não há transportadoras disponíveis para este CEP/peso. Verifique se o CEP está correto e tente novamente.'
+            });
+        } catch (fallbackError) {
+            console.error('❌ Fallback to manual rules also failed:', fallbackError.message);
+            // Return Melhor Envio error if both fail (likely token issue)
+            return res.status(503).json({
+                error: 'Não foi possível calcular o frete. Por favor, verifique o CEP e tente novamente. Se o problema persistir, entre em contato.'
+            });
+        }
     } catch (error) {
         console.error('Error calculating shipping:', error);
 
