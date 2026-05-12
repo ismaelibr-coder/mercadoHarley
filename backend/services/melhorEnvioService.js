@@ -22,10 +22,10 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
     const weightInKg = weightKg || 1;
 
     if (!token) {
-        console.warn('⚠️ MELHOR_ENVIO_TOKEN not configured in .env');
-        console.warn('   To use Melhor Envio: https://melhorenvio.com.br/painel/gerenciar/tokens');
-        console.warn('   Using fallback to manual shipping rules...');
-        return null; // Return null to fallback to manual rules
+        console.error('❌ MELHOR_ENVIO_TOKEN not configured!');
+        console.error('   Action required: Set MELHOR_ENVIO_TOKEN in backend/.env');
+        console.error('   Generate token: https://melhorenvio.com.br/painel/gerenciar/tokens');
+        return null; // Return null to indicate failure
     }
 
     try {
