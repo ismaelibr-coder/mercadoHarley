@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, Home, ShoppingBag, Truck, Image, Settings } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, Home, ShoppingBag, Image, Settings, Boxes } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const AdminLayout = () => {
@@ -60,6 +60,14 @@ const AdminLayout = () => {
                     >
                         <Settings className="w-5 h-5" />
                         <span className="font-bold">Configurações</span>
+                    </Link>
+
+                    <Link
+                        to="/admin/internal-stock"
+                        className="flex items-center gap-3 px-4 py-3 rounded hover:bg-gray-800 transition-colors mb-2"
+                    >
+                        <Boxes className="w-5 h-5" />
+                        <span className="font-bold">Estoque Interno</span>
                     </Link>
                 </nav>
 

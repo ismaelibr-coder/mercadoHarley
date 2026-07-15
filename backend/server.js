@@ -17,6 +17,7 @@ import orderRoutes from './routes/orders.js';
 import cleanupRoutes from './routes/cleanup.js';
 import shippingLabelsRouter from './routes/shippingLabels.js';
 import settingsRouter from './routes/settings.js';
+import internalStockRouter from './routes/internalStock.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'url';
@@ -175,6 +176,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/orders', limiter, orderRoutes);
 app.use('/api/shipping-labels', limiter, shippingLabelsRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/internal-stock', limiter, internalStockRouter);
 app.use('/api/admin', cleanupRoutes); // Admin cleanup routes
 
 

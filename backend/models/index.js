@@ -5,6 +5,19 @@ import Order from './Order.js';
 import Banner from './Banner.js';
 import ShippingRule from './ShippingRule.js';
 import AuditLog from './AuditLog.js';
+import PricingConfig from './PricingConfig.js';
+import Supplier from './Supplier.js';
+import InternalStockItem from './InternalStockItem.js';
+
+Supplier.hasMany(InternalStockItem, {
+    foreignKey: 'supplierId',
+    as: 'items'
+});
+
+InternalStockItem.belongsTo(Supplier, {
+    foreignKey: 'supplierId',
+    as: 'supplier'
+});
 
 export {
     sequelize,
@@ -13,7 +26,10 @@ export {
     Order,
     Banner,
     ShippingRule,
-    AuditLog
+    AuditLog,
+    PricingConfig,
+    Supplier,
+    InternalStockItem
 };
 
 export default {
@@ -23,5 +39,8 @@ export default {
     Order,
     Banner,
     ShippingRule,
-    AuditLog
+    AuditLog,
+    PricingConfig,
+    Supplier,
+    InternalStockItem
 };

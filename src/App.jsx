@@ -28,6 +28,7 @@ import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminOrderDetailsPage from './pages/admin/AdminOrderDetailsPage';
 import ShippingRules from './pages/admin/ShippingRules';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminInternalStock from './pages/admin/AdminInternalStock';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -117,6 +118,7 @@ function App() {
               <Route path="banners/new" element={<BannerForm />} />
               <Route path="banners/edit/:id" element={<BannerForm />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="internal-stock" element={<AdminInternalStock />} />
             </Route>
           </Routes>
         </CartProvider>
