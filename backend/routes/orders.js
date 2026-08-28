@@ -1,8 +1,10 @@
 import express from 'express';
 import { getAllOrders, getOrderById, updateOrderStatus, createOrder, getOrdersByUserId } from '../services/dbService.js';
+import { calculateOrderTotal } from '../services/orderCalculationService.js';
 import { sendOrderStatusUpdate } from '../services/emailService.js';
 import { verifyAdmin, authenticate } from '../middleware/auth.js';
 import { auditLog } from '../middleware/auditLog.js';
+import { validateOrder } from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -48,7 +50,7 @@ router.get('/:id', authenticate, async (req, res) => {
  * POST /api/orders
  * Create order (requires authentication)
  */
-router.post('/', authenticate, auditLog('CREATE_ORDER'), async (req, res) => {
+router.post('/', authenticate, validateOrder, auditLog('CREATE_ORDER'), async (req, res) => {
     try {
         const orderData = req.body;
         orderData.userId = req.userId;
@@ -64,9 +66,22 @@ router.post('/', authenticate, auditLog('CREATE_ORDER'), async (req, res) => {
                     error: 'Campo "Nome do Vendedor" é obrigatório para vendas no pavilhão'
                 });
             }
+            // Pavilhão sales are intentionally recorded at zero (settled in-store,
+            // outside the payment system) — skip price recalculation for this flow.
             orderData.orderType = 'pavilhao';
         } else {
             orderData.orderType = 'online';
+
+            // Recompute subtotal/discount/total server-side from real product prices —
+            // never trust the amounts the client sent (price tampering protection).
+            const { subtotal, discount, total, items } = await calculateOrderTotal(orderData.items, {
+                shippingPrice: orderData.shipping?.price,
+                paymentMethod: orderData.payment?.method
+            });
+            orderData.items = items;
+            orderData.subtotal = subtotal;
+            orderData.discount = discount;
+            orderData.total = total;
         }
 
         const order = await createOrder(orderData);

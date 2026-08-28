@@ -1,6 +1,6 @@
-# Mercado Harley Backend API
+# Sick Grip Backend API
 
-Backend server for Mercado Harley e-commerce with real Mercado Pago payment integration.
+Backend server for Sick Grip e-commerce with real Mercado Pago payment integration.
 
 ## 🚀 Features
 

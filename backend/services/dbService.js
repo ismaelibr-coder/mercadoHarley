@@ -11,7 +11,9 @@ export const initializeFirebase = async () => {
 export const createOrder = async (orderData) => {
   const t = await sequelize.transaction();
   try {
-    // Check and decrement stock
+    // Validate items exist and have enough stock. This is a check only — stock is
+    // NOT decremented here. It's only decremented once payment is confirmed (see
+    // updateOrderStatus below), so a pending/unpaid order never removes real stock.
     for (const item of orderData.items || []) {
       const product = await Product.findByPk(item.id, { transaction: t });
       if (!product) throw new Error(`Produto ${item.name || item.id} não encontrado`);
@@ -19,7 +21,6 @@ export const createOrder = async (orderData) => {
       if (currentStock < item.quantity) {
         throw new Error(`Estoque insuficiente para ${item.name || item.id}. Disponível: ${currentStock}, Solicitado: ${item.quantity}`);
       }
-      await product.update({ stock: currentStock - item.quantity }, { transaction: t });
     }
 
     const id = orderData.id || `ord_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
@@ -61,18 +62,57 @@ export const getAllOrders = async () => {
   return rows.map(r => r.toJSON());
 };
 
-export const updateOrderStatus = async (orderId, status, additionalData = {}) => {
-  const updateData = {
-    status,
-    updatedAt: new Date(),
-    ...additionalData
-  };
-  if (status === 'paid') updateData.paidAt = new Date();
-  if (status === 'shipped') updateData.shippedAt = new Date();
-  if (status === 'delivered') updateData.deliveredAt = new Date();
+// Statuses that mean "payment confirmed" — stock is committed (decremented) here,
+// and only here, so a pending order that never gets paid never touches real stock.
+const STOCK_DECREMENTING_STATUSES = new Set(['paid']);
+// Statuses that release a previously committed order back to stock.
+const STOCK_RESTORING_STATUSES = new Set(['cancelled', 'rejected']);
 
-  await Order.update(updateData, { where: { id: orderId } });
-  return getOrderById(orderId);
+const adjustStockForOrder = async (order, direction, t) => {
+  for (const item of order.items || []) {
+    const product = await Product.findByPk(item.id, { transaction: t });
+    if (!product) continue; // product may have been removed since the order was placed
+    const currentStock = product.stock || 0;
+    const nextStock = direction < 0
+      ? Math.max(0, currentStock - item.quantity)
+      : currentStock + item.quantity;
+    await product.update({ stock: nextStock }, { transaction: t });
+  }
+};
+
+export const updateOrderStatus = async (orderId, status, additionalData = {}) => {
+  const t = await sequelize.transaction();
+  try {
+    const order = await Order.findByPk(orderId, { transaction: t });
+    if (!order) throw new Error('Order not found');
+
+    const previousStatus = order.status;
+
+    const updateData = {
+      status,
+      updatedAt: new Date(),
+      ...additionalData
+    };
+    if (status === 'paid') updateData.paidAt = new Date();
+    if (status === 'shipped') updateData.shippedAt = new Date();
+    if (status === 'delivered') updateData.deliveredAt = new Date();
+
+    await order.update(updateData, { transaction: t });
+
+    // Move stock only on a genuine transition, so calling this twice with the same
+    // status (e.g. a duplicate webhook event) never double-decrements or double-restores.
+    if (STOCK_DECREMENTING_STATUSES.has(status) && !STOCK_DECREMENTING_STATUSES.has(previousStatus)) {
+      await adjustStockForOrder(order, -1, t);
+    } else if (STOCK_RESTORING_STATUSES.has(status) && STOCK_DECREMENTING_STATUSES.has(previousStatus)) {
+      await adjustStockForOrder(order, 1, t);
+    }
+
+    await t.commit();
+    return getOrderById(orderId);
+  } catch (err) {
+    await t.rollback();
+    throw err;
+  }
 };
 
 export const updateOrderPayment = async (orderId, paymentData) => {

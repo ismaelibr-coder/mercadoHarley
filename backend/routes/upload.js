@@ -39,6 +39,11 @@ router.post('/image', verifyAdmin, upload.single('image'), async (req, res) => {
         });
     } catch (error) {
         console.error('Upload error:', error);
+        // saveImage rejects files whose real content isn't a recognized image format —
+        // that's a client input problem (400), not a server failure (500).
+        if (error.message && error.message.includes('não reconhecido')) {
+            return res.status(400).json({ error: error.message });
+        }
         res.status(500).json({ error: 'Failed to upload image' });
     }
 });

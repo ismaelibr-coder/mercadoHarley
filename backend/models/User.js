@@ -45,6 +45,14 @@ export const User = sequelize.define('User', {
             isIn: [['customer', 'pavilhao', 'admin']]
         }
     },
+    resetTokenHash: {
+        type: DataTypes.STRING(64),
+        allowNull: true
+    },
+    resetTokenExpiresAt: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
     createdAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW

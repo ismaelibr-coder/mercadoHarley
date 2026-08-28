@@ -5,7 +5,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-this-in-production';
+// No fallback on purpose: a hardcoded default here would let anyone forge a valid
+// admin JWT by reading this file. Any entrypoint that imports this module (the
+// server, or a standalone script) must have JWT_SECRET set in its environment.
+if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET não configurado — defina a variável de ambiente antes de iniciar.');
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '7d';
 const REFRESH_TOKEN_EXPIRY = process.env.REFRESH_TOKEN_EXPIRY || '30d';
 

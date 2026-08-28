@@ -1,12 +1,14 @@
 {
     "name": "mercado-harley-backend",
     "version": "1.0.0",
-    "description": "Backend API for Mercado Harley e-commerce with Mercado Pago integration",
+    "description": "Backend API for Sick Grip e-commerce with Mercado Pago integration",
     "main": "server.js",
     "type": "module",
     "scripts": {
         "start": "node server.js",
-        "dev": "node --watch server.js"
+        "dev": "node --watch server.js",
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "keywords": [
         "express",
@@ -32,5 +34,8 @@
         "resend": "^6.5.2",
         "sequelize": "^6.35.1",
         "uuid": "^9.0.1"
+    },
+    "devDependencies": {
+        "vitest": "^4.1.11"
     }
 }

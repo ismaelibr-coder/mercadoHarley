@@ -27,6 +27,15 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
+// Refuse to boot with missing critical config — running with an unset JWT_SECRET
+// (falling back to a hardcoded value) or without DB credentials is unsafe/broken,
+// and failing loudly here beats failing silently/insecurely later.
+const REQUIRED_ENV_VARS = ['JWT_SECRET', 'DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+const missingEnvVars = REQUIRED_ENV_VARS.filter((name) => !process.env[name]);
+if (missingEnvVars.length > 0) {
+    console.error(`❌ Variáveis de ambiente obrigatórias ausentes: ${missingEnvVars.join(', ')}`);
+    process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,40 +43,60 @@ const PORT = process.env.PORT || 3001;
 // Trust proxy - Required for Render deployment
 app.set('trust proxy', 1);
 
-// Middleware
-// CORS - TEMPORARILY PERMISSIVE FOR DEBUGGING
-console.log('🔧 Applying CORS middleware (allow all origins)...');
-
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', version: '1.0.0', uptime: process.uptime() });
 });
 
-app.use(cors());
-app.options('*', cors()); // Enable pre-flight for all routes
-console.log('✅ CORS middleware applied successfully');
+// CORS — restricted to known frontend origins (FRONTEND_URL, plus any extra
+// origins in CORS_ORIGINS as a comma-separated list). Requests with no Origin
+// header (server-to-server, curl, the Mercado Pago webhook) are still allowed.
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
 
-// Security headers - TEMPORARILY DISABLED FOR DEBUGGING
-// TODO: Re-enable after fixing CORS
-/*
+const corsOptions = {
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        callback(new Error(`Origin não permitida pelo CORS: ${origin}`));
+    },
+    credentials: true
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Enable pre-flight for all routes
+
+// Security headers (CSP allows the Mercado Pago SDK, which the checkout loads client-side)
 app.use(helmet({
-    crossOriginResourcePolicy: false, // Disable to allow CORS
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // uploaded images are fetched from other origins
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
-            scriptSrc: ["'self'"],
+            scriptSrc: ["'self'", "https://sdk.mercadopago.com"],
             imgSrc: ["'self'", "data:", "https:"],
             connectSrc: ["'self'", "https://api.mercadopago.com", "https://sdk.mercadopago.com"],
         },
     },
 }));
-*/
 
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 100, // 100 requests por IP
     message: 'Muitas requisições, tente novamente mais tarde.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Stricter limit for payment creation — this is the endpoint most attractive to
+// card-testing / order-spam abuse (see also the per-order stock check in dbService).
+const paymentsLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: 'Muitas tentativas de pagamento, tente novamente mais tarde.',
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -149,7 +178,7 @@ async function initializeDatabase() {
 // Routes
 app.get('/', (req, res) => {
     res.json({
-        message: 'Mercado Harley Backend API',
+        message: 'Sick Grip Backend API',
         version: '1.0.0',
         status: 'running'
     });
@@ -165,14 +194,14 @@ app.get('/test-cors', (req, res) => {
     });
 });
 
-app.use('/api/payments', paymentsRouter);
-app.use('/api/webhooks', webhooksRouter);
+app.use('/api/payments', paymentsLimiter, paymentsRouter);
+app.use('/api/webhooks', limiter, webhooksRouter);
 app.use('/api/products', limiter, productsRouter);
 app.use('/api/shipping', limiter, shippingRouter);
 app.use('/api/upload', limiter, uploadRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/banners', bannerRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', limiter, authRoutes);
 app.use('/api/orders', limiter, orderRoutes);
 app.use('/api/shipping-labels', limiter, shippingLabelsRouter);
 app.use('/api/settings', settingsRouter);
@@ -192,7 +221,7 @@ async function startServer() {
         app.listen(PORT, () => {
             console.log(`
 ╔═══════════════════════════════════════╗
-║   🏍️  Mercado Harley Backend API    ║
+║   🏍️  Sick Grip Backend API             ║
 ║                                       ║
 ║   Server running on port ${PORT}       ║
 ║   Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}

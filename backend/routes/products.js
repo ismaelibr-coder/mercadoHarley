@@ -1,6 +1,6 @@
 import express from 'express';
 import { createProduct, getAllProducts, getProductById, updateProduct, deleteProduct } from '../services/dbService.js';
-import { validateProduct } from '../middleware/validation.js';
+import { validateProduct, validateProductUpdate } from '../middleware/validation.js';
 import { verifyAdmin } from '../middleware/auth.js';
 import { auditLog } from '../middleware/auditLog.js';
 
@@ -60,7 +60,7 @@ router.post('/', verifyAdmin, validateProduct, auditLog('CREATE_PRODUCT'), async
  * PUT /api/products/:id
  * Update product (requires admin)
  */
-router.put('/:id', verifyAdmin, auditLog('UPDATE_PRODUCT'), async (req, res) => {
+router.put('/:id', verifyAdmin, validateProductUpdate, auditLog('UPDATE_PRODUCT'), async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;

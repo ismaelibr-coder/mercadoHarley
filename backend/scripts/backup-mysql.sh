@@ -1,11 +1,13 @@
 #!/bin/bash
 # Script de Backup Automático do MySQL
-# Mercado Harley - Sick Grip
+# Sick Grip
 
-# Configurações
-DB_NAME="mercado_harley"
-DB_USER="harley_user"
-DB_PASSWORD="yepR1SAULoY7a16B83DgSObvQwNFp3cOObSQaD4jRGk="
+# Configurações — DB_PASSWORD (and DB_USER/DB_NAME, if different from the defaults
+# below) must come from the environment. Never hardcode a production credential in
+# a script that lives in git history forever.
+DB_NAME="${DB_NAME:-mercado_harley}"
+DB_USER="${DB_USER:-harley_user}"
+DB_PASSWORD="${DB_PASSWORD:?DB_PASSWORD não definido. Rode: DB_PASSWORD=... ./backup-mysql.sh (ou exporte a variável a partir do .env do servidor antes de chamar este script)}"
 BACKUP_DIR="/backups/mysql"
 DATE=$(date +"%Y%m%d_%H%M%S")
 BACKUP_FILE="$BACKUP_DIR/mercado_harley_$DATE.sql.gz"

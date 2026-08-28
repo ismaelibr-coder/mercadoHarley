@@ -48,6 +48,55 @@ export const validateProduct = (req, res, next) => {
 };
 
 /**
+ * Validate product data on partial update — same fields as validateProduct,
+ * but nothing is required (PUT only sends what's changing); at least one
+ * field must be present so an empty body doesn't silently no-op.
+ */
+export const validateProductUpdate = (req, res, next) => {
+    const schema = Joi.object({
+        name: Joi.string().min(3).max(200).optional(),
+        description: Joi.string().max(2000).optional(),
+        price: Joi.alternatives().try(
+            Joi.number().positive(),
+            Joi.string().pattern(/^R\$\s?[\d.,]+$/),
+            Joi.string().pattern(/^\d+(?:[.,]\d{1,2})?$/)
+        ).optional(),
+        category: Joi.string().optional(),
+        partType: Joi.string().allow('', null).optional(),
+        partner: Joi.string().allow('', null).optional(),
+        image: Joi.string().uri().allow('', null).optional(),
+        images: Joi.array().items(Joi.string().uri()).optional(),
+        stock: Joi.number().integer().min(0).optional(),
+        weight: Joi.number().positive().allow(0).optional(),
+        width: Joi.number().positive().allow(0).optional(),
+        height: Joi.number().positive().allow(0).optional(),
+        length: Joi.number().positive().allow(0).optional(),
+        dimensions: Joi.object({
+            weight: Joi.number().positive().allow(0).optional(),
+            width: Joi.number().positive().allow(0).optional(),
+            height: Joi.number().positive().allow(0).optional(),
+            length: Joi.number().positive().allow(0).optional()
+        }).optional(),
+        featured: Joi.boolean().optional(),
+        featuredCarousel: Joi.boolean().optional(),
+        new: Joi.boolean().optional(),
+        rating: Joi.number().min(0).max(5).optional(),
+        condition: Joi.string().allow('', null).optional(),
+        profitMargin: Joi.number().allow(0).optional(),
+        specs: Joi.array().items(Joi.string().allow('')).optional()
+    }).unknown(true).min(1);
+
+    const { error } = schema.validate(req.body);
+    if (error) {
+        return res.status(400).json({
+            error: 'Dados inválidos',
+            details: error.details[0].message
+        });
+    }
+    next();
+};
+
+/**
  * Validate shipping calculation request
  */
 export const validateShipping = (req, res, next) => {
@@ -72,27 +121,64 @@ export const validateShipping = (req, res, next) => {
 };
 
 /**
- * Validate order creation
+ * Validate order/payment creation. Matches the actual payload shape sent by
+ * CheckoutPage.jsx (buildOrderData) — items[].id (not productId), customer/
+ * shipping as nested objects, price fields as numbers. Deliberately loose on
+ * customer.cpf/phone and shipping.cep/number: the in-store "pavilhão" flow
+ * (backend/routes/orders.js) legitimately omits them. subtotal/discount/total
+ * are accepted but not trusted — the server always recomputes them
+ * (see orderCalculationService.js) before creating the order.
  */
+const orderPayloadSchema = Joi.object({
+    orderNumber: Joi.string().optional(),
+    items: Joi.array().items(
+        Joi.object({
+            id: Joi.string().required(),
+            quantity: Joi.number().integer().min(1).required()
+        }).unknown(true)
+    ).min(1).required(),
+    customer: Joi.object({
+        name: Joi.string().min(1).required(),
+        cpf: Joi.string().allow('', null).optional(),
+        phone: Joi.string().allow('', null).optional(),
+        email: Joi.string().allow('', null).optional()
+    }).unknown(true).required(),
+    shipping: Joi.object({
+        address: Joi.string().min(1).required(),
+        city: Joi.string().min(1).required()
+    }).unknown(true).required(),
+    payment: Joi.object().unknown(true).optional(),
+    method: Joi.string().allow('', null).optional(),
+    subtotal: Joi.number().optional(),
+    discount: Joi.number().optional(),
+    total: Joi.number().optional(),
+    sellerName: Joi.string().allow('', null).optional(),
+    orderType: Joi.string().optional(),
+    installments: Joi.number().integer().min(1).optional()
+}).unknown(true);
+
 export const validateOrder = (req, res, next) => {
+    const { error } = orderPayloadSchema.validate(req.body);
+    if (error) {
+        return res.status(400).json({
+            error: 'Dados inválidos',
+            details: error.details[0].message
+        });
+    }
+    next();
+};
+
+/**
+ * Validate the /api/payments/credit-card body, which wraps the same order
+ * payload one level deeper: { orderData, cardToken, installments, paymentMethodId }.
+ */
+export const validateCreditCardPayment = (req, res, next) => {
     const schema = Joi.object({
-        items: Joi.array().items(Joi.object({
-            productId: Joi.string().required(),
-            quantity: Joi.number().integer().min(1).required(),
-            price: Joi.string().required()
-        })).min(1).required(),
-        shippingAddress: Joi.object({
-            street: Joi.string().required(),
-            number: Joi.string().required(),
-            complement: Joi.string().allow('').optional(),
-            neighborhood: Joi.string().required(),
-            city: Joi.string().required(),
-            state: Joi.string().length(2).required(),
-            cep: Joi.string().pattern(/^\d{5}-?\d{3}$/).required()
-        }).required(),
-        paymentMethod: Joi.string().valid('credit_card', 'pix', 'boleto').required(),
-        totalAmount: Joi.number().positive().required()
-    });
+        orderData: orderPayloadSchema.required(),
+        cardToken: Joi.string().required(),
+        installments: Joi.number().integer().min(1).optional(),
+        paymentMethodId: Joi.string().required()
+    }).unknown(true);
 
     const { error } = schema.validate(req.body);
     if (error) {

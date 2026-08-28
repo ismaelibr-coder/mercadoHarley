@@ -8,10 +8,13 @@ import {
 import {
     createOrder as createOrderRecord,
     updateOrderPayment,
-    getOrderById
+    getOrderById,
+    findOrderByPaymentId
 } from '../services/dbService.js';
+import { calculateOrderTotal } from '../services/orderCalculationService.js';
 import { sendOrderConfirmation } from '../services/emailService.js';
-import { optionalAuth } from '../middleware/auth.js';
+import { optionalAuth, authenticate } from '../middleware/auth.js';
+import { validateOrder, validateCreditCardPayment } from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -23,7 +26,7 @@ const generateOrderNumber = () => {
 };
 
 // Create PIX payment
-router.post('/pix', optionalAuth, async (req, res, next) => {
+router.post('/pix', optionalAuth, validateOrder, async (req, res, next) => {
     try {
         const orderData = req.body;
 
@@ -31,6 +34,17 @@ router.post('/pix', optionalAuth, async (req, res, next) => {
         if (!orderData.orderNumber) {
             orderData.orderNumber = generateOrderNumber();
         }
+
+        // Recompute subtotal/discount/total server-side from real product prices —
+        // never trust the amounts the client sent (price tampering protection).
+        const { subtotal, discount, total, items } = await calculateOrderTotal(orderData.items, {
+            shippingPrice: orderData.shipping?.price,
+            paymentMethod: 'pix'
+        });
+        orderData.items = items;
+        orderData.subtotal = subtotal;
+        orderData.discount = discount;
+        orderData.total = total;
 
         // Create order in database first
         const order = await createOrderRecord({
@@ -74,13 +88,24 @@ router.post('/pix', optionalAuth, async (req, res, next) => {
 });
 
 // Create Boleto payment
-router.post('/boleto', optionalAuth, async (req, res, next) => {
+router.post('/boleto', optionalAuth, validateOrder, async (req, res, next) => {
     try {
         const orderData = req.body;
 
         if (!orderData.orderNumber) {
             orderData.orderNumber = generateOrderNumber();
         }
+
+        // Recompute subtotal/discount/total server-side from real product prices —
+        // never trust the amounts the client sent (price tampering protection).
+        const { subtotal, discount, total, items } = await calculateOrderTotal(orderData.items, {
+            shippingPrice: orderData.shipping?.price,
+            paymentMethod: 'boleto'
+        });
+        orderData.items = items;
+        orderData.subtotal = subtotal;
+        orderData.discount = discount;
+        orderData.total = total;
 
         // Create order in database
         const order = await createOrderRecord({
@@ -119,7 +144,7 @@ router.post('/boleto', optionalAuth, async (req, res, next) => {
 });
 
 // Process credit card payment
-router.post('/credit-card', optionalAuth, async (req, res, next) => {
+router.post('/credit-card', optionalAuth, validateCreditCardPayment, async (req, res, next) => {
     try {
         const { orderData, cardToken, installments = 1, paymentMethodId } = req.body;
 
@@ -134,6 +159,17 @@ router.post('/credit-card', optionalAuth, async (req, res, next) => {
         if (!orderData.orderNumber) {
             orderData.orderNumber = generateOrderNumber();
         }
+
+        // Recompute subtotal/discount/total server-side from real product prices —
+        // never trust the amounts the client sent (price tampering protection).
+        const { subtotal, discount, total, items } = await calculateOrderTotal(orderData.items, {
+            shippingPrice: orderData.shipping?.price,
+            paymentMethod: 'credit_card'
+        });
+        orderData.items = items;
+        orderData.subtotal = subtotal;
+        orderData.discount = discount;
+        orderData.total = total;
 
         // Create order in database
         const order = await createOrderRecord({
@@ -176,10 +212,20 @@ router.post('/credit-card', optionalAuth, async (req, res, next) => {
     }
 });
 
-// Get payment status
-router.get('/:paymentId/status', async (req, res, next) => {
+// Get payment status — requires auth and ownership so a paymentId can't be
+// guessed/enumerated to read a stranger's payment status.
+router.get('/:paymentId/status', authenticate, async (req, res, next) => {
     try {
         const { paymentId } = req.params;
+
+        const order = await findOrderByPaymentId(paymentId);
+        if (!order) {
+            return res.status(404).json({ error: 'Payment not found' });
+        }
+        if (!req.user.isAdmin && order.userId !== req.userId) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
         const status = await getPaymentStatus(paymentId);
 
         res.json(status);

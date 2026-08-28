@@ -13,14 +13,17 @@ export const calculateShipping = async (cep, totalWeight) => {
     // Get state from CEP
     const state = await getStateFromCEP(cep);
 
-    if (!state) {
+    if (!state || !/^[A-Z]{2}$/.test(state)) {
         throw new Error('CEP inválido');
     }
 
-    // Find matching shipping rules using JSON_CONTAINS for MySQL JSON column
+    // Find matching shipping rules using JSON_CONTAINS for MySQL JSON column.
+    // `state` is escaped via sequelize.escape() before being embedded as a literal —
+    // raw template-string interpolation here would be a SQL injection vector if this
+    // value's origin (ViaCEP / CEP-prefix lookup) ever changed to accept freer input.
     const rules = await ShippingRule.findAll({
         where: sequelize.where(
-            sequelize.fn('JSON_CONTAINS', sequelize.col('states'), sequelize.literal(`'"${state}"'`)),
+            sequelize.fn('JSON_CONTAINS', sequelize.col('states'), sequelize.literal(sequelize.escape(JSON.stringify(state)))),
             1
         )
     });

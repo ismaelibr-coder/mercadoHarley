@@ -1,5 +1,6 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../config/database.js';
+import { Supplier } from './Supplier.js';
 
 export const InternalStockItem = sequelize.define('InternalStockItem', {
     id: {
@@ -42,7 +43,11 @@ export const InternalStockItem = sequelize.define('InternalStockItem', {
     supplierId: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        field: 'supplier_id'
+        field: 'supplier_id',
+        references: {
+            model: Supplier,
+            key: 'id'
+        }
     },
     createdAt: {
         type: DataTypes.DATE,
@@ -60,7 +65,9 @@ export const InternalStockItem = sequelize.define('InternalStockItem', {
     indexes: [
         { fields: ['supplier_id'] },
         { fields: ['name'] },
-        { fields: ['active'] }
+        { fields: ['active'] },
+        // Matches the dominant query (active items for a given supplier).
+        { fields: ['active', 'supplier_id'] }
     ]
 });
 

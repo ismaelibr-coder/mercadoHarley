@@ -25,7 +25,7 @@ export const createPixPayment = async (orderData) => {
                 success: true,
                 paymentId: `mock_pix_${Date.now()}`,
                 status: 'pending',
-                qrCode: `00020126580014br.gov.bcb.pix0136${orderData.orderNumber}52040000530398654${orderData.total.toFixed(2)}5802BR5925MERCADO HARLEY6009SAO PAULO62070503***6304`,
+                qrCode: `00020126580014br.gov.bcb.pix0136${orderData.orderNumber}52040000530398654${Number(orderData.total).toFixed(2)}5802BR5925SICK GRIP6009SAO PAULO62070503***6304`,
                 qrCodeBase64: null,
                 ticketUrl: null
             };
@@ -89,7 +89,7 @@ export const createBoletoPayment = async (orderData) => {
 
         const paymentData = {
             transaction_amount: orderData.total,
-            description: `Pedido ${orderData.orderNumber} - Mercado Harley`,
+            description: `Pedido ${orderData.orderNumber} - Sick Grip`,
             payment_method_id: 'bolbradesco',
             payer: {
                 email: orderData.customer.email,
