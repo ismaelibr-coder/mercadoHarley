@@ -172,11 +172,11 @@ const CategoryPage = () => {
                             {sortedProducts.map((product) => (
                                 <div key={product.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden hover:border-sick-red transition-all group">
                                     <Link to={`/product/${product.id}`}>
-                                        <div className="relative overflow-hidden aspect-square">
+                                        <div className="relative overflow-hidden aspect-square bg-white p-4">
                                             <img
                                                 src={product.image}
                                                 alt={product.name}
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                                className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
                                             />
                                             <ConditionBadge condition={product.condition} className="absolute top-3 right-3" />
                                         </div>

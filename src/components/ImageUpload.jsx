@@ -56,7 +56,7 @@ const ImageUpload = ({ currentImage, onImageUploaded, onImageRemoved }) => {
                     <img
                         src={preview}
                         alt="Preview"
-                        className="w-full h-64 object-cover rounded-lg border border-gray-700"
+                        className="w-full h-64 object-contain rounded-lg border border-gray-700 bg-white p-3"
                     />
                     <button
                         type="button"
@@ -65,6 +65,9 @@ const ImageUpload = ({ currentImage, onImageUploaded, onImageRemoved }) => {
                     >
                         <X className="w-4 h-4" />
                     </button>
+                    <p className="text-gray-500 text-xs mt-2">
+                        Assim a foto vai aparecer no site. Fotos com fundo branco/neutro e o produto centralizado ficam mais consistentes com o resto do catálogo.
+                    </p>
                 </div>
             ) : (
                 <div

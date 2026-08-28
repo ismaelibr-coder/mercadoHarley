@@ -58,12 +58,12 @@ const ProductList = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {products.map((product) => (
                             <div key={product.id} className="bg-black border border-gray-800 rounded-lg overflow-hidden group hover:border-sick-red transition-colors duration-300 flex flex-col">
-                                <Link to={`/product/${product.id}`} className="relative h-64 overflow-hidden block">
+                                <Link to={`/product/${product.id}`} className="relative h-64 overflow-hidden block bg-white p-4">
                                     <img
                                         src={product.image}
                                         alt={product.name}
                                         loading="lazy"
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                                     />
                                     <ConditionBadge condition={product.condition} className="absolute top-3 right-3" />
                                     <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-sm px-3 py-1 rounded text-xs font-bold text-white uppercase">

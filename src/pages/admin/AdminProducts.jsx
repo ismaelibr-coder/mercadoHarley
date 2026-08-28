@@ -257,7 +257,7 @@ const AdminProducts = () => {
                                             <img
                                                 src={product.image}
                                                 alt={product.name}
-                                                className="w-16 h-16 object-cover rounded"
+                                                className="w-16 h-16 object-contain rounded bg-white p-1"
                                             />
                                         </td>
                                         <td className="p-4 text-white font-bold">{product.name}</td>

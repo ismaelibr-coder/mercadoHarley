@@ -120,12 +120,12 @@ const ProductPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     {/* Image Gallery */}
                     <div className="space-y-4">
-                        <div className="aspect-square rounded-xl overflow-hidden border border-gray-800 bg-gray-900">
+                        <div className="aspect-square rounded-xl overflow-hidden border border-gray-800 bg-white p-6">
                             <img
                                 src={gallery[activeImage] || product.image}
                                 alt={product.name}
                                 loading="lazy"
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                             />
                         </div>
                         {gallery.length > 1 && (
@@ -137,10 +137,10 @@ const ProductPage = () => {
                                         onClick={() => setActiveImage(index)}
                                         aria-label={`Ver imagem ${index + 1} de ${product.name}`}
                                         aria-current={activeImage === index}
-                                        className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${activeImage === index ? 'border-harley-orange' : 'border-gray-800 hover:border-gray-600'
+                                        className={`aspect-square rounded-lg overflow-hidden border-2 bg-white p-1.5 transition-colors ${activeImage === index ? 'border-harley-orange' : 'border-gray-800 hover:border-gray-600'
                                             }`}
                                     >
-                                        <img src={src} alt="" className="w-full h-full object-cover" />
+                                        <img src={src} alt="" className="w-full h-full object-contain" />
                                     </button>
                                 ))}
                             </div>
@@ -269,12 +269,12 @@ const ProductPage = () => {
                                     to={`/product/${item.id}`}
                                     className="group bg-gray-900 rounded-lg border border-gray-800 overflow-hidden hover:border-harley-orange transition-colors"
                                 >
-                                    <div className="aspect-square overflow-hidden bg-gray-800">
+                                    <div className="aspect-square overflow-hidden bg-white p-3">
                                         <img
                                             src={item.image}
                                             alt={item.name}
                                             loading="lazy"
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                                         />
                                     </div>
                                     <div className="p-3">
