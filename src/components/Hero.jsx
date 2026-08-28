@@ -46,24 +46,26 @@ const Hero = () => {
     const banner = heroBanners[0];
 
     return (
-        <div className="relative h-[300px] md:h-[500px] lg:h-[600px] w-full mb-12 overflow-hidden cursor-pointer group"
+        <div className="w-full mb-12 cursor-pointer group flex flex-col sm:flex-row bg-black overflow-hidden"
             onClick={() => handleBannerClick(banner)}
         >
-            {/* Background Image */}
-            <img
-                src={banner.image}
-                alt={banner.title}
-                className="w-full h-full object-cover"
-            />
-
-            {/* Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent"></div>
+            {/* Image — contained on white, the whole product photo is always visible
+                (never cropped). This banner shows a studio product photo, not a wide
+                lifestyle shot, so it gets the same treatment as the rest of the catalog. */}
+            <div className="order-1 sm:order-2 w-full sm:w-[45%] lg:w-[40%] h-[220px] sm:h-[420px] lg:h-[520px] flex-none bg-white p-6 sm:p-10 flex items-center justify-center">
+                <img
+                    src={banner.image}
+                    alt={banner.title}
+                    className="max-w-full max-h-full object-contain"
+                />
+            </div>
 
             {/* Content */}
-            <div className="absolute inset-0 flex items-center">
+            <div className="order-2 sm:order-1 flex-1 flex items-center py-10 sm:py-0">
                 <div className="container mx-auto px-4">
                     <div className="max-w-2xl">
-                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white mb-4 leading-tight">
+                        <p className="text-sick-red font-bold uppercase tracking-widest text-sm mb-3">Destaque Sick Grip</p>
+                        <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-4 leading-tight text-balance">
                             {banner.title}
                         </h1>
                         <div className="mt-6 inline-block bg-harley-orange text-white px-6 py-3 rounded font-bold group-hover:bg-red-800 transition-colors">
