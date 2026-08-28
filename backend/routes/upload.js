@@ -30,7 +30,10 @@ router.post('/image', verifyAdmin, upload.single('image'), async (req, res) => {
         }
 
         const uploadBaseUrl = process.env.UPLOADS_BASE_URL || `${req.protocol}://${req.get('host')}/uploads`;
-        const result = await saveImage(req.file, { baseUrl: uploadBaseUrl });
+        // multer populates non-file fields on req.body for upload.single(); 'purpose'
+        // tells saveImage whether to normalize onto a white square canvas ('product')
+        // or keep the image as-is ('banner' or anything else).
+        const result = await saveImage(req.file, { baseUrl: uploadBaseUrl, purpose: req.body.purpose });
 
         res.json({
             success: true,

@@ -5,9 +5,12 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 /**
  * Upload image to Cloudinary via backend
  * @param {File} file - Image file
+ * @param {Object} [options]
+ * @param {'product'|'banner'} [options.purpose] - 'product' normalizes onto a white
+ *   square canvas server-side; anything else keeps the image as uploaded.
  * @returns {Promise<Object>} - Upload result with URL
  */
-export const uploadImage = async (file) => {
+export const uploadImage = async (file, options = {}) => {
     try {
         const token = localStorage.getItem('auth_token');
 
@@ -17,6 +20,9 @@ export const uploadImage = async (file) => {
 
         const formData = new FormData();
         formData.append('image', file);
+        if (options.purpose) {
+            formData.append('purpose', options.purpose);
+        }
 
         const response = await axios.post(`${API_URL}/api/upload/image`, formData, {
             headers: {

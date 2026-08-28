@@ -235,6 +235,7 @@ const BannerForm = () => {
                         currentImage={formData.image}
                         onImageUploaded={(url) => setFormData(prev => ({ ...prev, image: url }))}
                         onImageRemoved={() => setFormData(prev => ({ ...prev, image: '' }))}
+                        purpose="banner"
                     />
                     <p className="text-xs text-gray-500 mt-2">Recomendado: 1920x600px (proporção 16:5)</p>
                 </div>

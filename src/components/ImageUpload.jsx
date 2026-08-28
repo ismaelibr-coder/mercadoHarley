@@ -3,7 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { Upload, X, Image as ImageIcon, Loader } from 'lucide-react';
 import { uploadImage } from '../services/uploadService';
 
-const ImageUpload = ({ currentImage, onImageUploaded, onImageRemoved }) => {
+const ImageUpload = ({ currentImage, onImageUploaded, onImageRemoved, purpose }) => {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState('');
     const [preview, setPreview] = useState(currentImage || '');
@@ -23,7 +23,7 @@ const ImageUpload = ({ currentImage, onImageUploaded, onImageRemoved }) => {
         setError('');
 
         try {
-            const result = await uploadImage(file);
+            const result = await uploadImage(file, { purpose });
             setPreview(result.url);
             onImageUploaded(result.url, result.publicId);
         } catch (err) {
@@ -32,7 +32,7 @@ const ImageUpload = ({ currentImage, onImageUploaded, onImageRemoved }) => {
         } finally {
             setUploading(false);
         }
-    }, [onImageUploaded]);
+    }, [onImageUploaded, purpose]);
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
@@ -66,7 +66,9 @@ const ImageUpload = ({ currentImage, onImageUploaded, onImageRemoved }) => {
                         <X className="w-4 h-4" />
                     </button>
                     <p className="text-gray-500 text-xs mt-2">
-                        Assim a foto vai aparecer no site. Fotos com fundo branco/neutro e o produto centralizado ficam mais consistentes com o resto do catálogo.
+                        {purpose === 'product'
+                            ? 'O fundo é padronizado em branco automaticamente ao salvar. Envie uma foto com o produto inteiro visível — o enquadramento é ajustado, mas nada que já esteja cortado na foto original é recuperado.'
+                            : 'Assim a foto vai aparecer no site. Fotos com fundo branco/neutro e o produto centralizado ficam mais consistentes com o resto do catálogo.'}
                     </p>
                 </div>
             ) : (

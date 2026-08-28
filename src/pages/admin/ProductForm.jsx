@@ -460,6 +460,7 @@ const ProductForm = () => {
                             currentImage={formData.image}
                             onImageUploaded={(url) => setFormData(prev => ({ ...prev, image: url }))}
                             onImageRemoved={() => setFormData(prev => ({ ...prev, image: '' }))}
+                            purpose="product"
                         />
                     </div>
 
