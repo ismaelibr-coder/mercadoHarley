@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { useToast } from '../components/ui/ToastProvider';
 
 const CartContext = createContext();
 
@@ -13,6 +14,7 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }) => {
     const { currentUser } = useAuth();
+    const { showToast } = useToast();
 
     const normalizeLegacyPrice = (rawPrice) => {
         if (typeof rawPrice === 'string') {
@@ -66,7 +68,7 @@ export const CartProvider = ({ children }) => {
         setCartItems(savedCart ? normalizeCartItems(JSON.parse(savedCart)) : []);
     }, [currentUser?.uid]);
 
-    const addToCart = (product) => {
+    const addToCart = (product, quantity = 1) => {
         setCartItems(prevItems => {
             const existingItem = prevItems.find(item => item.id === product.id);
 
@@ -74,25 +76,29 @@ export const CartProvider = ({ children }) => {
             const productStock = product.stock || 0;
 
             if (existingItem) {
-                // Check if we can add one more
-                if (existingItem.quantity >= productStock) {
-                    alert(`Estoque insuficiente. Apenas ${productStock} unidades disponíveis.`);
+                const desiredQuantity = existingItem.quantity + quantity;
+                if (desiredQuantity > productStock) {
+                    showToast(`Estoque insuficiente. Apenas ${productStock} unidades disponíveis.`, { type: 'warning' });
                     return prevItems;
                 }
                 return prevItems.map(item =>
                     item.id === product.id
-                        ? { ...item, quantity: item.quantity + 1 }
+                        ? { ...item, quantity: desiredQuantity }
                         : item
                 );
             }
 
             // Check if product has stock
             if (productStock < 1) {
-                alert('Produto esgotado.');
+                showToast('Produto esgotado.', { type: 'warning' });
+                return prevItems;
+            }
+            if (quantity > productStock) {
+                showToast(`Estoque insuficiente. Apenas ${productStock} unidades disponíveis.`, { type: 'warning' });
                 return prevItems;
             }
 
-            return [...prevItems, { ...product, quantity: 1 }];
+            return [...prevItems, { ...product, quantity }];
         });
         setIsCartOpen(true);
     };
@@ -113,7 +119,7 @@ export const CartProvider = ({ children }) => {
                     // Check stock limit
                     const productStock = item.stock || 0;
                     if (newQuantity > productStock) {
-                        alert(`Estoque insuficiente. Apenas ${productStock} unidades disponíveis.`);
+                        showToast(`Estoque insuficiente. Apenas ${productStock} unidades disponíveis.`, { type: 'warning' });
                         return item;
                     }
                     return { ...item, quantity: newQuantity };

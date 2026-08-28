@@ -2,7 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getUserOrders } from '../services/orderService';
 import { useNavigate } from 'react-router-dom';
-import { Package, Clock, CheckCircle, XCircle, Truck, ChevronRight, ShoppingBag } from 'lucide-react';
+import { Package, Clock, CheckCircle, XCircle, Truck, ChevronRight, ShoppingBag, Search } from 'lucide-react';
+
+const STATUS_OPTIONS = [
+    { value: 'all', label: 'Todos os status' },
+    { value: 'pending', label: 'Pendente' },
+    { value: 'paid', label: 'Pago' },
+    { value: 'shipped', label: 'Enviado' },
+    { value: 'delivered', label: 'Entregue' },
+    { value: 'cancelled', label: 'Cancelado' }
+];
 
 const MyOrdersPage = () => {
     const { currentUser } = useAuth();
@@ -10,6 +19,8 @@ const MyOrdersPage = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -73,6 +84,13 @@ const MyOrdersPage = () => {
         }).format(date);
     };
 
+    const visibleOrders = orders.filter((order) => {
+        const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+        const matchesSearch = !searchTerm.trim()
+            || String(order.orderNumber || '').toLowerCase().includes(searchTerm.trim().toLowerCase());
+        return matchesStatus && matchesSearch;
+    });
+
     if (loading) {
         return (
             <div className="min-h-screen bg-black pt-24 pb-12 flex justify-center items-center">
@@ -102,14 +120,41 @@ const MyOrdersPage = () => {
                         <p className="text-gray-400 mb-6">Explore nossa loja e encontre as melhores peças para sua moto.</p>
                         <button
                             onClick={() => navigate('/')}
-                            className="bg-harley-orange text-white px-6 py-3 rounded font-bold hover:bg-orange-700 transition-colors uppercase"
+                            className="bg-harley-orange text-white px-6 py-3 rounded font-bold hover:bg-red-800 transition-colors uppercase"
                         >
                             Ir para a Loja
                         </button>
                     </div>
                 ) : (
+                    <>
+                        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Buscar por número do pedido..."
+                                    className="w-full bg-gray-900 border border-gray-800 rounded p-2.5 pl-9 text-sm text-white focus:outline-none focus:border-harley-orange transition-colors"
+                                />
+                            </div>
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="bg-gray-900 border border-gray-800 rounded p-2.5 text-sm text-white focus:outline-none focus:border-harley-orange sm:w-56"
+                            >
+                                {STATUS_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        {visibleOrders.length === 0 ? (
+                            <div className="bg-gray-900 rounded-lg border border-gray-800 p-10 text-center text-gray-400">
+                                Nenhum pedido encontrado com esses filtros.
+                            </div>
+                        ) : (
                     <div className="space-y-4">
-                        {orders.map((order) => (
+                        {visibleOrders.map((order) => (
                             <div
                                 key={order.id}
                                 onClick={() => navigate(`/order-confirmation/${order.id}`)}
@@ -166,6 +211,8 @@ const MyOrdersPage = () => {
                             </div>
                         ))}
                     </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

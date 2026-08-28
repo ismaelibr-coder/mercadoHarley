@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS users (
     address JSON,
     isAdmin BOOLEAN DEFAULT FALSE,
     userType VARCHAR(50) DEFAULT 'customer' COMMENT 'Type: customer, pavilhao, admin',
+    resetTokenHash VARCHAR(64) COMMENT 'SHA-256 hash of the active password-reset token, if any',
+    resetTokenExpiresAt TIMESTAMP NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_email (email),
@@ -34,6 +36,14 @@ CREATE TABLE IF NOT EXISTS products (
     weight DECIMAL(8, 2),
     description LONGTEXT,
     category VARCHAR(100),
+    partType VARCHAR(100),
+    partner VARCHAR(100),
+    product_condition VARCHAR(30) COMMENT 'Model attribute name is "condition"; column is product_condition',
+    rating INT DEFAULT 5,
+    profitMargin DECIMAL(5, 2) DEFAULT 0,
+    featured BOOLEAN DEFAULT FALSE,
+    featuredCarousel BOOLEAN DEFAULT FALSE,
+    specs JSON,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_category (category),
@@ -124,7 +134,11 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
--- SESSIONS TABLE (para JWT refresh tokens, se necessário)
+-- SESSIONS TABLE — NOT IMPLEMENTED.
+-- Refresh tokens are stateless JWTs (see backend/services/authService.js);
+-- nothing in the codebase reads or writes this table. Kept here only so a
+-- future implementation of revocable refresh tokens has a starting point —
+-- do not assume it is populated or in active use.
 -- ============================================================
 CREATE TABLE IF NOT EXISTS sessions (
     id VARCHAR(255) PRIMARY KEY,
@@ -135,4 +149,52 @@ CREATE TABLE IF NOT EXISTS sessions (
     FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_userId (userId),
     INDEX idx_expiresAt (expiresAt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- SUPPLIERS TABLE (internal stock module)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS suppliers (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(120) NOT NULL UNIQUE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    source ENUM('manual', 'partner_import') NOT NULL DEFAULT 'manual',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_suppliers_active (active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- PRICING CONFIG TABLE (internal stock module — single global row)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS pricing_config (
+    id VARCHAR(50) PRIMARY KEY DEFAULT 'default',
+    site_markup_percent DECIMAL(5, 2) NOT NULL DEFAULT 0,
+    marketplace_markup_percent DECIMAL(5, 2) NOT NULL DEFAULT 0,
+    rounding_strategy VARCHAR(20) NOT NULL DEFAULT '2_decimals',
+    updated_by VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- INTERNAL STOCK ITEMS TABLE (internal stock module)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS internal_stock_items (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    quantity INT NOT NULL DEFAULT 0,
+    unit_cost DECIMAL(12, 2) NOT NULL,
+    site_sale_price DECIMAL(12, 2) NOT NULL,
+    ml_sale_price DECIMAL(12, 2) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    supplier_id VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id),
+    INDEX idx_internal_stock_supplier (supplier_id),
+    INDEX idx_internal_stock_name (name),
+    INDEX idx_internal_stock_active (active),
+    INDEX idx_internal_stock_active_supplier (active, supplier_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

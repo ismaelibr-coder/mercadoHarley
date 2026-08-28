@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom';
 import { getAllProducts } from '../services/productService';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { Star } from 'lucide-react';
 import ProductFilters from '../components/ProductFilters';
+import ConditionBadge from '../components/ui/ConditionBadge';
+import RatingStars from '../components/ui/RatingStars';
 
 const CategoryPage = () => {
     const { type } = useParams();
@@ -62,69 +63,59 @@ const CategoryPage = () => {
         }
     };
 
-    const handleFilterChange = (filters) => {
-        console.log('🔍 Filter changed:', filters);
-        console.log('📦 Initial products count:', initialProducts.length);
+    const getNumericPrice = (product) => (
+        typeof product.price === 'number'
+            ? product.price
+            : parseFloat(String(product.price).replace('R$', '').replace('.', '').replace(',', '.').trim())
+    );
 
+    const handleFilterChange = (filters) => {
         let filtered = [...initialProducts];
 
-        // Search
         if (filters.search) {
             const term = filters.search.toLowerCase();
-            console.log('🔎 Searching for:', term);
             filtered = filtered.filter(p =>
                 p.name.toLowerCase().includes(term) ||
                 p.description?.toLowerCase().includes(term)
             );
-            console.log('✅ After search:', filtered.length, 'products');
         }
 
-        // Price Range
         if (filters.priceRange.min) {
-            console.log('💰 Min price filter:', filters.priceRange.min);
-            filtered = filtered.filter(p => {
-                const price = typeof p.price === 'number'
-                    ? p.price
-                    : parseFloat(p.price.replace('R$', '').replace('.', '').replace(',', '.').trim());
-                return price >= parseFloat(filters.priceRange.min);
-            });
-            console.log('✅ After min price:', filtered.length, 'products');
+            filtered = filtered.filter(p => getNumericPrice(p) >= parseFloat(filters.priceRange.min));
         }
         if (filters.priceRange.max) {
-            console.log('💰 Max price filter:', filters.priceRange.max);
-            filtered = filtered.filter(p => {
-                const price = typeof p.price === 'number'
-                    ? p.price
-                    : parseFloat(p.price.replace('R$', '').replace('.', '').replace(',', '.').trim());
-                return price <= parseFloat(filters.priceRange.max);
-            });
-            console.log('✅ After max price:', filtered.length, 'products');
+            filtered = filtered.filter(p => getNumericPrice(p) <= parseFloat(filters.priceRange.max));
         }
 
-        // Categories
         if (filters.categories.length > 0) {
-            console.log('📁 Category filter:', filters.categories);
             filtered = filtered.filter(p => filters.categories.includes(p.category));
-            console.log('✅ After categories:', filtered.length, 'products');
         }
 
-        // Part Types
         if (filters.partTypes && filters.partTypes.length > 0) {
-            console.log('🔧 Part type filter:', filters.partTypes);
             filtered = filtered.filter(p => filters.partTypes.includes(p.partType));
-            console.log('✅ After part types:', filtered.length, 'products');
         }
 
-        // Partners
         if (filters.partners && filters.partners.length > 0) {
-            console.log('🤝 Partner filter:', filters.partners);
             filtered = filtered.filter(p => filters.partners.includes(p.partner));
-            console.log('✅ After partners:', filtered.length, 'products');
         }
 
-        console.log('🎯 Final filtered products:', filtered.length);
         setProducts(filtered);
     };
+
+    const [sortBy, setSortBy] = useState('relevance');
+    const sortedProducts = React.useMemo(() => {
+        const list = [...products];
+        switch (sortBy) {
+            case 'price-asc':
+                return list.sort((a, b) => getNumericPrice(a) - getNumericPrice(b));
+            case 'price-desc':
+                return list.sort((a, b) => getNumericPrice(b) - getNumericPrice(a));
+            case 'newest':
+                return list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+            default:
+                return list;
+        }
+    }, [products, sortBy]);
 
     return (
         <div className="bg-black min-h-screen py-12">
@@ -140,14 +131,32 @@ const CategoryPage = () => {
 
                 {/* Main Content */}
                 <main className="w-full md:w-3/4">
-                    <div className="mb-8">
-                        <h1 className="text-3xl md:text-4xl font-display font-bold text-white uppercase tracking-wider mb-2">
-                            {currentCategory.title}
-                        </h1>
-                        <div className="w-20 h-1 bg-sick-red mb-2"></div>
-                        <p className="text-gray-400 text-sm">
-                            {loading ? 'Carregando...' : `${products.length} produto${products.length !== 1 ? 's' : ''} encontrado${products.length !== 1 ? 's' : ''}`}
-                        </p>
+                    <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                        <div>
+                            <h1 className="text-3xl md:text-4xl font-display font-bold text-white uppercase tracking-wider mb-2">
+                                {currentCategory.title}
+                            </h1>
+                            <div className="w-20 h-1 bg-sick-red mb-2"></div>
+                            <p className="text-gray-400 text-sm">
+                                {loading ? 'Carregando...' : `${products.length} produto${products.length !== 1 ? 's' : ''} encontrado${products.length !== 1 ? 's' : ''}`}
+                            </p>
+                        </div>
+                        {!loading && products.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="sort-by" className="text-gray-400 text-sm flex-none">Ordenar por</label>
+                                <select
+                                    id="sort-by"
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="bg-gray-900 border border-gray-800 rounded p-2 text-sm text-white focus:outline-none focus:border-sick-red"
+                                >
+                                    <option value="relevance">Relevância</option>
+                                    <option value="price-asc">Menor preço</option>
+                                    <option value="price-desc">Maior preço</option>
+                                    <option value="newest">Mais recentes</option>
+                                </select>
+                            </div>
+                        )}
                     </div>
 
                     {loading ? (
@@ -160,7 +169,7 @@ const CategoryPage = () => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {products.map((product) => (
+                            {sortedProducts.map((product) => (
                                 <div key={product.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden hover:border-sick-red transition-all group">
                                     <Link to={`/product/${product.id}`}>
                                         <div className="relative overflow-hidden aspect-square">
@@ -169,14 +178,7 @@ const CategoryPage = () => {
                                                 alt={product.name}
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                                             />
-                                            {product.condition && (
-                                                <span className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold uppercase ${product.condition === 'Novo'
-                                                    ? 'bg-green-600 text-white'
-                                                    : 'bg-yellow-600 text-white'
-                                                    }`}>
-                                                    {product.condition}
-                                                </span>
-                                            )}
+                                            <ConditionBadge condition={product.condition} className="absolute top-3 right-3" />
                                         </div>
                                     </Link>
                                     <div className="p-4">
@@ -190,14 +192,7 @@ const CategoryPage = () => {
                                                 {product.name}
                                             </h3>
                                         </Link>
-                                        <div className="flex items-center gap-1 mb-3">
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star
-                                                    key={i}
-                                                    className={`w-3 h-3 ${i < product.rating ? 'fill-sick-red text-sick-red' : 'text-gray-600'}`}
-                                                />
-                                            ))}
-                                        </div>
+                                        <RatingStars rating={product.rating} size="sm" className="mb-3" />
                                         <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-800">
                                             <span className="text-xl font-bold text-white">R$ {typeof product.price === 'number' ? product.price.toFixed(2) : product.price}</span>
                                             <button

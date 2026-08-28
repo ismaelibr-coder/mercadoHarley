@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Star, ShoppingCart, Truck, ShieldCheck } from 'lucide-react';
-import { getProductById } from '../services/productService';
+import { ArrowLeft, Star, ShoppingCart, Minus, Plus, XCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { getProductById, getProductsByCategory } from '../services/productService';
 import { useCart } from '../context/CartContext';
 import SEO from '../components/SEO';
 import ShippingCalculator from '../components/ShippingCalculator';
+import ConditionBadge from '../components/ui/ConditionBadge';
+import RatingStars from '../components/ui/RatingStars';
 
 const ProductPage = () => {
     const { id } = useParams();
@@ -12,11 +14,16 @@ const ProductPage = () => {
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [quantity, setQuantity] = useState(1);
+    const [activeImage, setActiveImage] = useState(0);
+    const [relatedProducts, setRelatedProducts] = useState([]);
 
     useEffect(() => {
         const loadProduct = async () => {
             try {
                 setLoading(true);
+                setQuantity(1);
+                setActiveImage(0);
                 const data = await getProductById(id);
                 setProduct(data);
             } catch (err) {
@@ -29,6 +36,21 @@ const ProductPage = () => {
 
         loadProduct();
     }, [id]);
+
+    useEffect(() => {
+        if (!product?.category) {
+            setRelatedProducts([]);
+            return;
+        }
+        let cancelled = false;
+        getProductsByCategory(product.category)
+            .then((items) => {
+                if (cancelled) return;
+                setRelatedProducts(items.filter((p) => p.id !== product.id).slice(0, 4));
+            })
+            .catch((err) => console.error('Error loading related products:', err));
+        return () => { cancelled = true; };
+    }, [product?.category, product?.id]);
 
     if (loading) {
         return (
@@ -52,8 +74,19 @@ const ProductPage = () => {
         );
     }
 
+    const gallery = (Array.isArray(product.images) && product.images.length > 0)
+        ? product.images
+        : [product.image];
+    const inStock = !!product.stock && product.stock > 0;
+    const maxQuantity = product.stock || 1;
+
+    const handleAddToCart = () => {
+        addToCart(product, quantity);
+        setQuantity(1);
+    };
+
     return (
-        <div className="bg-black min-h-screen py-12">
+        <div className="bg-black min-h-screen py-12 pb-28 lg:pb-12">
             <SEO
                 title={product.name}
                 description={product.description}
@@ -62,7 +95,24 @@ const ProductPage = () => {
             />
             <div className="container mx-auto px-4">
                 {/* Breadcrumb */}
-                <Link to="/" className="inline-flex items-center text-gray-400 hover:text-harley-orange mb-8 transition-colors">
+                <nav aria-label="Breadcrumb" className="mb-8 text-sm text-gray-400">
+                    <ol className="flex items-center flex-wrap gap-2">
+                        <li><Link to="/" className="hover:text-harley-orange transition-colors">Início</Link></li>
+                        {product.category && (
+                            <>
+                                <li aria-hidden="true">/</li>
+                                <li>
+                                    <Link to={`/category/${product.category}`} className="hover:text-harley-orange transition-colors capitalize">
+                                        {product.category}
+                                    </Link>
+                                </li>
+                            </>
+                        )}
+                        <li aria-hidden="true">/</li>
+                        <li className="text-gray-200 truncate max-w-[14rem]" aria-current="page">{product.name}</li>
+                    </ol>
+                </nav>
+                <Link to="/" className="inline-flex items-center text-gray-400 hover:text-harley-orange mb-8 transition-colors lg:hidden">
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Voltar para a loja
                 </Link>
@@ -72,12 +122,29 @@ const ProductPage = () => {
                     <div className="space-y-4">
                         <div className="aspect-square rounded-xl overflow-hidden border border-gray-800 bg-gray-900">
                             <img
-                                src={product.image}
+                                src={gallery[activeImage] || product.image}
                                 alt={product.name}
                                 loading="lazy"
                                 className="w-full h-full object-cover"
                             />
                         </div>
+                        {gallery.length > 1 && (
+                            <div className="grid grid-cols-5 gap-3">
+                                {gallery.map((src, index) => (
+                                    <button
+                                        key={src + index}
+                                        type="button"
+                                        onClick={() => setActiveImage(index)}
+                                        aria-label={`Ver imagem ${index + 1} de ${product.name}`}
+                                        aria-current={activeImage === index}
+                                        className={`aspect-square rounded-lg overflow-hidden border-2 transition-colors ${activeImage === index ? 'border-harley-orange' : 'border-gray-800 hover:border-gray-600'
+                                            }`}
+                                    >
+                                        <img src={src} alt="" className="w-full h-full object-cover" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Product Info */}
@@ -87,29 +154,12 @@ const ProductPage = () => {
                                 <span className="text-harley-orange font-bold uppercase tracking-wider text-sm">
                                     {product.category}
                                 </span>
-                                {product.condition && (
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${product.condition === 'Novo'
-                                        ? 'bg-green-600 text-white'
-                                        : 'bg-yellow-600 text-white'
-                                        }`}>
-                                        {product.condition}
-                                    </span>
-                                )}
+                                <ConditionBadge condition={product.condition} />
                             </div>
                             <h1 className="text-3xl md:text-5xl font-display font-bold text-white mt-2 mb-4">
                                 {product.name}
                             </h1>
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-1">
-                                    {[...Array(5)].map((_, i) => (
-                                        <Star
-                                            key={i}
-                                            className={`w-5 h-5 ${i < product.rating ? 'text-harley-orange fill-harley-orange' : 'text-gray-600'}`}
-                                        />
-                                    ))}
-                                </div>
-                                <span className="text-gray-400 text-sm">(12 avaliações)</span>
-                            </div>
+                            <RatingStars rating={product.rating} />
                         </div>
 
                         <div className="mb-8">
@@ -120,16 +170,16 @@ const ProductPage = () => {
                             {/* Stock Status */}
                             <div className="flex items-center gap-2">
                                 {product.stock === 0 ? (
-                                    <span className="px-4 py-2 bg-red-900/50 border border-red-700 text-red-400 rounded font-bold uppercase text-sm">
-                                        ❌ Esgotado
+                                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-red-900/50 border border-red-700 text-red-400 rounded font-bold uppercase text-sm">
+                                        <XCircle className="w-4 h-4" /> Esgotado
                                     </span>
                                 ) : product.stock <= 5 ? (
-                                    <span className="px-4 py-2 bg-yellow-900/50 border border-yellow-700 text-yellow-400 rounded font-bold uppercase text-sm">
-                                        ⚠️ Últimas {product.stock} unidades
+                                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-900/50 border border-yellow-700 text-yellow-400 rounded font-bold uppercase text-sm">
+                                        <AlertTriangle className="w-4 h-4" /> Últimas {product.stock} unidades
                                     </span>
                                 ) : (
-                                    <span className="px-4 py-2 bg-green-900/50 border border-green-700 text-green-400 rounded font-bold uppercase text-sm">
-                                        ✓ Em Estoque
+                                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-900/50 border border-green-700 text-green-400 rounded font-bold uppercase text-sm">
+                                        <CheckCircle2 className="w-4 h-4" /> Em Estoque
                                     </span>
                                 )}
                             </div>
@@ -156,18 +206,41 @@ const ProductPage = () => {
                             </div>
                         )}
 
-                        {/* Actions */}
-                        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                        {/* Quantity + Actions (hidden here on mobile — shown in the sticky bar instead) */}
+                        <div className="hidden lg:flex flex-col sm:flex-row gap-4 mb-8">
+                            {inStock && (
+                                <div className="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded px-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                                        disabled={quantity <= 1}
+                                        aria-label="Diminuir quantidade"
+                                        className="p-3 text-white hover:text-harley-orange transition-colors disabled:opacity-40"
+                                    >
+                                        <Minus className="w-4 h-4" />
+                                    </button>
+                                    <span className="w-8 text-center font-bold text-white" aria-live="polite">{quantity}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                                        disabled={quantity >= maxQuantity}
+                                        aria-label="Aumentar quantidade"
+                                        className="p-3 text-white hover:text-harley-orange transition-colors disabled:opacity-40"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
                             <button
-                                onClick={() => addToCart(product)}
-                                disabled={!product.stock || product.stock === 0}
-                                className={`flex-1 py-4 px-8 rounded font-bold text-lg transition-colors flex items-center justify-center gap-2 uppercase tracking-wider ${!product.stock || product.stock === 0
+                                onClick={handleAddToCart}
+                                disabled={!inStock}
+                                className={`flex-1 py-4 px-8 rounded font-bold text-lg transition-colors flex items-center justify-center gap-2 uppercase tracking-wider ${!inStock
                                     ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                    : 'bg-harley-orange text-white hover:bg-orange-700'
+                                    : 'bg-harley-orange text-white hover:bg-red-800'
                                     }`}
                             >
                                 <ShoppingCart className="w-6 h-6" />
-                                {!product.stock || product.stock === 0 ? 'Indisponível' : 'Adicionar ao Carrinho'}
+                                {!inStock ? 'Indisponível' : 'Adicionar ao Carrinho'}
                             </button>
                         </div>
 
@@ -182,13 +255,77 @@ const ProductPage = () => {
                                 }}
                             />
                         </div>
-
-                        {/* Features */}
-                        <div className="grid grid-cols-2 gap-4 pt-8 border-t border-gray-800">
-                            {/* Shipping info and warranty removed */}
-                        </div>
                     </div>
                 </div>
+
+                {/* Related products */}
+                {relatedProducts.length > 0 && (
+                    <div className="mt-16 pt-10 border-t border-gray-800">
+                        <h2 className="text-2xl font-display font-bold text-white uppercase mb-6">Você também pode gostar</h2>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {relatedProducts.map((item) => (
+                                <Link
+                                    key={item.id}
+                                    to={`/product/${item.id}`}
+                                    className="group bg-gray-900 rounded-lg border border-gray-800 overflow-hidden hover:border-harley-orange transition-colors"
+                                >
+                                    <div className="aspect-square overflow-hidden bg-gray-800">
+                                        <img
+                                            src={item.image}
+                                            alt={item.name}
+                                            loading="lazy"
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        />
+                                    </div>
+                                    <div className="p-3">
+                                        <p className="text-white text-sm font-medium line-clamp-2">{item.name}</p>
+                                        <p className="text-harley-orange font-bold text-sm mt-1">
+                                            R$ {typeof item.price === 'number' ? item.price.toFixed(2) : item.price}
+                                        </p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Sticky add-to-cart bar (mobile only — desktop has the inline action row above) */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-gray-900 border-t border-gray-800 p-3 flex items-center gap-3">
+                {inStock && (
+                    <div className="flex items-center gap-1 bg-black border border-gray-700 rounded px-1 flex-none">
+                        <button
+                            type="button"
+                            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                            disabled={quantity <= 1}
+                            aria-label="Diminuir quantidade"
+                            className="p-2.5 text-white disabled:opacity-40"
+                        >
+                            <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-6 text-center font-bold text-white text-sm" aria-live="polite">{quantity}</span>
+                        <button
+                            type="button"
+                            onClick={() => setQuantity((q) => Math.min(maxQuantity, q + 1))}
+                            disabled={quantity >= maxQuantity}
+                            aria-label="Aumentar quantidade"
+                            className="p-2.5 text-white disabled:opacity-40"
+                        >
+                            <Plus className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+                <button
+                    onClick={handleAddToCart}
+                    disabled={!inStock}
+                    className={`flex-1 py-3.5 px-4 rounded font-bold uppercase tracking-wide flex items-center justify-center gap-2 transition-colors ${!inStock
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                        : 'bg-harley-orange text-white hover:bg-red-800'
+                        }`}
+                >
+                    <ShoppingCart className="w-5 h-5" />
+                    {!inStock ? 'Indisponível' : 'Adicionar ao Carrinho'}
+                </button>
             </div>
         </div>
     );

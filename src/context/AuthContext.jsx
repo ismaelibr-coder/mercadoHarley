@@ -168,6 +168,20 @@ export const AuthProvider = ({ children }) => {
         return resetPassword(email);
     };
 
+    const resetPasswordWithToken = async (email, token, newPassword) => {
+        try {
+            const response = await axios.post(`${API_URL}/api/auth/reset-password`, {
+                email,
+                token,
+                newPassword
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Reset password error:', error);
+            throw new Error(error.response?.data?.error || 'Falha ao redefinir a senha.');
+        }
+    };
+
     const getUserProfile = async (uid) => {
         try {
             const token = localStorage.getItem('auth_token');
@@ -197,12 +211,20 @@ export const AuthProvider = ({ children }) => {
         logout,
         resetPassword,
         requestPasswordReset,
+        resetPasswordWithToken,
         getUserProfile
     };
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {loading ? (
+                // A blank screen while auth resolves looks like a broken app, even to
+                // anonymous visitors who don't have a token to check in the first place.
+                <div className="min-h-screen bg-black flex items-center justify-center" role="status" aria-live="polite">
+                    <div className="w-10 h-10 border-2 border-harley-orange border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
+                    <span className="sr-only">Carregando...</span>
+                </div>
+            ) : children}
         </AuthContext.Provider>
     );
 };

@@ -21,6 +21,7 @@ import {
     updateInternalStockItem,
     updatePricingConfig
 } from '../../services/internalStockService';
+import { useToast } from '../../components/ui/ToastProvider';
 
 const initialItemForm = {
     name: '',
@@ -36,6 +37,7 @@ const formatMoney = (value) => new Intl.NumberFormat('pt-BR', {
 }).format(Number(value || 0));
 
 const AdminInternalStock = () => {
+    const { showToast } = useToast();
     const [loading, setLoading] = useState(true);
     const [savingConfig, setSavingConfig] = useState(false);
     const [savingItem, setSavingItem] = useState(false);
@@ -80,7 +82,7 @@ const AdminInternalStock = () => {
             }
         } catch (error) {
             console.error('Erro ao carregar estoque interno:', error);
-            alert('Erro ao carregar dados do estoque interno.');
+            showToast('Erro ao carregar dados do estoque interno.', { type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -104,12 +106,12 @@ const AdminInternalStock = () => {
             });
 
             const recalculatedItems = response?.recalculatedItems || 0;
-            alert(`Configuração salva. ${recalculatedItems} item(ns) recalculado(s).`);
+            showToast(`Configuração salva. ${recalculatedItems} item(ns) recalculado(s).`, { type: 'success' });
 
             await loadAll();
         } catch (error) {
             console.error('Erro ao salvar configuração:', error);
-            alert(error.response?.data?.error || 'Erro ao salvar configuração de preço.');
+            showToast(error.response?.data?.error || 'Erro ao salvar configuração de preço.', { type: 'error' });
         } finally {
             setSavingConfig(false);
         }
@@ -132,7 +134,7 @@ const AdminInternalStock = () => {
             }
         } catch (error) {
             console.error('Erro ao cadastrar fornecedor:', error);
-            alert(error.response?.data?.error || 'Erro ao cadastrar fornecedor.');
+            showToast(error.response?.data?.error || 'Erro ao cadastrar fornecedor.', { type: 'error' });
         } finally {
             setSavingSupplier(false);
         }
@@ -145,10 +147,10 @@ const AdminInternalStock = () => {
             const supplierData = await getSuppliers(false);
             setSuppliers(supplierData);
 
-            alert(`${response.imported || 0} fornecedor(es) importado(s) de Parceiros/Marcas.`);
+            showToast(`${response.imported || 0} fornecedor(es) importado(s) de Parceiros/Marcas.`, { type: 'success' });
         } catch (error) {
             console.error('Erro ao importar fornecedores:', error);
-            alert(error.response?.data?.error || 'Erro ao importar fornecedores de Parceiros/Marcas.');
+            showToast(error.response?.data?.error || 'Erro ao importar fornecedores de Parceiros/Marcas.', { type: 'error' });
         } finally {
             setImportingSuppliers(false);
         }
@@ -157,7 +159,7 @@ const AdminInternalStock = () => {
     const handleRemoveSupplier = async (supplierId, supplierName) => {
         const inUse = items.some((item) => item.supplierId === supplierId);
         if (inUse) {
-            alert('Este fornecedor está vinculado a itens e não pode ser removido agora.');
+            showToast('Este fornecedor está vinculado a itens e não pode ser removido agora.', { type: 'warning' });
             return;
         }
 
@@ -175,7 +177,7 @@ const AdminInternalStock = () => {
             }
         } catch (error) {
             console.error('Erro ao remover fornecedor:', error);
-            alert(error.response?.data?.error || 'Erro ao remover fornecedor.');
+            showToast(error.response?.data?.error || 'Erro ao remover fornecedor.', { type: 'error' });
         }
     };
 
@@ -187,7 +189,7 @@ const AdminInternalStock = () => {
         event.preventDefault();
 
         if (!itemForm.name.trim() || !itemForm.description.trim() || !itemForm.supplierId) {
-            alert('Preencha nome, descrição e fornecedor.');
+            showToast('Preencha nome, descrição e fornecedor.', { type: 'warning' });
             return;
         }
 
@@ -200,7 +202,7 @@ const AdminInternalStock = () => {
         };
 
         if (payload.unitCost <= 0) {
-            alert('Valor unitário deve ser maior que zero.');
+            showToast('Valor unitário deve ser maior que zero.', { type: 'warning' });
             return;
         }
 
@@ -208,10 +210,10 @@ const AdminInternalStock = () => {
         try {
             if (editingItemId) {
                 await updateInternalStockItem(editingItemId, payload);
-                alert('Item atualizado com sucesso.');
+                showToast('Item atualizado com sucesso.', { type: 'success' });
             } else {
                 await createInternalStockItem(payload);
-                alert('Item cadastrado com sucesso.');
+                showToast('Item cadastrado com sucesso.', { type: 'success' });
             }
 
             const itemData = await getInternalStockItems();
@@ -219,7 +221,7 @@ const AdminInternalStock = () => {
             resetItemForm();
         } catch (error) {
             console.error('Erro ao salvar item:', error);
-            alert(error.response?.data?.error || 'Erro ao salvar item do estoque interno.');
+            showToast(error.response?.data?.error || 'Erro ao salvar item do estoque interno.', { type: 'error' });
         } finally {
             setSavingItem(false);
         }
@@ -251,7 +253,7 @@ const AdminInternalStock = () => {
             }
         } catch (error) {
             console.error('Erro ao excluir item:', error);
-            alert(error.response?.data?.error || 'Erro ao excluir item do estoque interno.');
+            showToast(error.response?.data?.error || 'Erro ao excluir item do estoque interno.', { type: 'error' });
         }
     };
 

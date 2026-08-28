@@ -126,8 +126,10 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    // Not a form submit handler — invoked by a type="button" click (see render below).
+    // This component is rendered inside CheckoutPage's own <form>, so it must never
+    // render (or behave as) a nested <form>, which produces invalid, browser-inconsistent HTML.
+    const handleSubmit = async () => {
         setLoading(true);
 
         try {
@@ -164,7 +166,7 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
             <div className="bg-gray-900 p-6 rounded-lg border border-gray-800">
                 <div className="flex items-center gap-2 mb-4">
                     <CreditCard className="text-sick-red" size={24} />
@@ -173,9 +175,12 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
 
                 {/* Card Number */}
                 <div className="mb-4">
-                    <label className="block text-gray-400 text-sm mb-2">Número do Cartão</label>
+                    <label htmlFor="card-number" className="block text-gray-400 text-sm mb-2">Número do Cartão</label>
                     <input
+                        id="card-number"
                         type="text"
+                        inputMode="numeric"
+                        autoComplete="cc-number"
                         value={cardNumber}
                         onChange={handleCardNumberChange}
                         placeholder="0000 0000 0000 0000"
@@ -187,9 +192,11 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
 
                 {/* Cardholder Name */}
                 <div className="mb-4">
-                    <label className="block text-gray-400 text-sm mb-2">Nome no Cartão</label>
+                    <label htmlFor="card-holder-name" className="block text-gray-400 text-sm mb-2">Nome no Cartão</label>
                     <input
+                        id="card-holder-name"
                         type="text"
+                        autoComplete="cc-name"
                         value={cardholderName}
                         onChange={(e) => setCardholderName(e.target.value.toUpperCase())}
                         placeholder="NOME COMO NO CARTÃO"
@@ -201,9 +208,12 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
                 <div className="grid grid-cols-2 gap-4 mb-4">
                     {/* Expiration Date */}
                     <div>
-                        <label className="block text-gray-400 text-sm mb-2">Validade</label>
+                        <label htmlFor="card-expiration" className="block text-gray-400 text-sm mb-2">Validade</label>
                         <input
+                            id="card-expiration"
                             type="text"
+                            inputMode="numeric"
+                            autoComplete="cc-exp"
                             value={expirationDate}
                             onChange={(e) => setExpirationDate(formatExpirationDate(e.target.value))}
                             placeholder="MM/AA"
@@ -215,9 +225,12 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
 
                     {/* CVV */}
                     <div>
-                        <label className="block text-gray-400 text-sm mb-2">CVV</label>
+                        <label htmlFor="card-cvv" className="block text-gray-400 text-sm mb-2">CVV</label>
                         <input
+                            id="card-cvv"
                             type="text"
+                            inputMode="numeric"
+                            autoComplete="cc-csc"
                             value={securityCode}
                             onChange={(e) => setSecurityCode(e.target.value.replace(/\D/g, ''))}
                             placeholder="000"
@@ -230,9 +243,10 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
 
                 {/* Installments */}
                 <div className="mb-4">
-                    <label className="block text-gray-400 text-sm mb-2">Parcelas</label>
+                    <label htmlFor="card-installments" className="block text-gray-400 text-sm mb-2">Parcelas</label>
                     {installmentOptions.length > 0 ? (
                         <select
+                            id="card-installments"
                             value={installments}
                             onChange={(e) => setInstallments(e.target.value)}
                             className="w-full bg-gray-800 text-white px-4 py-3 rounded border border-gray-700 focus:border-sick-red focus:outline-none"
@@ -259,13 +273,14 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
             </div>
 
             <button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 disabled={loading || !paymentMethodId}
                 className="w-full bg-sick-red text-white py-4 rounded font-bold uppercase hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {loading ? 'Processando...' : `Pagar R$ ${total.toFixed(2)}`}
             </button>
-        </form>
+        </div>
     );
 };
 

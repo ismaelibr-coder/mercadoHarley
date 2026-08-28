@@ -66,7 +66,7 @@ const Hero = () => {
                         <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white mb-4 leading-tight">
                             {banner.title}
                         </h1>
-                        <div className="mt-6 inline-block bg-harley-orange text-white px-6 py-3 rounded font-bold group-hover:bg-orange-700 transition-colors">
+                        <div className="mt-6 inline-block bg-harley-orange text-white px-6 py-3 rounded font-bold group-hover:bg-red-800 transition-colors">
                             Ver Mais
                         </div>
                     </div>

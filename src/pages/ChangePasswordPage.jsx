@@ -177,7 +177,7 @@ const ChangePasswordPage = () => {
                     <button
                         type="submit"
                         disabled={loading || success}
-                        className="w-full bg-harley-orange text-white py-3 rounded font-bold uppercase tracking-wider hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-harley-orange text-white py-3 rounded font-bold uppercase tracking-wider hover:bg-red-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? 'Alterando...' : success ? 'Senha Alterada' : 'Alterar Senha'}
                     </button>

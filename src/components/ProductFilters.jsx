@@ -15,10 +15,11 @@ const ProductFilters = ({ products, onFilterChange }) => {
     const [availablePartTypes, setAvailablePartTypes] = useState([]);
     const [availablePartners, setAvailablePartners] = useState([]);
 
-    // Accordion states
+    // Accordion states — categoria e tipo de peça abertos por padrão, já que são
+    // a forma primária de navegação (antes ficavam escondidos atrás de cliques extras)
     const [expandedSections, setExpandedSections] = useState({
-        categories: false,
-        partTypes: false,
+        categories: true,
+        partTypes: true,
         partners: false,
         price: false
     });

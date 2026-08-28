@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { getFilterSettings, updateFilterSettings } from '../../services/settingsService';
 import { Plus, Trash2, Save, RotateCcw } from 'lucide-react';
+import { useToast } from '../../components/ui/ToastProvider';
 
 const AdminSettings = () => {
+    const { showToast } = useToast();
     const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -43,9 +45,9 @@ const AdminSettings = () => {
         setSaving(true);
         const success = await updateFilterSettings(settings);
         if (success) {
-            alert('Configurações salvas com sucesso!');
+            showToast('Configurações salvas com sucesso!', { type: 'success' });
         } else {
-            alert('Erro ao salvar configurações.');
+            showToast('Erro ao salvar configurações.', { type: 'error' });
         }
         setSaving(false);
     };

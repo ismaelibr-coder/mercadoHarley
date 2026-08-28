@@ -212,7 +212,7 @@ const AdminDashboard = () => {
                                 </div>
                                 <Link
                                     to={`/admin/products/edit/${product.id}`}
-                                    className="px-4 py-2 bg-sick-red text-white rounded hover:bg-orange-700 transition-colors font-bold text-sm"
+                                    className="px-4 py-2 bg-sick-red text-white rounded hover:bg-red-800 transition-colors font-bold text-sm"
                                 >
                                     Editar
                                 </Link>

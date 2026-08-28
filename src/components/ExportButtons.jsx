@@ -2,11 +2,13 @@ import React from 'react';
 import { Download, FileText, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
 import Papa from 'papaparse';
+import { useToast } from './ui/ToastProvider';
 
 const ExportButtons = ({ data, filename = 'relatorio', type = 'sales' }) => {
+    const { showToast } = useToast();
     const exportToCSV = () => {
         if (!data || data.length === 0) {
-            alert('Não há dados para exportar');
+            showToast('Não há dados para exportar', { type: 'warning' });
             return;
         }
 
@@ -42,7 +44,7 @@ const ExportButtons = ({ data, filename = 'relatorio', type = 'sales' }) => {
 
     const exportToPDF = () => {
         if (!data || data.length === 0) {
-            alert('Não há dados para exportar');
+            showToast('Não há dados para exportar', { type: 'warning' });
             return;
         }
 
@@ -121,7 +123,7 @@ const ExportButtons = ({ data, filename = 'relatorio', type = 'sales' }) => {
 
         } catch (error) {
             console.error('Error generating PDF:', error);
-            alert('Erro ao gerar PDF');
+            showToast('Erro ao gerar PDF', { type: 'error' });
         }
     };
 

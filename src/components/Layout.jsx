@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, ShoppingCart, Phone, Mail, Instagram, Facebook, Twitter, User, LogOut } from 'lucide-react';
+import { Menu, X, ShoppingCart, Phone, Mail, Instagram, User, LogOut, Search } from 'lucide-react';
 import CartSidebar from './CartSidebar';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +9,8 @@ import InfoBar from './InfoBar';
 
 const Layout = ({ children }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [mobileSearchQuery, setMobileSearchQuery] = useState('');
     const { cartCount, isCartOpen, setIsCartOpen } = useCart();
     const { currentUser, logout } = useAuth();
     const navigate = useNavigate();
@@ -19,6 +21,24 @@ const Layout = ({ children }) => {
     const handleLogout = async () => {
         await logout();
         navigate('/');
+    };
+
+    const runSearch = (query) => {
+        const trimmed = query.trim();
+        if (!trimmed) return;
+        navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+    };
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        runSearch(searchQuery);
+    };
+
+    const handleMobileSearchSubmit = (e) => {
+        e.preventDefault();
+        runSearch(mobileSearchQuery);
+        setMobileSearchQuery('');
+        setIsMenuOpen(false);
     };
 
     return (
@@ -44,6 +64,22 @@ const Layout = ({ children }) => {
                             <Link to="/category/vestuario" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Vestuário</Link>
                             <Link to="/contato" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Contato</Link>
                         </nav>
+
+                        {/* Search */}
+                        <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center relative w-36 lg:w-52 xl:w-64">
+                            <label htmlFor="header-search" className="sr-only">Buscar produtos</label>
+                            <input
+                                id="header-search"
+                                type="search"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Buscar produtos..."
+                                className="w-full bg-gray-900 border border-gray-800 rounded-full py-2 pl-4 pr-10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-harley-orange transition-colors"
+                            />
+                            <button type="submit" aria-label="Buscar" className="absolute right-1 p-1.5 text-gray-400 hover:text-harley-orange transition-colors">
+                                <Search className="w-4 h-4" />
+                            </button>
+                        </form>
 
                         {/* Actions */}
                         <div className="flex items-center gap-4">
@@ -124,6 +160,20 @@ const Layout = ({ children }) => {
                 {isMenuOpen && (
                     <div className="md:hidden bg-gray-900 border-t border-gray-800 absolute w-full left-0">
                         <nav className="flex flex-col p-4 space-y-4">
+                            <form onSubmit={handleMobileSearchSubmit} className="flex items-center relative">
+                                <label htmlFor="mobile-search" className="sr-only">Buscar produtos</label>
+                                <input
+                                    id="mobile-search"
+                                    type="search"
+                                    value={mobileSearchQuery}
+                                    onChange={(e) => setMobileSearchQuery(e.target.value)}
+                                    placeholder="Buscar produtos..."
+                                    className="w-full bg-black border border-gray-800 rounded-full py-2.5 pl-4 pr-10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-harley-orange transition-colors"
+                                />
+                                <button type="submit" aria-label="Buscar" className="absolute right-1 p-1.5 text-gray-400 hover:text-harley-orange transition-colors">
+                                    <Search className="w-4 h-4" />
+                                </button>
+                            </form>
                             {currentUser && (
                                 <div className="pb-4 border-b border-gray-800 mb-2">
                                     <span className="block text-sm font-bold text-gray-300 mb-2">
@@ -177,7 +227,7 @@ const Layout = ({ children }) => {
             {/* Footer */}
             <footer className="bg-gray-900 border-t border-gray-800 pt-16 pb-8">
                 <div className="container mx-auto px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
                         <div>
                             <div className="flex items-center gap-3 mb-6">
                                 <img src="/sick-grip-logo.png" alt="SICK GRIP" className="h-10 w-auto" />
@@ -217,21 +267,6 @@ const Layout = ({ children }) => {
                                     <span>sickgrip.br@gmail.com</span>
                                 </li>
                             </ul>
-                        </div>
-
-                        <div>
-                            <h3 className="font-display font-bold text-lg uppercase mb-6 text-white">Newsletter</h3>
-                            <p className="text-gray-400 mb-4">Receba ofertas exclusivas e novidades.</p>
-                            <form className="flex flex-col gap-3">
-                                <input
-                                    type="email"
-                                    placeholder="Seu e-mail"
-                                    className="bg-black border border-gray-800 p-3 rounded focus:outline-none focus:border-harley-orange text-white"
-                                />
-                                <button className="bg-harley-orange text-white font-bold py-3 px-6 rounded hover:bg-white hover:text-black transition-colors uppercase tracking-wide">
-                                    Inscrever-se
-                                </button>
-                            </form>
                         </div>
                     </div>
 

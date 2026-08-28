@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, Phone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/ui/ToastProvider';
 
 const RegisterPage = () => {
     const { register } = useAuth();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -73,7 +75,7 @@ const RegisterPage = () => {
                     complement: data.complemento || prev.complement
                 }));
             } else {
-                alert('CEP não encontrado');
+                showToast('CEP não encontrado', { type: 'warning' });
             }
         } catch (error) {
             console.error('Erro ao buscar CEP:', error);
@@ -106,7 +108,7 @@ const RegisterPage = () => {
                     state: formData.state
                 }
             });
-            alert("Cadastro realizado com sucesso! Bem-vindo ao SICK GRIP.");
+            showToast('Cadastro realizado com sucesso! Bem-vindo ao SICK GRIP.', { type: 'success' });
             navigate('/');
         } catch (err) {
             // Auth error handling
@@ -323,7 +325,7 @@ const RegisterPage = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-harley-orange text-white py-3 rounded font-bold uppercase tracking-wider hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                        className="w-full bg-harley-orange text-white py-3 rounded font-bold uppercase tracking-wider hover:bg-red-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                     >
                         {loading ? 'Criando conta...' : 'Criar Conta'}
                         {!loading && <ArrowRight className="w-5 h-5" />}

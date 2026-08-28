@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { getOrderById } from '../services/orderService';
-import { CheckCircle, Package, Truck, CreditCard, QrCode, Barcode, Printer, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Package, Truck, CreditCard, QrCode, Barcode, Printer, ArrowLeft, SearchX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import OrderStatusTimeline from '../components/ui/OrderStatusTimeline';
 
 const OrderConfirmation = () => {
     const { orderId } = useParams();
-    const navigate = useNavigate();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [notFound, setNotFound] = useState(false);
 
     useEffect(() => {
         loadOrder();
@@ -16,12 +17,13 @@ const OrderConfirmation = () => {
 
     const loadOrder = async () => {
         try {
+            setNotFound(false);
             const orderData = await getOrderById(orderId);
             setOrder(orderData);
         } catch (error) {
             console.error('Error loading order:', error);
-            alert('Pedido não encontrado');
-            navigate('/');
+            setOrder(null);
+            setNotFound(true);
         } finally {
             setLoading(false);
         }
@@ -29,18 +31,6 @@ const OrderConfirmation = () => {
 
     const handlePrint = () => {
         window.print();
-    };
-
-    const getStatusColor = (status) => {
-        const colors = {
-            pending: 'text-yellow-500',
-            paid: 'text-blue-500',
-            processing: 'text-purple-500',
-            shipped: 'text-orange-500',
-            delivered: 'text-green-500',
-            cancelled: 'text-red-500'
-        };
-        return colors[status] || 'text-gray-500';
     };
 
     const getStatusText = (status) => {
@@ -63,8 +53,24 @@ const OrderConfirmation = () => {
         );
     }
 
-    if (!order) {
-        return null;
+    if (notFound || !order) {
+        return (
+            <div className="bg-black min-h-screen flex flex-col items-center justify-center text-center px-4">
+                <SearchX className="w-16 h-16 text-gray-600 mb-6" />
+                <h1 className="text-3xl font-display font-bold text-white mb-3 uppercase">Pedido não encontrado</h1>
+                <p className="text-gray-400 max-w-md mb-8">
+                    Não conseguimos localizar este pedido. Ele pode ter sido removido, ou o link usado está incorreto.
+                </p>
+                <div className="flex gap-4">
+                    <Link to="/my-orders" className="bg-gray-800 text-white px-6 py-3 rounded font-bold hover:bg-gray-700 transition-colors">
+                        Ver meus pedidos
+                    </Link>
+                    <Link to="/" className="bg-harley-orange text-white px-6 py-3 rounded font-bold hover:bg-red-800 transition-colors">
+                        Voltar para a loja
+                    </Link>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -85,7 +91,7 @@ const OrderConfirmation = () => {
 
                 {/* Order Info Card */}
                 <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 mb-6">
-                    <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-800">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-800">
                         <div>
                             <h2 className="text-2xl font-bold text-white mb-2">
                                 Pedido #{order.orderNumber}
@@ -100,11 +106,9 @@ const OrderConfirmation = () => {
                                 })}
                             </p>
                         </div>
-                        <div className="text-right">
-                            <p className="text-gray-400 text-sm mb-1">Status</p>
-                            <p className={`text-lg font-bold ${getStatusColor(order.status)}`}>
-                                {getStatusText(order.status)}
-                            </p>
+                        <div className="md:w-72">
+                            <p className="text-gray-400 text-sm mb-2 md:text-right">{getStatusText(order.status)}</p>
+                            <OrderStatusTimeline status={order.status} />
                         </div>
                     </div>
 
@@ -146,7 +150,7 @@ const OrderConfirmation = () => {
                                 </div>
                                 <button
                                     onClick={() => navigator.clipboard.writeText(order.payment.qrCode)}
-                                    className="mt-4 bg-harley-orange text-white px-6 py-2 rounded font-bold hover:bg-orange-700 transition-colors"
+                                    className="mt-4 bg-harley-orange text-white px-6 py-2 rounded font-bold hover:bg-red-800 transition-colors"
                                 >
                                     Copiar Código PIX
                                 </button>
@@ -167,7 +171,7 @@ const OrderConfirmation = () => {
                                     href={order.payment.boletoUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-block bg-harley-orange text-white px-6 py-3 rounded font-bold hover:bg-orange-700 transition-colors"
+                                    className="inline-block bg-harley-orange text-white px-6 py-3 rounded font-bold hover:bg-red-800 transition-colors"
                                 >
                                     Visualizar Boleto
                                 </a>
@@ -276,7 +280,7 @@ const OrderConfirmation = () => {
                     </button>
                     <Link
                         to="/"
-                        className="bg-harley-orange text-white px-6 py-3 rounded font-bold hover:bg-orange-700 transition-colors flex items-center gap-2"
+                        className="bg-harley-orange text-white px-6 py-3 rounded font-bold hover:bg-red-800 transition-colors flex items-center gap-2"
                     >
                         <ArrowLeft className="w-5 h-5" />
                         Voltar para a Loja

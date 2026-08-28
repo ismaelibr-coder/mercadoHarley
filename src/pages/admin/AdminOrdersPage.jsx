@@ -3,10 +3,12 @@ import { useAuth } from '../../context/AuthContext';
 import { getAllOrders, updateOrderStatus } from '../../services/orderService';
 import { useNavigate, Link } from 'react-router-dom';
 import { Package, Search, Filter, ChevronDown, ChevronUp, CheckCircle, XCircle, Clock, Truck, AlertCircle } from 'lucide-react';
+import { useToast } from '../../components/ui/ToastProvider';
 
 const AdminOrdersPage = () => {
     const { currentUser, isAdmin } = useAuth();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -47,7 +49,7 @@ const AdminOrdersPage = () => {
             ));
         } catch (err) {
             console.error('Error updating status:', err);
-            alert('Erro ao atualizar status do pedido.');
+            showToast('Erro ao atualizar status do pedido.', { type: 'error' });
         } finally {
             setUpdatingId(null);
         }

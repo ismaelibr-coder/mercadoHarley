@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# ⚠️  ARCHIVED — DO NOT RUN. ⚠️
+# This was a one-off runbook for the (already completed) Firebase→MySQL migration
+# (see FASE2_COMPLETION_REPORT.md). It references MYSQL_PASSWORD, an env var name
+# that doesn't match what the app actually uses (DB_PASSWORD), so it will hang
+# waiting for interactive input if re-run — and it unconditionally runs `git
+# stash` on the remote host, discarding any uncommitted changes there. Kept only
+# for historical reference.
+
 # Script de deploy para resolver erro 500 e aplicar FASE 2 no VPS
 # Uso: ssh root@187.77.62.63 'bash -s' < deploy-fase2-vps.sh
 

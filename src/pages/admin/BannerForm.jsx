@@ -4,10 +4,12 @@ import { Save, ArrowLeft } from 'lucide-react';
 import { createBanner, updateBanner, getBannerById } from '../../services/bannerService';
 import { getAllProducts } from '../../services/productService';
 import ImageUpload from '../../components/ImageUpload';
+import { useToast } from '../../components/ui/ToastProvider';
 
 const BannerForm = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const isEdit = Boolean(id);
 
     const [loading, setLoading] = useState(false);
@@ -54,7 +56,7 @@ const BannerForm = () => {
             });
         } catch (error) {
             console.error('Error loading banner:', error);
-            alert('Erro ao carregar banner.');
+            showToast('Erro ao carregar banner.', { type: 'error' });
         }
     };
 
@@ -85,15 +87,15 @@ const BannerForm = () => {
 
             if (isEdit) {
                 await updateBanner(id, bannerData);
-                alert('Banner atualizado com sucesso!');
+                showToast('Banner atualizado com sucesso!', { type: 'success' });
             } else {
                 await createBanner(bannerData);
-                alert('Banner criado com sucesso!');
+                showToast('Banner criado com sucesso!', { type: 'success' });
             }
             navigate('/admin/banners');
         } catch (error) {
             console.error('Error saving banner:', error);
-            alert('Erro ao salvar banner.');
+            showToast('Erro ao salvar banner.', { type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -241,7 +243,7 @@ const BannerForm = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="flex items-center gap-2 bg-harley-orange text-white px-6 py-3 rounded font-bold uppercase tracking-wide hover:bg-orange-700 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-2 bg-harley-orange text-white px-6 py-3 rounded font-bold uppercase tracking-wide hover:bg-red-800 transition-colors disabled:opacity-50"
                     >
                         <Save className="w-5 h-5" />
                         {loading ? 'Salvando...' : 'Salvar Banner'}

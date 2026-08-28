@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, CreditCard, Truck, QrCode, Barcode, AlertCircle } from 'lucide-react';
+import { ShieldCheck, CreditCard, Truck, QrCode, Barcode, AlertCircle, Minus, Plus, Trash2 } from 'lucide-react';
 import CreditCardForm from '../components/CreditCardForm';
+import { useToast } from '../components/ui/ToastProvider';
 
 import { createPixPayment, createBoletoPayment, processCreditCardPayment, initMercadoPago } from '../services/paymentService';
 import { calculateShipping } from '../services/shippingService';
 
 const CheckoutPage = () => {
-    const { cartItems, cartTotal, clearCart } = useCart();
+    const { cartItems, cartTotal, clearCart, updateQuantity, removeFromCart } = useCart();
     const { currentUser, loading: authLoading, getUserProfile, userType } = useAuth();
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const [loading, setLoading] = useState(false);
     const [step, setStep] = useState('shipping');
@@ -23,6 +25,7 @@ const CheckoutPage = () => {
 
     const [formData, setFormData] = useState({
         name: '',
+        email: '',
         cpf: '',
         phone: '',
         cep: '',
@@ -139,6 +142,10 @@ const CheckoutPage = () => {
         const newErrors = {};
 
         if (!formData.name.trim()) newErrors.name = 'Nome é obrigatório';
+        // Logged-in users already have a verified e-mail (currentUser.email); guests must provide one.
+        if (!currentUser && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+            newErrors.email = 'E-mail inválido';
+        }
         if (!validateCPF(formData.cpf)) newErrors.cpf = 'CPF inválido';
         if (formData.phone.length < 14) newErrors.phone = 'Telefone inválido';
         if (formData.cep.length < 9) newErrors.cep = 'CEP inválido';
@@ -146,12 +153,9 @@ const CheckoutPage = () => {
         if (!formData.number.trim()) newErrors.number = 'Número é obrigatório';
         if (!formData.city.trim()) newErrors.city = 'Cidade é obrigatória';
 
-        if (paymentMethod === 'credit') {
-            if (formData.cardNumber.length < 19) newErrors.cardNumber = 'Número do cartão inválido';
-            if (!formData.cardName.trim()) newErrors.cardName = 'Nome no cartão é obrigatório';
-            if (formData.cardExpiry.length < 5) newErrors.cardExpiry = 'Validade inválida';
-            if (formData.cardCvv.length < 3) newErrors.cardCvv = 'CVV inválido';
-        }
+        // Card fields (number/name/expiry/CVV) are owned and validated entirely by
+        // CreditCardForm — they never exist on this form's state, and must not be
+        // checked here.
 
         // Shipping is optional - can proceed without it
         // if (!selectedShipping) {
@@ -186,6 +190,7 @@ const CheckoutPage = () => {
                     setFormData(prev => ({
                         ...prev,
                         name: profile.displayName || currentUser.displayName || '',
+                        email: currentUser.email || profile.email || prev.email,
                         phone: profile.phone || '',
                         cpf: profile.cpf || '',
                         ...(profile.address && useSavedAddress ? {
@@ -270,7 +275,65 @@ const CheckoutPage = () => {
         return () => clearTimeout(timer);
     }, [formData.cep, cartItems]);
 
-    // Handle card payment from CreditCardForm
+    // Builds the order payload shared by every payment method, so subtotal/discount/
+    // total and the customer/shipping/items shape can never drift between them again.
+    // The backend always recomputes these amounts from the database before charging —
+    // what's sent here only drives the optimistic UI and the payment request itself.
+    const buildOrderData = (activePaymentMethod) => {
+        const subtotal = cartTotal;
+        const shippingCost = selectedShipping ? selectedShipping.price : 0;
+        const discount = activePaymentMethod === 'pix' ? subtotal * 0.05 : 0;
+        const total = subtotal - discount + shippingCost;
+        const customerEmail = currentUser?.email || formData.email || '';
+        const normalizedMethod = activePaymentMethod === 'credit' ? 'credit_card' : activePaymentMethod;
+
+        return {
+            orderNumber: `HD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+            userId: currentUser?.uid || 'guest',
+            userEmail: customerEmail || 'guest@example.com',
+            customer: {
+                name: formData.name,
+                cpf: formData.cpf,
+                phone: formData.phone,
+                email: customerEmail
+            },
+            shipping: {
+                cep: formData.cep,
+                address: formData.address,
+                number: formData.number,
+                complement: formData.complement,
+                city: formData.city,
+                state: formData.state || 'SP',
+                neighborhood: 'Centro',
+                zipCode: formData.cep,
+                method: selectedShipping ? selectedShipping.name : 'Padrão',
+                price: shippingCost,
+                deliveryDays: selectedShipping ? selectedShipping.deliveryDays : 0
+            },
+            items: cartItems.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: typeof item.price === 'number'
+                    ? item.price
+                    : parseFloat(item.price.replace('R$', '').replace('.', '').replace(',', '.').trim()),
+                quantity: item.quantity,
+                image: item.image,
+                profitMargin: item.profitMargin || 0,
+                partner: item.partner || ''
+            })),
+            payment: {
+                method: normalizedMethod,
+                status: 'pending'
+            },
+            method: normalizedMethod,
+            subtotal,
+            discount,
+            total
+        };
+    };
+
+    // Handle card payment from CreditCardForm (called after the card is already
+    // tokenized by Mercado Pago's SDK — raw card data never reaches this component).
     const handleCardPayment = async ({ token, installments, paymentMethodId }) => {
         if (!validateForm()) {
             throw new Error('Por favor, preencha todos os campos obrigatórios');
@@ -279,44 +342,7 @@ const CheckoutPage = () => {
         setLoading(true);
 
         try {
-            // Generate order number
-            const orderNumber = `HD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-
-            const discount = paymentMethod === 'pix' ? subtotal * 0.05 : 0;
-            const total = subtotal - discount + (selectedShipping?.price || 0);
-
-            const orderData = {
-                orderNumber,
-                items: cartItems.map(item => ({
-                    id: item.id,
-                    name: item.name,
-                    price: typeof item.price === 'number' ? item.price : parseFloat(item.price.replace('R$', '').replace('.', '').replace(',', '.').trim()),
-                    quantity: item.quantity,
-                    image: item.image
-                })),
-                customer: {
-                    name: formData.name,
-                    email: formData.email,
-                    cpf: formData.cpf,
-                    phone: formData.phone
-                },
-                shipping: {
-                    cep: formData.cep,
-                    address: formData.address,
-                    number: formData.number,
-                    complement: formData.complement,
-                    neighborhood: formData.neighborhood,
-                    city: formData.city,
-                    state: formData.state,
-                    method: selectedShipping?.name || 'Frete Grátis',
-                    price: selectedShipping?.price || 0
-                },
-                total,
-                subtotal,
-                discount,
-                method: 'credit_card',
-                installments
-            };
+            const orderData = { ...buildOrderData('credit'), installments };
 
             const paymentResult = await processCreditCardPayment(orderData, {
                 token,
@@ -343,6 +369,13 @@ const CheckoutPage = () => {
     const handlePayment = async (e) => {
         e.preventDefault();
 
+        if (paymentMethod === 'credit') {
+            // Credit card is handled exclusively by CreditCardForm's own button/flow
+            // (needed for Mercado Pago tokenization) — nothing to do if this form's
+            // submit fires instead (e.g. Enter pressed in one of its fields).
+            return;
+        }
+
         if (!validateForm()) {
             return;
         }
@@ -350,72 +383,13 @@ const CheckoutPage = () => {
         setLoading(true);
 
         try {
-            // Generate order number
-            const orderNumber = `HD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-
-            const subtotal = cartTotal;
-            const shippingCost = selectedShipping ? selectedShipping.price : 0;
-            const discount = paymentMethod === 'pix' ? subtotal * 0.05 : 0;
-            const total = subtotal - discount + shippingCost;
-
-            const orderData = {
-                orderNumber,
-                userId: currentUser?.uid || 'guest',
-                userEmail: currentUser?.email || formData.email || 'guest@example.com',
-                customer: {
-                    name: formData.name,
-                    cpf: formData.cpf,
-                    phone: formData.phone,
-                    email: currentUser?.email || formData.email || ''
-                },
-                shipping: {
-                    cep: formData.cep,
-                    address: formData.address,
-                    number: formData.number,
-                    complement: formData.complement,
-                    city: formData.city,
-                    state: formData.state || 'SP',
-                    neighborhood: 'Centro',
-                    zipCode: formData.cep,
-                    method: selectedShipping ? selectedShipping.name : 'Padrão',
-                    price: shippingCost,
-                    deliveryDays: selectedShipping ? selectedShipping.deliveryDays : 0
-                },
-                items: cartItems.map(item => ({
-                    id: item.id,
-                    name: item.name,
-                    price: typeof item.price === 'number'
-                        ? item.price
-                        : parseFloat(item.price.replace('R$', '').replace('.', '').replace(',', '.').trim()),
-                    quantity: item.quantity,
-                    image: item.image,
-                    profitMargin: item.profitMargin || 0,
-                    partner: item.partner || ''
-                })),
-                payment: {
-                    method: paymentMethod,
-                    status: 'pending'
-                },
-                subtotal,
-                // shipping: shippingCost, // Already included in shipping object above
-                discount,
-                total
-            };
+            const orderData = buildOrderData(paymentMethod);
 
             let paymentResult;
-
             if (paymentMethod === 'pix') {
                 paymentResult = await createPixPayment(orderData);
             } else if (paymentMethod === 'boleto') {
                 paymentResult = await createBoletoPayment(orderData);
-            } else if (paymentMethod === 'credit') {
-                paymentResult = await processCreditCardPayment(orderData, {
-                    cardNumber: formData.cardNumber,
-                    cardName: formData.cardName,
-                    cardExpiry: formData.cardExpiry,
-                    cardCvv: formData.cardCvv,
-                    cpf: formData.cpf
-                });
             }
 
             if (paymentResult && paymentResult.success) {
@@ -428,7 +402,7 @@ const CheckoutPage = () => {
 
         } catch (error) {
             console.error('Error processing order:', error);
-            alert(`Erro ao processar pedido: ${error.message}`);
+            showToast(`Erro ao processar pedido: ${error.message}`, { type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -451,7 +425,7 @@ const CheckoutPage = () => {
             e.preventDefault();
             
             if (!sellerName.trim()) {
-                alert('Por favor, insira o nome do vendedor');
+                showToast('Por favor, insira o nome do vendedor', { type: 'warning' });
                 return;
             }
 
@@ -515,7 +489,7 @@ const CheckoutPage = () => {
                 navigate(`/order-confirmation/${result.order.id}`);
             } catch (error) {
                 console.error('Erro ao processar pedido:', error);
-                alert(`Erro ao processar pedido: ${error.message}`);
+                showToast(`Erro ao processar pedido: ${error.message}`, { type: 'error' });
             } finally {
                 setLoading(false);
             }
@@ -586,7 +560,7 @@ const CheckoutPage = () => {
                                 <button
                                     type="submit"
                                     disabled={loading || !sellerName.trim()}
-                                    className="w-full bg-sick-red text-white py-4 rounded font-bold text-lg hover:bg-orange-700 transition-colors uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full bg-sick-red text-white py-4 rounded font-bold text-lg hover:bg-red-800 transition-colors uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {loading ? '⏳ Processando...' : '✅ Finalizar Pedido'}
                                 </button>
@@ -618,7 +592,7 @@ const CheckoutPage = () => {
                 </p>
                 <button
                     onClick={() => navigate('/')}
-                    className="bg-sick-red text-white py-3 px-8 rounded font-bold hover:bg-orange-700 transition-colors uppercase tracking-wide"
+                    className="bg-sick-red text-white py-3 px-8 rounded font-bold hover:bg-red-800 transition-colors uppercase tracking-wide"
                 >
                     Voltar para a Loja
                 </button>
@@ -629,9 +603,29 @@ const CheckoutPage = () => {
     return (
         <div className="bg-black min-h-screen py-12">
             <div className="container mx-auto px-4">
-                <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-8 uppercase">
+                <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-4 uppercase">
                     Finalizar Compra
                 </h1>
+
+                {/* Progress indicator — the form below is a single scrolling page (not a
+                    multi-step wizard), so this shows where the customer is in the overall
+                    purchase flow rather than gating navigation between sections. */}
+                <ol className="flex items-center gap-3 mb-8 text-sm">
+                    <li className="flex items-center gap-2 text-white font-bold">
+                        <span className="w-6 h-6 rounded-full bg-sick-red text-white flex items-center justify-center text-xs">1</span>
+                        Dados e Entrega
+                    </li>
+                    <li className="w-8 h-px bg-gray-700" aria-hidden="true"></li>
+                    <li className="flex items-center gap-2 text-white font-bold">
+                        <span className="w-6 h-6 rounded-full bg-sick-red text-white flex items-center justify-center text-xs">2</span>
+                        Pagamento
+                    </li>
+                    <li className="w-8 h-px bg-gray-700" aria-hidden="true"></li>
+                    <li className="flex items-center gap-2 text-gray-500">
+                        <span className="w-6 h-6 rounded-full border border-gray-700 flex items-center justify-center text-xs">3</span>
+                        Confirmação
+                    </li>
+                </ol>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                     {/* Form */}
@@ -648,28 +642,43 @@ const CheckoutPage = () => {
                                     <h3 className="text-white font-bold mb-4 border-b border-gray-800 pb-2">Dados Pessoais</h3>
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="block text-gray-400 text-sm mb-2">Nome Completo</label>
+                                    <label htmlFor="checkout-name" className="block text-gray-400 text-sm mb-2">Nome Completo</label>
                                     <input
-                                        name="name" value={formData.name} onChange={handleChange}
-                                        type="text" className={`w-full bg-black border ${errors.name ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
+                                        id="checkout-name" name="name" value={formData.name} onChange={handleChange}
+                                        type="text" aria-invalid={!!errors.name} aria-describedby={errors.name ? 'checkout-name-error' : undefined}
+                                        className={`w-full bg-black border ${errors.name ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                     />
-                                    {errors.name && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.name}</span>}
+                                    {errors.name && <span id="checkout-name-error" role="alert" className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.name}</span>}
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label htmlFor="checkout-email" className="block text-gray-400 text-sm mb-2">E-mail</label>
+                                    <input
+                                        id="checkout-email" name="email" value={formData.email} onChange={handleChange}
+                                        type="email" disabled={!!currentUser}
+                                        placeholder="voce@exemplo.com"
+                                        aria-invalid={!!errors.email} aria-describedby={errors.email ? 'checkout-email-error' : undefined}
+                                        className={`w-full bg-black border ${errors.email ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors disabled:opacity-60`}
+                                    />
+                                    {errors.email && <span id="checkout-email-error" role="alert" className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.email}</span>}
+                                    {currentUser && <p className="text-gray-500 text-xs mt-1">E-mail da sua conta</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-gray-400 text-sm mb-2">CPF</label>
+                                    <label htmlFor="checkout-cpf" className="block text-gray-400 text-sm mb-2">CPF</label>
                                     <input
-                                        name="cpf" value={formData.cpf} onChange={handleChange} placeholder="000.000.000-00"
-                                        type="text" className={`w-full bg-black border ${errors.cpf ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
+                                        id="checkout-cpf" name="cpf" value={formData.cpf} onChange={handleChange} placeholder="000.000.000-00"
+                                        type="text" aria-invalid={!!errors.cpf} aria-describedby={errors.cpf ? 'checkout-cpf-error' : undefined}
+                                        className={`w-full bg-black border ${errors.cpf ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                     />
-                                    {errors.cpf && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cpf}</span>}
+                                    {errors.cpf && <span id="checkout-cpf-error" role="alert" className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cpf}</span>}
                                 </div>
                                 <div>
-                                    <label className="block text-gray-400 text-sm mb-2">Telefone / WhatsApp</label>
+                                    <label htmlFor="checkout-phone" className="block text-gray-400 text-sm mb-2">Telefone / WhatsApp</label>
                                     <input
-                                        name="phone" value={formData.phone} onChange={handleChange} placeholder="(00) 00000-0000"
-                                        type="text" className={`w-full bg-black border ${errors.phone ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
+                                        id="checkout-phone" name="phone" value={formData.phone} onChange={handleChange} placeholder="(00) 00000-0000"
+                                        type="text" aria-invalid={!!errors.phone} aria-describedby={errors.phone ? 'checkout-phone-error' : undefined}
+                                        className={`w-full bg-black border ${errors.phone ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                     />
-                                    {errors.phone && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.phone}</span>}
+                                    {errors.phone && <span id="checkout-phone-error" role="alert" className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.phone}</span>}
                                 </div>
 
                                 <div className="md:col-span-2 mt-4">
@@ -689,51 +698,55 @@ const CheckoutPage = () => {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-gray-400 text-sm mb-2">CEP</label>
+                                    <label htmlFor="checkout-cep" className="block text-gray-400 text-sm mb-2">CEP</label>
                                     <div className="relative">
                                         <input
-                                            name="cep" value={formData.cep} onChange={handleChange}
+                                            id="checkout-cep" name="cep" value={formData.cep} onChange={handleChange}
                                             onBlur={(e) => fetchAddressByCep(e.target.value)}
                                             placeholder="00000-000"
-                                            type="text" className={`w-full bg-black border ${errors.cep ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
+                                            type="text" aria-invalid={!!errors.cep} aria-describedby={errors.cep ? 'checkout-cep-error' : undefined}
+                                            className={`w-full bg-black border ${errors.cep ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                         />
                                         {cepLoading && (
-                                            <div className="absolute right-3 top-3.5">
+                                            <div className="absolute right-3 top-3.5" aria-hidden="true">
                                                 <div className="w-5 h-5 border-2 border-sick-red border-t-transparent rounded-full animate-spin"></div>
                                             </div>
                                         )}
                                     </div>
-                                    {errors.cep && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cep}</span>}
+                                    {errors.cep && <span id="checkout-cep-error" role="alert" className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cep}</span>}
                                     <p className="text-gray-500 text-xs mt-1">O endereço será preenchido automaticamente</p>
                                 </div>
                                 <div>
-                                    <label className="block text-gray-400 text-sm mb-2">Cidade</label>
+                                    <label htmlFor="checkout-city" className="block text-gray-400 text-sm mb-2">Cidade</label>
                                     <input
-                                        name="city" value={formData.city} onChange={handleChange}
-                                        type="text" className={`w-full bg-black border ${errors.city ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
+                                        id="checkout-city" name="city" value={formData.city} onChange={handleChange}
+                                        type="text" aria-invalid={!!errors.city} aria-describedby={errors.city ? 'checkout-city-error' : undefined}
+                                        className={`w-full bg-black border ${errors.city ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                     />
-                                    {errors.city && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.city}</span>}
+                                    {errors.city && <span id="checkout-city-error" role="alert" className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.city}</span>}
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="block text-gray-400 text-sm mb-2">Endereço</label>
+                                    <label htmlFor="checkout-address" className="block text-gray-400 text-sm mb-2">Endereço</label>
                                     <input
-                                        name="address" value={formData.address} onChange={handleChange}
-                                        type="text" className={`w-full bg-black border ${errors.address ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
+                                        id="checkout-address" name="address" value={formData.address} onChange={handleChange}
+                                        type="text" aria-invalid={!!errors.address} aria-describedby={errors.address ? 'checkout-address-error' : undefined}
+                                        className={`w-full bg-black border ${errors.address ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                     />
-                                    {errors.address && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.address}</span>}
+                                    {errors.address && <span id="checkout-address-error" role="alert" className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.address}</span>}
                                 </div>
                                 <div>
-                                    <label className="block text-gray-400 text-sm mb-2">Número</label>
+                                    <label htmlFor="checkout-number" className="block text-gray-400 text-sm mb-2">Número</label>
                                     <input
-                                        name="number" value={formData.number} onChange={handleChange}
-                                        type="text" className={`w-full bg-black border ${errors.number ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
+                                        id="checkout-number" name="number" value={formData.number} onChange={handleChange}
+                                        type="text" aria-invalid={!!errors.number} aria-describedby={errors.number ? 'checkout-number-error' : undefined}
+                                        className={`w-full bg-black border ${errors.number ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors`}
                                     />
-                                    {errors.number && <span className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.number}</span>}
+                                    {errors.number && <span id="checkout-number-error" role="alert" className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.number}</span>}
                                 </div>
                                 <div>
-                                    <label className="block text-gray-400 text-sm mb-2">Complemento</label>
+                                    <label htmlFor="checkout-complement" className="block text-gray-400 text-sm mb-2">Complemento</label>
                                     <input
-                                        name="complement" value={formData.complement} onChange={handleChange}
+                                        id="checkout-complement" name="complement" value={formData.complement} onChange={handleChange}
                                         type="text" className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors"
                                     />
                                 </div>
@@ -829,22 +842,26 @@ const CheckoutPage = () => {
 
                                     {paymentMethod === 'credit' && (
                                         <CreditCardForm
-                                            total={cartTotal - (paymentMethod === 'pix' ? cartTotal * 0.05 : 0) + (selectedShipping?.price || 0)}
+                                            total={cartTotal + (selectedShipping?.price || 0)}
                                             onPaymentSuccess={handleCardPayment}
-                                            onError={(error) => alert(error)}
+                                            onError={(error) => showToast(error, { type: 'error' })}
                                         />
                                     )}
                                 </div>
 
-                                <div className="md:col-span-2 mt-6">
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="w-full bg-sick-red text-white py-4 rounded font-bold hover:bg-orange-700 transition-colors uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {loading ? 'Processando...' : 'Finalizar Pedido'}
-                                    </button>
-                                </div>
+                                {/* Credit card has its own submit button above (CreditCardForm) —
+                                    showing this one too would be a second, conflicting way to pay. */}
+                                {paymentMethod !== 'credit' && (
+                                    <div className="md:col-span-2 mt-6">
+                                        <button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="w-full bg-sick-red text-white py-4 rounded font-bold hover:bg-red-800 transition-colors uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {loading ? 'Processando...' : 'Finalizar Pedido'}
+                                        </button>
+                                    </div>
+                                )}
                             </form>
                         </div>
                     </div>
@@ -857,12 +874,40 @@ const CheckoutPage = () => {
                             <div className="space-y-4 mb-6">
                                 {cartItems.map(item => (
                                     <div key={item.id} className="flex gap-4">
-                                        <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded" />
-                                        <div className="flex-1">
-                                            <div className="text-white font-medium">{item.name}</div>
-                                            <div className="text-gray-400 text-sm">Qtd: {item.quantity}</div>
+                                        <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded flex-none" />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-white font-medium truncate">{item.name}</div>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <div className="flex items-center gap-1 bg-black border border-gray-700 rounded px-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                        aria-label={`Diminuir quantidade de ${item.name}`}
+                                                        className="p-1 text-gray-300 hover:text-harley-orange transition-colors"
+                                                    >
+                                                        <Minus className="w-3 h-3" />
+                                                    </button>
+                                                    <span className="text-xs font-bold w-4 text-center text-white">{item.quantity}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                        aria-label={`Aumentar quantidade de ${item.name}`}
+                                                        className="p-1 text-gray-300 hover:text-harley-orange transition-colors"
+                                                    >
+                                                        <Plus className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeFromCart(item.id)}
+                                                    aria-label={`Remover ${item.name} do pedido`}
+                                                    className="p-1 text-gray-500 hover:text-red-500 transition-colors"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="text-harley-orange font-bold">{item.price}</div>
+                                        <div className="text-harley-orange font-bold flex-none">{item.price}</div>
                                     </div>
                                 ))}
                             </div>

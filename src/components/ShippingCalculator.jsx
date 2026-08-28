@@ -73,7 +73,7 @@ const ShippingCalculator = ({ productWeight = 1, dimensions }) => {
                 <button
                     onClick={handleCalculate}
                     disabled={loading || cep.replace(/\D/g, '').length !== 8}
-                    className="bg-harley-orange text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="bg-harley-orange text-white px-4 py-2 rounded hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                     {loading ? (
                         <>

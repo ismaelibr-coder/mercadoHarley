@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
+
+const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 const CartSidebar = () => {
     const {
@@ -13,6 +15,47 @@ const CartSidebar = () => {
         cartTotal
     } = useCart();
 
+    const panelRef = useRef(null);
+    const closeButtonRef = useRef(null);
+    const previouslyFocusedRef = useRef(null);
+
+    // Dialog semantics: move focus into the panel on open, trap Tab inside it,
+    // close on Escape, and return focus to whatever opened it on close.
+    useEffect(() => {
+        if (!isCartOpen) return undefined;
+
+        previouslyFocusedRef.current = document.activeElement;
+        closeButtonRef.current?.focus();
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setIsCartOpen(false);
+                return;
+            }
+            if (e.key === 'Tab' && panelRef.current) {
+                const focusable = panelRef.current.querySelectorAll(FOCUSABLE_SELECTOR);
+                if (focusable.length === 0) return;
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            if (previouslyFocusedRef.current && typeof previouslyFocusedRef.current.focus === 'function') {
+                previouslyFocusedRef.current.focus();
+            }
+        };
+    }, [isCartOpen, setIsCartOpen]);
+
     if (!isCartOpen) return null;
 
     return (
@@ -21,20 +64,29 @@ const CartSidebar = () => {
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
                 onClick={() => setIsCartOpen(false)}
+                aria-hidden="true"
             ></div>
 
             {/* Sidebar */}
             <div className="absolute inset-y-0 right-0 max-w-md w-full flex">
-                <div className="h-full w-full bg-gray-900 shadow-xl flex flex-col border-l border-gray-800 transform transition-transform duration-300 ease-in-out">
+                <div
+                    ref={panelRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="cart-sidebar-title"
+                    className="h-full w-full bg-gray-900 shadow-xl flex flex-col border-l border-gray-800 transform transition-transform duration-300 ease-in-out"
+                >
 
                     {/* Header */}
                     <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between bg-black">
-                        <h2 className="text-xl font-display font-bold text-white uppercase flex items-center gap-2">
+                        <h2 id="cart-sidebar-title" className="text-xl font-display font-bold text-white uppercase flex items-center gap-2">
                             <ShoppingBag className="w-5 h-5 text-harley-orange" />
                             Seu Carrinho
                         </h2>
                         <button
+                            ref={closeButtonRef}
                             onClick={() => setIsCartOpen(false)}
+                            aria-label="Fechar carrinho"
                             className="text-gray-400 hover:text-white transition-colors"
                         >
                             <X className="w-6 h-6" />
@@ -77,6 +129,7 @@ const CartSidebar = () => {
                                             <div className="flex items-center gap-2 bg-gray-800 rounded p-1">
                                                 <button
                                                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                    aria-label={`Diminuir quantidade de ${item.name}`}
                                                     className="p-1 hover:text-harley-orange transition-colors"
                                                 >
                                                     <Minus className="w-3 h-3" />
@@ -84,6 +137,7 @@ const CartSidebar = () => {
                                                 <span className="text-xs font-bold w-4 text-center">{item.quantity}</span>
                                                 <button
                                                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                    aria-label={`Aumentar quantidade de ${item.name}`}
                                                     className="p-1 hover:text-harley-orange transition-colors"
                                                 >
                                                     <Plus className="w-3 h-3" />
@@ -91,6 +145,7 @@ const CartSidebar = () => {
                                             </div>
                                             <button
                                                 onClick={() => removeFromCart(item.id)}
+                                                aria-label={`Remover ${item.name} do carrinho`}
                                                 className="text-gray-500 hover:text-red-500 transition-colors"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -114,7 +169,7 @@ const CartSidebar = () => {
                             <Link
                                 to="/checkout"
                                 onClick={() => setIsCartOpen(false)}
-                                className="block w-full bg-harley-orange text-white py-4 rounded font-bold uppercase tracking-wider hover:bg-orange-700 transition-colors text-center"
+                                className="block w-full bg-harley-orange text-white py-4 rounded font-bold uppercase tracking-wider hover:bg-red-800 transition-colors text-center"
                             >
                                 Finalizar Compra
                             </Link>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Star } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { getAllProducts } from '../services/productService';
 import { Link } from 'react-router-dom';
+import ConditionBadge from './ui/ConditionBadge';
+import RatingStars from './ui/RatingStars';
 
 const ProductList = () => {
     const { addToCart } = useCart();
@@ -15,16 +17,12 @@ const ProductList = () => {
 
     const loadProducts = async () => {
         try {
-            console.log('🔍 Fetching products from API...');
             const data = await getAllProducts();
-            console.log('📦 Products received:', data);
-
             // Filter for featured products and limit to 6
             const featuredProducts = data.filter(p => p.featured).slice(0, 6);
-            console.log('⭐ Featured products:', featuredProducts.length);
             setProducts(featuredProducts);
         } catch (error) {
-            console.error('❌ Error loading products:', error);
+            console.error('Error loading featured products:', error);
         } finally {
             setLoading(false);
         }
@@ -67,28 +65,14 @@ const ProductList = () => {
                                         loading="lazy"
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                     />
-                                    {product.condition && (
-                                        <span className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold uppercase ${product.condition === 'Novo'
-                                            ? 'bg-green-600 text-white'
-                                            : 'bg-yellow-600 text-white'
-                                            }`}>
-                                            {product.condition}
-                                        </span>
-                                    )}
+                                    <ConditionBadge condition={product.condition} className="absolute top-3 right-3" />
                                     <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-sm px-3 py-1 rounded text-xs font-bold text-white uppercase">
                                         {product.category}
                                     </div>
                                 </Link>
 
                                 <div className="p-6 flex-1 flex flex-col">
-                                    <div className="flex items-center gap-1 mb-2">
-                                        {[...Array(5)].map((_, i) => (
-                                            <Star
-                                                key={i}
-                                                className={`w-4 h-4 ${i < product.rating ? 'text-sick-red fill-sick-red' : 'text-gray-600'}`}
-                                            />
-                                        ))}
-                                    </div>
+                                    <RatingStars rating={product.rating} size="md" className="mb-2" />
 
                                     <Link to={`/product/${product.id}`} className="block mb-2">
                                         <h3 className="text-xl font-bold text-white group-hover:text-sick-red transition-colors line-clamp-2">

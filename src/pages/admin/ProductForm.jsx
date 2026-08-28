@@ -4,6 +4,7 @@ import { Save, ArrowLeft, Package, DollarSign, Tag, Truck } from 'lucide-react';
 import { createProduct, updateProduct, getProductById } from '../../services/productService';
 import { getFilterSettings } from '../../services/settingsService';
 import ImageUpload from '../../components/ImageUpload';
+import { useToast } from '../../components/ui/ToastProvider';
 
 const PART_TYPES = [
     'Guidão',
@@ -46,6 +47,7 @@ const normalizeCondition = (value) => {
 const ProductForm = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const isEdit = Boolean(id);
 
     const [loading, setLoading] = useState(false);
@@ -139,7 +141,7 @@ const ProductForm = () => {
             }
         } catch (error) {
             console.error('Error loading product:', error);
-            alert('Erro ao carregar produto.');
+            showToast('Erro ao carregar produto.', { type: 'error' });
         }
     };
 
@@ -196,15 +198,15 @@ const ProductForm = () => {
 
             if (isEdit) {
                 await updateProduct(id, productData);
-                alert('Produto atualizado com sucesso!');
+                showToast('Produto atualizado com sucesso!', { type: 'success' });
             } else {
                 await createProduct(productData);
-                alert('Produto criado com sucesso!');
+                showToast('Produto criado com sucesso!', { type: 'success' });
             }
             navigate('/admin/products');
         } catch (error) {
             console.error('Error saving product:', error);
-            alert('Erro ao salvar produto.');
+            showToast('Erro ao salvar produto.', { type: 'error' });
         } finally {
             setLoading(false);
         }

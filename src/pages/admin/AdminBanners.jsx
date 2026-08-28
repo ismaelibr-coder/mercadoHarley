@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Image, Plus, Trash2, Edit, ExternalLink } from 'lucide-react';
 import { getAllBanners, deleteBanner } from '../../services/bannerService';
+import { useToast } from '../../components/ui/ToastProvider';
 
 const AdminBanners = () => {
+    const { showToast } = useToast();
     const [banners, setBanners] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
@@ -18,7 +20,7 @@ const AdminBanners = () => {
             setBanners(data);
         } catch (error) {
             console.error('Error loading banners:', error);
-            alert('Erro ao carregar banners.');
+            showToast('Erro ao carregar banners.', { type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -29,11 +31,11 @@ const AdminBanners = () => {
 
         try {
             await deleteBanner(id);
-            alert('Banner excluído com sucesso!');
+            showToast('Banner excluído com sucesso!', { type: 'success' });
             loadBanners();
         } catch (error) {
             console.error('Error deleting banner:', error);
-            alert('Erro ao excluir banner.');
+            showToast('Erro ao excluir banner.', { type: 'error' });
         }
     };
 
@@ -57,7 +59,7 @@ const AdminBanners = () => {
                 </div>
                 <Link
                     to="/admin/banners/new"
-                    className="flex items-center gap-2 bg-harley-orange text-white px-6 py-3 rounded font-bold uppercase tracking-wide hover:bg-orange-700 transition-colors"
+                    className="flex items-center gap-2 bg-harley-orange text-white px-6 py-3 rounded font-bold uppercase tracking-wide hover:bg-red-800 transition-colors"
                 >
                     <Plus className="w-5 h-5" />
                     Novo Banner
@@ -72,7 +74,7 @@ const AdminBanners = () => {
                     <p className="text-gray-400 mb-4">Nenhum banner cadastrado</p>
                     <Link
                         to="/admin/banners/new"
-                        className="inline-flex items-center gap-2 bg-harley-orange text-white px-6 py-3 rounded font-bold uppercase tracking-wide hover:bg-orange-700 transition-colors"
+                        className="inline-flex items-center gap-2 bg-harley-orange text-white px-6 py-3 rounded font-bold uppercase tracking-wide hover:bg-red-800 transition-colors"
                     >
                         <Plus className="w-5 h-5" />
                         Criar Primeiro Banner

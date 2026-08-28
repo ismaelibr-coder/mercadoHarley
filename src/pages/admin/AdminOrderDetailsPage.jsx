@@ -3,10 +3,12 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getOrderById, updateOrderStatus } from '../../services/orderService';
 import { ArrowLeft, Package, Truck, MapPin, User, CreditCard, Calendar } from 'lucide-react';
 import ShippingLabelSection from '../../components/admin/ShippingLabelSection';
+import { useToast } from '../../components/ui/ToastProvider';
 
 const AdminOrderDetailsPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -51,7 +53,7 @@ const AdminOrderDetailsPage = () => {
             setOrder(prev => ({ ...prev, status: newStatus }));
         } catch (err) {
             console.error('Error updating status:', err);
-            alert('Erro ao atualizar status.');
+            showToast('Erro ao atualizar status.', { type: 'error' });
         } finally {
             setUpdating(false);
         }

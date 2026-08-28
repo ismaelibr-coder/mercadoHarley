@@ -143,7 +143,7 @@ const ShippingRules = () => {
                 </h1>
                 <button
                     onClick={handleCreate}
-                    className="bg-harley-orange text-white px-4 py-2 rounded flex items-center gap-2 hover:bg-orange-600"
+                    className="bg-harley-orange text-white px-4 py-2 rounded flex items-center gap-2 hover:bg-red-800"
                 >
                     <Plus size={20} />
                     Nova Regra
@@ -236,7 +236,7 @@ const ShippingRules = () => {
                             </button>
                             <button
                                 type="submit"
-                                className="bg-harley-orange text-white px-6 py-2 rounded hover:bg-orange-600 flex items-center gap-2"
+                                className="bg-harley-orange text-white px-6 py-2 rounded hover:bg-red-800 flex items-center gap-2"
                             >
                                 <Save size={20} />
                                 Salvar

@@ -8,6 +8,7 @@ import CheckoutPage from './pages/CheckoutPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import AdminBanners from './pages/admin/AdminBanners';
 import BannerForm from './pages/admin/BannerForm';
@@ -15,10 +16,9 @@ import ContactPage from './pages/ContactPage';
 import AboutPage from './pages/AboutPage';
 import TermsPage from './pages/TermsPage';
 import CategoryPage from './pages/CategoryPage';
+import SearchResultsPage from './pages/SearchResultsPage';
 import CustomPartsPage from './pages/CustomPartsPage';
 import NewsPage from './pages/NewsPage';
-import SeedDatabase from './pages/SeedDatabase';
-import MigrateCategories from './pages/MigrateCategories';
 import OrderConfirmation from './pages/OrderConfirmation';
 import MyOrdersPage from './pages/MyOrdersPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -31,12 +31,14 @@ import AdminSettings from './pages/admin/AdminSettings';
 import AdminInternalStock from './pages/admin/AdminInternalStock';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './components/ui/ToastProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 
 function App() {
   return (
     <Router>
+      <ToastProvider>
       <AuthProvider>
         <CartProvider>
           <Routes>
@@ -46,14 +48,14 @@ function App() {
             <Route path="/login" element={<Layout><LoginPage /></Layout>} />
             <Route path="/register" element={<Layout><RegisterPage /></Layout>} />
             <Route path="/forgot-password" element={<Layout><ForgotPasswordPage /></Layout>} />
+            <Route path="/reset-password" element={<Layout><ResetPasswordPage /></Layout>} />
             <Route path="/contato" element={<ContactPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/category/:type" element={<Layout><CategoryPage /></Layout>} />
+            <Route path="/search" element={<Layout><SearchResultsPage /></Layout>} />
             <Route path="/custom-parts" element={<Layout><CustomPartsPage /></Layout>} />
             <Route path="/news" element={<NewsPage />} />
-            <Route path="/seed" element={<SeedDatabase />} />
-            <Route path="/migrate-categories" element={<MigrateCategories />} />
             {/* The original /order-confirmation/:orderId route was public, now it's moved to protected */}
 
             {/* Protected Routes */}
@@ -123,6 +125,7 @@ function App() {
           </Routes>
         </CartProvider>
       </AuthProvider>
+      </ToastProvider>
     </Router>
   );
 }

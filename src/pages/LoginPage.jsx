@@ -103,7 +103,7 @@ const LoginPage = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-harley-orange text-white py-3 rounded font-bold uppercase tracking-wider hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-harley-orange text-white py-3 rounded font-bold uppercase tracking-wider hover:bg-red-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? 'Entrando...' : 'Entrar'}
                         {!loading && <ArrowRight className="w-5 h-5" />}
