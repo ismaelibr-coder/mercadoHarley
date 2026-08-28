@@ -3,7 +3,11 @@ set -euo pipefail
 
 # Deploy completo (backend + frontend)
 # Exemplo:
-# DEPLOY_HOST=187.77.62.63 DEPLOY_USER=root DEPLOY_PASSWORD='***' DEPLOY_PATH=/var/www/mercadoHarley/repo FRONTEND_REMOTE_PATH=/var/www/html ./scripts/deploy-production.sh
+# DEPLOY_HOST=187.77.62.63 DEPLOY_USER=root DEPLOY_PASSWORD='***' DEPLOY_PATH=/var/www/mercadoHarley/repo FRONTEND_REMOTE_PATH=/home/app/mercado-harley/dist ./scripts/deploy-production.sh
+#
+# FRONTEND_REMOTE_PATH defaults to the real production docroot for
+# sickgrip.com.br, confirmed from /etc/nginx/sites-available/sickgrip on the
+# VPS (`root /home/app/mercado-harley/dist;`) — not /var/www/html.
 
 if [ -z "${DEPLOY_HOST:-}" ] || [ -z "${DEPLOY_USER:-}" ] || [ -z "${DEPLOY_PATH:-}" ]; then
   echo "DEPLOY_HOST, DEPLOY_USER e DEPLOY_PATH são obrigatórios."
@@ -13,7 +17,7 @@ fi
 DEPLOY_PORT="${DEPLOY_PORT:-22}"
 BACKEND_SUBDIR="${BACKEND_SUBDIR:-backend}"
 PM2_APP_NAME="${PM2_APP_NAME:-mercado-harley-backend}"
-FRONTEND_REMOTE_PATH="${FRONTEND_REMOTE_PATH:-/var/www/html}"
+FRONTEND_REMOTE_PATH="${FRONTEND_REMOTE_PATH:-/home/app/mercado-harley/dist}"
 
 echo "[1/2] Deploy backend..."
 DEPLOY_HOST="$DEPLOY_HOST" \

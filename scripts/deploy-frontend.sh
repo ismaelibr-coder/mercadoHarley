@@ -3,14 +3,19 @@ set -euo pipefail
 
 # Robust frontend deploy script
 # Usage examples:
-# METHOD=rsync HOST=example.com USER=user REMOTE_PATH=/home/user/public_html PORT=22 ./scripts/deploy-frontend.sh
+# METHOD=rsync HOST=187.77.62.63 USER=root REMOTE_PATH=/home/app/mercado-harley/dist PORT=22 ./scripts/deploy-frontend.sh
+#
+# REMOTE_PATH defaults to the real production docroot for sickgrip.com.br,
+# confirmed from /etc/nginx/sites-available/sickgrip on the VPS (`root
+# /home/app/mercado-harley/dist;`). rsync runs with --delete against this
+# path, so double-check it before overriding for a different target.
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="$REPO_ROOT/dist"
 METHOD="${METHOD:-rsync}"
 HOST="${HOST:-}"
 USER="${USER:-}"
-REMOTE_PATH="${REMOTE_PATH:-/public_html/}"
+REMOTE_PATH="${REMOTE_PATH:-/home/app/mercado-harley/dist}"
 SSH_KEY="${SSH_KEY:-}"
 PORT="${PORT:-22}"
 PASSWORD="${PASSWORD:-}"
