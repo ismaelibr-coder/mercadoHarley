@@ -1,5 +1,6 @@
 import { Product } from '../models/index.js';
 import { calculateMelhorEnvioShipping } from './melhorEnvioService.js';
+import { createOrder as createOrderRecord } from './dbService.js';
 import logger from '../utils/logger.js';
 
 // Same discount rule the frontend displays (CheckoutPage.jsx), enforced here so it
@@ -110,4 +111,51 @@ export const calculateOrderTotal = async (items, { shipping, paymentMethod } = {
     };
 };
 
-export default { calculateOrderTotal };
+// Every route that creates a paid order needs a unique, human-readable order number
+// unless the client already supplied one.
+export const generateOrderNumber = () => {
+    const year = new Date().getFullYear();
+    const random = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+    return `HD-${year}-${random}`;
+};
+
+/**
+ * The part of PIX/boleto/credit-card order creation that was previously copy-pasted
+ * three times in payments.js: assign an order number if missing, recompute the
+ * trusted total (see calculateOrderTotal above), and persist the pending order.
+ * Payment-provider-specific work (calling Mercado Pago, shaping the
+ * updateOrderPayment payload, sending confirmation email) stays in the route —
+ * those genuinely differ per method and forcing them through a shared callback
+ * would obscure more than it'd save.
+ *
+ * Mutates and returns `orderData` (order number/items/subtotal/discount/total/
+ * shipping.price now reflect verified server-side values) alongside the created
+ * `order` record, so callers can pass the same orderData on to the payment
+ * provider without re-deriving anything.
+ */
+export const createPendingOrder = async (orderData, { paymentMethod, userId, userEmail }) => {
+    if (!orderData.orderNumber) {
+        orderData.orderNumber = generateOrderNumber();
+    }
+
+    const { subtotal, discount, shipping, total, items } = await calculateOrderTotal(orderData.items, {
+        shipping: orderData.shipping,
+        paymentMethod
+    });
+    orderData.items = items;
+    orderData.subtotal = subtotal;
+    orderData.discount = discount;
+    orderData.total = total;
+    if (orderData.shipping) orderData.shipping.price = shipping;
+
+    const order = await createOrderRecord({
+        ...orderData,
+        userId,
+        userEmail,
+        status: 'pending'
+    });
+
+    return { order, orderData };
+};
+
+export default { calculateOrderTotal, createPendingOrder, generateOrderNumber };

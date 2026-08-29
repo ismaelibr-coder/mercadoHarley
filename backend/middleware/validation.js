@@ -1,42 +1,9 @@
 import Joi from 'joi';
 
-/**
- * Validate product data before creation/update
- */
-export const validateProduct = (req, res, next) => {
-    const schema = Joi.object({
-        name: Joi.string().min(3).max(200).required(),
-        description: Joi.string().max(2000).required(),
-        price: Joi.alternatives().try(
-            Joi.number().positive(),
-            Joi.string().pattern(/^R\$\s?[\d.,]+$/),
-            Joi.string().pattern(/^\d+(?:[.,]\d{1,2})?$/)
-        ).required(),
-        category: Joi.string().required(),
-        partType: Joi.string().allow('', null).optional(),
-        partner: Joi.string().allow('', null).optional(),
-        image: Joi.string().uri().allow('', null).optional(),
-        images: Joi.array().items(Joi.string().uri()).optional(),
-        stock: Joi.number().integer().min(0).required(),
-        weight: Joi.number().positive().allow(0).optional(),
-        width: Joi.number().positive().allow(0).optional(),
-        height: Joi.number().positive().allow(0).optional(),
-        length: Joi.number().positive().allow(0).optional(),
-        dimensions: Joi.object({
-            weight: Joi.number().positive().allow(0).optional(),
-            width: Joi.number().positive().allow(0).optional(),
-            height: Joi.number().positive().allow(0).optional(),
-            length: Joi.number().positive().allow(0).optional()
-        }).optional(),
-        featured: Joi.boolean().optional(),
-        featuredCarousel: Joi.boolean().optional(),
-        new: Joi.boolean().optional(),
-        rating: Joi.number().min(0).max(5).optional(),
-        condition: Joi.string().allow('', null).optional(),
-        profitMargin: Joi.number().allow(0).optional(),
-        specs: Joi.array().items(Joi.string().allow('')).optional()
-    }).unknown(true);
-
+// Every validator below did the same 6 lines: run a schema, and on failure
+// respond 400 with the first error message. Factored out once so each export
+// is just its schema.
+const validate = (schema) => (req, res, next) => {
     const { error } = schema.validate(req.body);
     if (error) {
         return res.status(400).json({
@@ -47,60 +14,61 @@ export const validateProduct = (req, res, next) => {
     next();
 };
 
-/**
- * Validate product data on partial update — same fields as validateProduct,
- * but nothing is required (PUT only sends what's changing); at least one
- * field must be present so an empty body doesn't silently no-op.
- */
-export const validateProductUpdate = (req, res, next) => {
-    const schema = Joi.object({
-        name: Joi.string().min(3).max(200).optional(),
-        description: Joi.string().max(2000).optional(),
-        price: Joi.alternatives().try(
-            Joi.number().positive(),
-            Joi.string().pattern(/^R\$\s?[\d.,]+$/),
-            Joi.string().pattern(/^\d+(?:[.,]\d{1,2})?$/)
-        ).optional(),
-        category: Joi.string().optional(),
-        partType: Joi.string().allow('', null).optional(),
-        partner: Joi.string().allow('', null).optional(),
-        image: Joi.string().uri().allow('', null).optional(),
-        images: Joi.array().items(Joi.string().uri()).optional(),
-        stock: Joi.number().integer().min(0).optional(),
+const productFields = {
+    name: Joi.string().min(3).max(200),
+    description: Joi.string().max(2000),
+    price: Joi.alternatives().try(
+        Joi.number().positive(),
+        Joi.string().pattern(/^R\$\s?[\d.,]+$/),
+        Joi.string().pattern(/^\d+(?:[.,]\d{1,2})?$/)
+    ),
+    category: Joi.string(),
+    partType: Joi.string().allow('', null),
+    partner: Joi.string().allow('', null),
+    image: Joi.string().uri().allow('', null),
+    images: Joi.array().items(Joi.string().uri()),
+    stock: Joi.number().integer().min(0),
+    weight: Joi.number().positive().allow(0),
+    width: Joi.number().positive().allow(0),
+    height: Joi.number().positive().allow(0),
+    length: Joi.number().positive().allow(0),
+    dimensions: Joi.object({
         weight: Joi.number().positive().allow(0).optional(),
         width: Joi.number().positive().allow(0).optional(),
         height: Joi.number().positive().allow(0).optional(),
-        length: Joi.number().positive().allow(0).optional(),
-        dimensions: Joi.object({
-            weight: Joi.number().positive().allow(0).optional(),
-            width: Joi.number().positive().allow(0).optional(),
-            height: Joi.number().positive().allow(0).optional(),
-            length: Joi.number().positive().allow(0).optional()
-        }).optional(),
-        featured: Joi.boolean().optional(),
-        featuredCarousel: Joi.boolean().optional(),
-        new: Joi.boolean().optional(),
-        rating: Joi.number().min(0).max(5).optional(),
-        condition: Joi.string().allow('', null).optional(),
-        profitMargin: Joi.number().allow(0).optional(),
-        specs: Joi.array().items(Joi.string().allow('')).optional()
-    }).unknown(true).min(1);
-
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({
-            error: 'Dados inválidos',
-            details: error.details[0].message
-        });
-    }
-    next();
+        length: Joi.number().positive().allow(0).optional()
+    }),
+    featured: Joi.boolean(),
+    featuredCarousel: Joi.boolean(),
+    new: Joi.boolean(),
+    rating: Joi.number().min(0).max(5),
+    condition: Joi.string().allow('', null),
+    profitMargin: Joi.number().allow(0),
+    specs: Joi.array().items(Joi.string().allow(''))
 };
 
-/**
- * Validate shipping calculation request
- */
-export const validateShipping = (req, res, next) => {
-    const schema = Joi.object({
+// Validate product data before creation
+export const validateProduct = validate(
+    Joi.object({
+        ...productFields,
+        name: productFields.name.required(),
+        description: productFields.description.required(),
+        price: productFields.price.required(),
+        category: productFields.category.required(),
+        stock: productFields.stock.required()
+    }).unknown(true)
+);
+
+// Same fields as validateProduct, but nothing required (PUT only sends what's
+// changing); at least one field must be present so an empty body doesn't
+// silently no-op.
+export const validateProductUpdate = validate(
+    Joi.object(productFields).unknown(true).min(1)
+);
+
+// Validate shipping calculation request
+export const validateShipping = validate(
+    Joi.object({
         cep: Joi.string().pattern(/^\d{5}-?\d{3}$/).required(),
         weight: Joi.number().positive().required(),
         dimensions: Joi.object({
@@ -108,20 +76,11 @@ export const validateShipping = (req, res, next) => {
             height: Joi.number().positive().optional(),
             length: Joi.number().positive().optional()
         }).optional()
-    });
-
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({
-            error: 'Dados inválidos',
-            details: error.details[0].message
-        });
-    }
-    next();
-};
+    })
+);
 
 /**
- * Validate order/payment creation. Matches the actual payload shape sent by
+ * Order/payment creation. Matches the actual payload shape sent by
  * CheckoutPage.jsx (buildOrderData) — items[].id (not productId), customer/
  * shipping as nested objects, price fields as numbers. Deliberately loose on
  * customer.cpf/phone and shipping.cep/number: the in-store "pavilhão" flow
@@ -157,141 +116,67 @@ const orderPayloadSchema = Joi.object({
     installments: Joi.number().integer().min(1).optional()
 }).unknown(true);
 
-export const validateOrder = (req, res, next) => {
-    const { error } = orderPayloadSchema.validate(req.body);
-    if (error) {
-        return res.status(400).json({
-            error: 'Dados inválidos',
-            details: error.details[0].message
-        });
-    }
-    next();
-};
+export const validateOrder = validate(orderPayloadSchema);
 
 // Every status dbService.js/emailService.js actually know how to handle — an
 // unrecognized value would silently leave stock/notifications inconsistent.
 const ORDER_STATUSES = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'rejected'];
 
-export const validateOrderStatus = (req, res, next) => {
-    const schema = Joi.object({
+export const validateOrderStatus = validate(
+    Joi.object({
         status: Joi.string().valid(...ORDER_STATUSES).required()
-    }).unknown(true);
+    }).unknown(true)
+);
 
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({
-            error: 'Dados inválidos',
-            details: error.details[0].message
-        });
-    }
-    next();
-};
-
-/**
- * Validate the /api/payments/credit-card body, which wraps the same order
- * payload one level deeper: { orderData, cardToken, installments, paymentMethodId }.
- */
-export const validateCreditCardPayment = (req, res, next) => {
-    const schema = Joi.object({
+// Validate the /api/payments/credit-card body, which wraps the same order
+// payload one level deeper: { orderData, cardToken, installments, paymentMethodId }.
+export const validateCreditCardPayment = validate(
+    Joi.object({
         orderData: orderPayloadSchema.required(),
         cardToken: Joi.string().required(),
         installments: Joi.number().integer().min(1).optional(),
         paymentMethodId: Joi.string().required()
-    }).unknown(true);
+    }).unknown(true)
+);
 
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({
-            error: 'Dados inválidos',
-            details: error.details[0].message
-        });
-    }
-    next();
-};
-
-export const validateSupplierPayload = (req, res, next) => {
-    const schema = Joi.object({
+export const validateSupplierPayload = validate(
+    Joi.object({
         name: Joi.string().trim().min(2).max(120).required(),
         active: Joi.boolean().optional()
-    }).unknown(false);
+    }).unknown(false)
+);
 
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({
-            error: 'Dados inválidos',
-            details: error.details[0].message
-        });
-    }
-    next();
-};
-
-export const validateSupplierUpdatePayload = (req, res, next) => {
-    const schema = Joi.object({
+export const validateSupplierUpdatePayload = validate(
+    Joi.object({
         name: Joi.string().trim().min(2).max(120).optional(),
         active: Joi.boolean().optional()
-    }).or('name', 'active').unknown(false);
+    }).or('name', 'active').unknown(false)
+);
 
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({
-            error: 'Dados inválidos',
-            details: error.details[0].message
-        });
-    }
-    next();
-};
-
-export const validatePricingConfigPayload = (req, res, next) => {
-    const schema = Joi.object({
+export const validatePricingConfigPayload = validate(
+    Joi.object({
         siteMarkupPercent: Joi.number().min(0).required(),
         marketplaceMarkupPercent: Joi.number().min(0).required(),
         roundingStrategy: Joi.string().valid('2_decimals').optional()
-    }).unknown(false);
+    }).unknown(false)
+);
 
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({
-            error: 'Dados inválidos',
-            details: error.details[0].message
-        });
-    }
-    next();
-};
-
-export const validateInternalStockItemCreate = (req, res, next) => {
-    const schema = Joi.object({
+export const validateInternalStockItemCreate = validate(
+    Joi.object({
         name: Joi.string().trim().min(2).max(200).required(),
         description: Joi.string().trim().min(2).max(5000).required(),
         quantity: Joi.number().integer().min(0).required(),
         unitCost: Joi.number().positive().required(),
         supplierId: Joi.string().trim().required()
-    }).unknown(false);
+    }).unknown(false)
+);
 
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({
-            error: 'Dados inválidos',
-            details: error.details[0].message
-        });
-    }
-    next();
-};
-
-export const validateInternalStockItemUpdate = (req, res, next) => {
-    const schema = Joi.object({
+export const validateInternalStockItemUpdate = validate(
+    Joi.object({
         name: Joi.string().trim().min(2).max(200).optional(),
         description: Joi.string().trim().min(2).max(5000).optional(),
         quantity: Joi.number().integer().min(0).optional(),
         unitCost: Joi.number().positive().optional(),
         supplierId: Joi.string().trim().optional()
-    }).or('name', 'description', 'quantity', 'unitCost', 'supplierId').unknown(false);
-
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({
-            error: 'Dados inválidos',
-            details: error.details[0].message
-        });
-    }
-    next();
-};
+    }).or('name', 'description', 'quantity', 'unitCost', 'supplierId').unknown(false)
+);

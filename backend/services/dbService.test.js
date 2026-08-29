@@ -11,7 +11,7 @@ vi.mock('../config/database.js', () => ({
 }));
 
 vi.mock('../models/index.js', () => ({
-    sequelize: { transaction: vi.fn() },
+    sequelize: { transaction: vi.fn(), query: vi.fn() },
     User: {},
     Product: { findByPk: vi.fn() },
     Order: { findByPk: vi.fn() },
@@ -20,7 +20,7 @@ vi.mock('../models/index.js', () => ({
 }));
 
 import { sequelize, Product, Order } from '../models/index.js';
-import { updateOrderStatus } from './dbService.js';
+import { updateOrderStatus, findOrderByPaymentId } from './dbService.js';
 
 const makeProduct = (stock) => ({
     stock,
@@ -111,5 +111,62 @@ describe('updateOrderStatus — locking and idempotency', () => {
         await expect(updateOrderStatus('ghost', 'paid')).rejects.toThrow(/not found/i);
         expect(transaction.rollback).toHaveBeenCalled();
         expect(transaction.commit).not.toHaveBeenCalled();
+    });
+
+    it('sets err.status = 404 on "not found" so the central errorHandler responds 404, not 500', async () => {
+        Order.findByPk.mockResolvedValue(null);
+
+        try {
+            await updateOrderStatus('ghost', 'paid');
+            expect.unreachable('should have thrown');
+        } catch (err) {
+            expect(err.status).toBe(404);
+        }
+    });
+});
+
+describe('findOrderByPaymentId — single query, both id shapes', () => {
+    beforeEach(() => {
+        sequelize.query.mockReset();
+    });
+
+    it('queries with a null numeric replacement (not NaN) for a non-numeric payment id', async () => {
+        sequelize.query.mockResolvedValue([]);
+
+        await findOrderByPaymentId('mock_pix_1730000000000');
+
+        const [, options] = sequelize.query.mock.calls[0];
+        // NaN would serialize to the bare SQL token `NaN`, a syntax error — must be null.
+        expect(options.replacements).toEqual(['mock_pix_1730000000000', null]);
+    });
+
+    it('queries with both string and numeric forms for a numeric payment id', async () => {
+        sequelize.query.mockResolvedValue([]);
+
+        await findOrderByPaymentId('123456789');
+
+        const [, options] = sequelize.query.mock.calls[0];
+        expect(options.replacements).toEqual(['123456789', 123456789]);
+    });
+
+    it('parses JSON string columns on the matched row', async () => {
+        sequelize.query.mockResolvedValue([{
+            id: 'ord-1',
+            items: '[{"id":"p1"}]',
+            payment: '{"paymentId":"123"}',
+            shipping: '{"city":"Porto Alegre"}'
+        }]);
+
+        const result = await findOrderByPaymentId('123');
+
+        expect(result.items).toEqual([{ id: 'p1' }]);
+        expect(result.payment).toEqual({ paymentId: '123' });
+        expect(result.shipping).toEqual({ city: 'Porto Alegre' });
+    });
+
+    it('returns null when nothing matches', async () => {
+        sequelize.query.mockResolvedValue([]);
+
+        expect(await findOrderByPaymentId('nope')).toBeNull();
     });
 });

@@ -7,54 +7,37 @@ import {
     getPaymentStatus
 } from '../services/mercadoPagoService.js';
 import {
-    createOrder as createOrderRecord,
     updateOrderPayment,
     getOrderById,
     findOrderByPaymentId
 } from '../services/dbService.js';
-import { calculateOrderTotal } from '../services/orderCalculationService.js';
+import { createPendingOrder } from '../services/orderCalculationService.js';
 import { sendOrderConfirmation } from '../services/emailService.js';
 import { optionalAuth, authenticate } from '../middleware/auth.js';
 import { validateOrder, validateCreditCardPayment } from '../middleware/validation.js';
 
 const router = express.Router();
 
-// Generate unique order number
-const generateOrderNumber = () => {
-    const year = new Date().getFullYear();
-    const random = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-    return `HD-${year}-${random}`;
-};
-
 // Create PIX payment
 router.post('/pix', optionalAuth, validateOrder, async (req, res, next) => {
     try {
-        const orderData = req.body;
+        let orderData = req.body;
 
-        // Generate order number if not provided
-        if (!orderData.orderNumber) {
-            orderData.orderNumber = generateOrderNumber();
-        }
-
-        // Recompute subtotal/discount/total server-side from real product prices —
-        // never trust the amounts the client sent (price tampering protection).
-        const { subtotal, discount, shipping, total, items } = await calculateOrderTotal(orderData.items, {
-            shipping: orderData.shipping,
-            paymentMethod: 'pix'
+        // Assigns orderNumber, recomputes subtotal/discount/total/shipping server-side
+        // from real product prices (never trusts what the client sent), and persists
+        // the pending order.
+        // Guest checkout (no logged-in user): userId must be null, not the literal
+        // string 'guest' — orders.userId has a FK to users.id (ON DELETE SET NULL,
+        // i.e. nullable by design), and 'guest' is not a real user row, so every
+        // guest order was failing with a foreign-key-constraint error before ever
+        // reaching Mercado Pago. Confirmed in production: 0 guest orders exist.
+        const created = await createPendingOrder(orderData, {
+            paymentMethod: 'pix',
+            userId: req.user?.uid || null,
+            userEmail: req.user?.email || orderData.customer.email
         });
-        orderData.items = items;
-        orderData.subtotal = subtotal;
-        orderData.discount = discount;
-        orderData.total = total;
-        if (orderData.shipping) orderData.shipping.price = shipping;
-
-        // Create order in database first
-        const order = await createOrderRecord({
-            ...orderData,
-            userId: req.user?.uid || 'guest',
-            userEmail: req.user?.email || orderData.customer.email,
-            status: 'pending'
-        });
+        const order = created.order;
+        orderData = created.orderData;
 
         // Create PIX payment with Mercado Pago
         const paymentResult = await createPixPayment({
@@ -92,31 +75,15 @@ router.post('/pix', optionalAuth, validateOrder, async (req, res, next) => {
 // Create Boleto payment
 router.post('/boleto', optionalAuth, validateOrder, async (req, res, next) => {
     try {
-        const orderData = req.body;
+        let orderData = req.body;
 
-        if (!orderData.orderNumber) {
-            orderData.orderNumber = generateOrderNumber();
-        }
-
-        // Recompute subtotal/discount/total server-side from real product prices —
-        // never trust the amounts the client sent (price tampering protection).
-        const { subtotal, discount, shipping, total, items } = await calculateOrderTotal(orderData.items, {
-            shipping: orderData.shipping,
-            paymentMethod: 'boleto'
+        const created = await createPendingOrder(orderData, {
+            paymentMethod: 'boleto',
+            userId: req.user?.uid || null,
+            userEmail: req.user?.email || orderData.customer.email
         });
-        orderData.items = items;
-        orderData.subtotal = subtotal;
-        orderData.discount = discount;
-        orderData.total = total;
-        if (orderData.shipping) orderData.shipping.price = shipping;
-
-        // Create order in database
-        const order = await createOrderRecord({
-            ...orderData,
-            userId: req.user?.uid || 'guest',
-            userEmail: req.user?.email || orderData.customer.email,
-            status: 'pending'
-        });
+        const order = created.order;
+        orderData = created.orderData;
 
         // Create Boleto payment
         const paymentResult = await createBoletoPayment({
@@ -149,7 +116,7 @@ router.post('/boleto', optionalAuth, validateOrder, async (req, res, next) => {
 // Process credit card payment
 router.post('/credit-card', optionalAuth, validateCreditCardPayment, async (req, res, next) => {
     try {
-        const { orderData, cardToken, installments = 1, paymentMethodId } = req.body;
+        let { orderData, cardToken, installments = 1, paymentMethodId } = req.body;
 
         if (!cardToken) {
             return res.status(400).json({ error: 'Token do cartão é obrigatório' });
@@ -159,29 +126,13 @@ router.post('/credit-card', optionalAuth, validateCreditCardPayment, async (req,
             return res.status(400).json({ error: 'Método de pagamento é obrigatório' });
         }
 
-        if (!orderData.orderNumber) {
-            orderData.orderNumber = generateOrderNumber();
-        }
-
-        // Recompute subtotal/discount/total server-side from real product prices —
-        // never trust the amounts the client sent (price tampering protection).
-        const { subtotal, discount, shipping, total, items } = await calculateOrderTotal(orderData.items, {
-            shipping: orderData.shipping,
-            paymentMethod: 'credit_card'
+        const created = await createPendingOrder(orderData, {
+            paymentMethod: 'credit_card',
+            userId: req.user?.uid || null,
+            userEmail: req.user?.email || orderData.customer.email
         });
-        orderData.items = items;
-        orderData.subtotal = subtotal;
-        orderData.discount = discount;
-        orderData.total = total;
-        if (orderData.shipping) orderData.shipping.price = shipping;
-
-        // Create order in database
-        const order = await createOrderRecord({
-            ...orderData,
-            userId: req.user?.uid || 'guest',
-            userEmail: req.user?.email || orderData.customer.email,
-            status: 'pending'
-        });
+        const order = created.order;
+        orderData = created.orderData;
 
         // Process credit card payment with installments
         const paymentResult = await processCreditCardPayment({

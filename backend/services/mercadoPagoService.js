@@ -17,6 +17,43 @@ logger.info('✅ Mercado Pago configured');
 // Helper to check if mock mode is enabled
 const isMockMode = () => process.env.MOCK_PAYMENTS === 'true';
 
+// The payer block — name split, CPF digits-only — was built identically 3 times
+// across createPixPayment/createBoletoPayment/processCreditCardPayment. Boleto is
+// the one payment method that additionally needs a billing address (Mercado Pago
+// requires it for that method specifically), so it's opt-in here rather than
+// silently added everywhere.
+const buildPayer = (orderData, { includeAddress = false } = {}) => {
+    const payer = {
+        email: orderData.customer.email,
+        first_name: orderData.customer.name.split(' ')[0],
+        last_name: orderData.customer.name.split(' ').slice(1).join(' ') || 'Silva',
+        identification: {
+            type: 'CPF',
+            number: orderData.customer.cpf.replace(/\D/g, '')
+        }
+    };
+
+    if (includeAddress) {
+        payer.address = {
+            zip_code: orderData.shipping.cep.replace(/\D/g, ''),
+            street_name: orderData.shipping.address,
+            street_number: parseInt(orderData.shipping.number) || 0,
+            neighborhood: orderData.shipping.city,
+            city: orderData.shipping.city,
+            federal_unit: orderData.shipping.state || 'SP'
+        };
+    }
+
+    return payer;
+};
+
+const buildNotificationUrl = () => `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/webhooks/mercadopago`;
+
+const buildNotificationMetadata = (orderData) => ({
+    order_id: orderData.id,
+    order_number: orderData.orderNumber
+});
+
 // Create PIX payment
 export const createPixPayment = async (orderData) => {
     try {
@@ -36,20 +73,9 @@ export const createPixPayment = async (orderData) => {
             transaction_amount: parseFloat(Number(orderData.total).toFixed(2)),
             description: `Pedido ${orderData.orderNumber} - Sick Grip`,
             payment_method_id: 'pix',
-            payer: {
-                email: orderData.customer.email,
-                first_name: orderData.customer.name.split(' ')[0],
-                last_name: orderData.customer.name.split(' ').slice(1).join(' ') || 'Silva',
-                identification: {
-                    type: 'CPF',
-                    number: orderData.customer.cpf.replace(/\D/g, '')
-                }
-            },
-            notification_url: `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/webhooks/mercadopago`,
-            metadata: {
-                order_id: orderData.id,
-                order_number: orderData.orderNumber
-            }
+            payer: buildPayer(orderData),
+            notification_url: buildNotificationUrl(),
+            metadata: buildNotificationMetadata(orderData)
         };
 
         // Idempotency key = this order's own id (unique per order, already created in
@@ -97,28 +123,9 @@ export const createBoletoPayment = async (orderData) => {
             transaction_amount: orderData.total,
             description: `Pedido ${orderData.orderNumber} - Sick Grip`,
             payment_method_id: 'bolbradesco',
-            payer: {
-                email: orderData.customer.email,
-                first_name: orderData.customer.name.split(' ')[0],
-                last_name: orderData.customer.name.split(' ').slice(1).join(' ') || 'Silva',
-                identification: {
-                    type: 'CPF',
-                    number: orderData.customer.cpf.replace(/\D/g, '')
-                },
-                address: {
-                    zip_code: orderData.shipping.cep.replace(/\D/g, ''),
-                    street_name: orderData.shipping.address,
-                    street_number: parseInt(orderData.shipping.number) || 0,
-                    neighborhood: orderData.shipping.city,
-                    city: orderData.shipping.city,
-                    federal_unit: orderData.shipping.state || 'SP'
-                }
-            },
-            notification_url: `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/webhooks/mercadopago`,
-            metadata: {
-                order_id: orderData.id,
-                order_number: orderData.orderNumber
-            }
+            payer: buildPayer(orderData, { includeAddress: true }),
+            notification_url: buildNotificationUrl(),
+            metadata: buildNotificationMetadata(orderData)
         };
 
         const response = await payment.create({ body: paymentData, requestOptions: { idempotencyKey: String(orderData.id) } });
@@ -163,20 +170,9 @@ export const processCreditCardPayment = async (orderData, cardToken, installment
             description: `Pedido ${orderData.orderNumber} - Sick Grip`,
             installments: parseInt(installments),
             payment_method_id: paymentMethodId,
-            payer: {
-                email: orderData.customer.email,
-                first_name: orderData.customer.name.split(' ')[0],
-                last_name: orderData.customer.name.split(' ').slice(1).join(' ') || 'Silva',
-                identification: {
-                    type: 'CPF',
-                    number: orderData.customer.cpf.replace(/\D/g, '')
-                }
-            },
-            notification_url: `${process.env.BACKEND_URL || 'http://localhost:3001'}/api/webhooks/mercadopago`,
-            metadata: {
-                order_id: orderData.id,
-                order_number: orderData.orderNumber
-            }
+            payer: buildPayer(orderData),
+            notification_url: buildNotificationUrl(),
+            metadata: buildNotificationMetadata(orderData)
         };
 
         const response = await payment.create({ body: paymentData, requestOptions: { idempotencyKey: String(orderData.id) } });

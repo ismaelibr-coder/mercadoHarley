@@ -1,6 +1,6 @@
 import express from 'express';
 import { getAllOrders, getOrderById, updateOrderStatus, createOrder, getOrdersByUserId } from '../services/dbService.js';
-import { calculateOrderTotal } from '../services/orderCalculationService.js';
+import { createPendingOrder } from '../services/orderCalculationService.js';
 import { sendOrderStatusUpdate } from '../services/emailService.js';
 import { verifyAdmin, authenticate } from '../middleware/auth.js';
 import { auditLog } from '../middleware/auditLog.js';
@@ -13,14 +13,13 @@ const router = express.Router();
  * GET /api/orders
  * Get orders for authenticated user (or all orders if admin)
  */
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, async (req, res, next) => {
     try {
         const isAdmin = req.user?.isAdmin || false;
         const orders = isAdmin ? await getAllOrders() : await getOrdersByUserId(req.userId);
         res.json({ orders });
     } catch (error) {
-        logger.error('Error fetching orders:', error);
-        res.status(500).json({ error: 'Failed to fetch orders' });
+        next(error);
     }
 });
 
@@ -28,7 +27,7 @@ router.get('/', authenticate, async (req, res) => {
  * GET /api/orders/:id
  * Get order by ID (admin or order owner)
  */
-router.get('/:id', authenticate, async (req, res) => {
+router.get('/:id', authenticate, async (req, res, next) => {
     try {
         const order = await getOrderById(req.params.id);
 
@@ -39,11 +38,7 @@ router.get('/:id', authenticate, async (req, res) => {
 
         res.status(403).json({ error: 'Access denied' });
     } catch (error) {
-        logger.error('Error fetching order:', error);
-        if (error.message.includes('not found')) {
-            return res.status(404).json({ error: 'Order not found' });
-        }
-        res.status(500).json({ error: 'Failed to fetch order' });
+        next(error);
     }
 });
 
@@ -51,7 +46,7 @@ router.get('/:id', authenticate, async (req, res) => {
  * POST /api/orders
  * Create order (requires authentication)
  */
-router.post('/', authenticate, validateOrder, auditLog('CREATE_ORDER'), async (req, res) => {
+router.post('/', authenticate, validateOrder, auditLog('CREATE_ORDER'), async (req, res, next) => {
     try {
         const orderData = req.body;
         orderData.userId = req.userId;
@@ -60,33 +55,31 @@ router.post('/', authenticate, validateOrder, auditLog('CREATE_ORDER'), async (r
         const { User } = await import('../models/index.js');
         const user = await User.findByPk(req.userId);
 
-        // If pavilhao user, require sellerName
+        let order;
         if (user && user.userType === 'pavilhao') {
             if (!orderData.sellerName || orderData.sellerName.trim() === '') {
                 return res.status(400).json({
                     error: 'Campo "Nome do Vendedor" é obrigatório para vendas no pavilhão'
                 });
             }
-            // Pavilhão sales are intentionally recorded at zero (settled in-store,
-            // outside the payment system) — skip price recalculation for this flow.
+            // Pavilhão sales are settled in-store, outside the payment system, but the
+            // total still feeds sales reporting (getSalesReportPavilhaoVsOnline) — see
+            // the validation added in Fase 2, not skipped/zeroed here.
             orderData.orderType = 'pavilhao';
+            order = await createOrder(orderData);
         } else {
             orderData.orderType = 'online';
 
-            // Recompute subtotal/discount/total server-side from real product prices —
-            // never trust the amounts the client sent (price tampering protection).
-            const { subtotal, discount, shipping, total, items } = await calculateOrderTotal(orderData.items, {
-                shipping: orderData.shipping,
-                paymentMethod: orderData.payment?.method
+            // Assigns orderNumber, recomputes subtotal/discount/total/shipping
+            // server-side from real product prices (never trusts the client), and
+            // persists the pending order.
+            const created = await createPendingOrder(orderData, {
+                paymentMethod: orderData.payment?.method,
+                userId: orderData.userId,
+                userEmail: orderData.customer?.email
             });
-            orderData.items = items;
-            orderData.subtotal = subtotal;
-            orderData.discount = discount;
-            orderData.total = total;
-            if (orderData.shipping) orderData.shipping.price = shipping;
+            order = created.order;
         }
-
-        const order = await createOrder(orderData);
 
         res.status(201).json({
             success: true,
@@ -94,8 +87,7 @@ router.post('/', authenticate, validateOrder, auditLog('CREATE_ORDER'), async (r
             message: 'Order created successfully'
         });
     } catch (error) {
-        logger.error('Error creating order:', error);
-        res.status(500).json({ error: error.message || 'Failed to create order' });
+        next(error);
     }
 });
 
@@ -103,7 +95,7 @@ router.post('/', authenticate, validateOrder, auditLog('CREATE_ORDER'), async (r
  * PUT /api/orders/:id/status
  * Update order status (admin only)
  */
-router.put('/:id/status', verifyAdmin, validateOrderStatus, auditLog('UPDATE_ORDER_STATUS'), async (req, res) => {
+router.put('/:id/status', verifyAdmin, validateOrderStatus, auditLog('UPDATE_ORDER_STATUS'), async (req, res, next) => {
     try {
         const { status } = req.body;
         const orderId = req.params.id;
@@ -124,11 +116,7 @@ router.put('/:id/status', verifyAdmin, validateOrderStatus, auditLog('UPDATE_ORD
             message: 'Order status updated successfully'
         });
     } catch (error) {
-        logger.error('Error updating order status:', error);
-        if (error.message.includes('not found')) {
-            return res.status(404).json({ error: 'Order not found' });
-        }
-        res.status(500).json({ error: error.message || 'Failed to update order status' });
+        next(error);
     }
 });
 

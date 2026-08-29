@@ -1,6 +1,15 @@
 import { sequelize, User, Product, Order, Banner, AuditLog } from '../models/index.js';
 import { QueryTypes } from 'sequelize';
 
+// Routes migrating to next(error) + the central errorHandler (see errorHandler.js)
+// read err.status when set, falling back to 500 otherwise — this is how a "not
+// found" error here becomes an actual 404 response instead of a generic 500.
+const notFoundError = (message) => {
+  const err = new Error(message);
+  err.status = 404;
+  return err;
+};
+
 export const createOrder = async (orderData) => {
   const t = await sequelize.transaction();
   try {
@@ -46,7 +55,7 @@ export const createOrder = async (orderData) => {
 
 export const getOrderById = async (orderId) => {
   const o = await Order.findByPk(orderId);
-  if (!o) throw new Error('Order not found');
+  if (!o) throw notFoundError('Order not found');
   return o.toJSON();
 };
 
@@ -85,7 +94,7 @@ export const updateOrderStatus = async (orderId, status, additionalData = {}) =>
     // previousStatus before either commits, and both pass the "genuine transition"
     // check below, double-decrementing stock for one paid order.
     const order = await Order.findByPk(orderId, { transaction: t, lock: t.LOCK.UPDATE });
-    if (!order) throw new Error('Order not found');
+    if (!order) throw notFoundError('Order not found');
 
     const previousStatus = order.status;
 
@@ -121,30 +130,29 @@ export const updateOrderPayment = async (orderId, paymentData) => {
   return getOrderById(orderId);
 };
 
+// payment.paymentId in the JSON column can be stored as either a string or a
+// number depending on which payment provider wrote it — matching both in one
+// query instead of two sequential ones (string, then numeric on a miss).
+const parseOrderJsonFields = (row) => {
+  try { if (typeof row.items === 'string') row.items = JSON.parse(row.items); } catch (e) { /* leave as-is */ }
+  try { if (typeof row.payment === 'string') row.payment = JSON.parse(row.payment); } catch (e) { /* leave as-is */ }
+  try { if (typeof row.shipping === 'string') row.shipping = JSON.parse(row.shipping); } catch (e) { /* leave as-is */ }
+  return row;
+};
+
 export const findOrderByPaymentId = async (paymentId) => {
-  // Try as string
-  const sql = "SELECT * FROM orders WHERE JSON_UNQUOTE(JSON_EXTRACT(payment, '$.paymentId')) = ? LIMIT 1";
-  const rows = await sequelize.query(sql, { replacements: [String(paymentId)], type: QueryTypes.SELECT });
-  if (rows && rows.length) {
-    const r = rows[0];
-    // Parse JSON fields if returned as strings
-    try { if (typeof r.items === 'string') r.items = JSON.parse(r.items); } catch(e){}
-    try { if (typeof r.payment === 'string') r.payment = JSON.parse(r.payment); } catch(e){}
-    try { if (typeof r.shipping === 'string') r.shipping = JSON.parse(r.shipping); } catch(e){}
-    return r;
-  }
+  // Mock-mode payment ids (mock_pix_..., mock_card_...) aren't numeric — Number()
+  // on those is NaN, which mysql2 would inline as the bare (invalid) SQL token NaN.
+  // null instead: valid SQL, and IN (x, NULL) simply never matches NULL, which is
+  // exactly the "this id isn't numeric" case we want to no-op on.
+  const numericId = Number(paymentId);
+  const sql = "SELECT * FROM orders WHERE JSON_UNQUOTE(JSON_EXTRACT(payment, '$.paymentId')) IN (?, ?) LIMIT 1";
+  const rows = await sequelize.query(sql, {
+    replacements: [String(paymentId), Number.isFinite(numericId) ? numericId : null],
+    type: QueryTypes.SELECT
+  });
 
-  // Try numeric
-  const rows2 = await sequelize.query(sql, { replacements: [Number(paymentId)], type: QueryTypes.SELECT });
-  if (rows2 && rows2.length) {
-    const r = rows2[0];
-    try { if (typeof r.items === 'string') r.items = JSON.parse(r.items); } catch(e){}
-    try { if (typeof r.payment === 'string') r.payment = JSON.parse(r.payment); } catch(e){}
-    try { if (typeof r.shipping === 'string') r.shipping = JSON.parse(r.shipping); } catch(e){}
-    return r;
-  }
-
-  return null;
+  return rows && rows.length ? parseOrderJsonFields(rows[0]) : null;
 };
 
 export const isUserAdmin = async (uid) => {
@@ -212,13 +220,13 @@ export const getAllProducts = async () => {
 
 export const getProductById = async (productId) => {
   const p = await Product.findByPk(productId);
-  if (!p) throw new Error('Product not found');
+  if (!p) throw notFoundError('Product not found');
   return normalizeProductOutput(p);
 };
 
 export const updateProduct = async (productId, productData) => {
   const p = await Product.findByPk(productId);
-  if (!p) throw new Error('Product not found');
+  if (!p) throw notFoundError('Product not found');
 
   const currentImages = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
   const normalizedInput = normalizeProductInput(productData, currentImages);
@@ -229,7 +237,7 @@ export const updateProduct = async (productId, productData) => {
 
 export const deleteProduct = async (productId) => {
   const p = await Product.findByPk(productId);
-  if (!p) throw new Error('Product not found');
+  if (!p) throw notFoundError('Product not found');
   await p.destroy();
 };
 
@@ -240,7 +248,7 @@ export const getOrdersByUserId = async (userId) => {
 
 export const updateUserProfile = async (userId, updates) => {
   const u = await User.findByPk(userId);
-  if (!u) throw new Error('User not found');
+  if (!u) throw notFoundError('User not found');
   await u.update(updates);
   return u.toJSON();
 };
@@ -263,7 +271,7 @@ export const getActiveBannersByType = async (displayType) => {
 
 export const getBannerById = async (id) => {
   const b = await Banner.findByPk(id);
-  if (!b) throw new Error('Banner not found');
+  if (!b) throw notFoundError('Banner not found');
   return b.toJSON();
 };
 
@@ -283,7 +291,7 @@ export const createBanner = async (data) => {
 
 export const updateBanner = async (id, data) => {
   const b = await Banner.findByPk(id);
-  if (!b) throw new Error('Banner not found');
+  if (!b) throw notFoundError('Banner not found');
   await b.update({
     title: data.title ?? b.title,
     subtitle: data.subtitle ?? b.subtitle,
@@ -297,7 +305,7 @@ export const updateBanner = async (id, data) => {
 
 export const deleteBanner = async (id) => {
   const b = await Banner.findByPk(id);
-  if (!b) throw new Error('Banner not found');
+  if (!b) throw notFoundError('Banner not found');
   await b.destroy();
 };
 
