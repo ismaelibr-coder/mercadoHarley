@@ -52,7 +52,12 @@ export const createPixPayment = async (orderData) => {
             }
         };
 
-        const response = await payment.create({ body: paymentData });
+        // Idempotency key = this order's own id (unique per order, already created in
+        // the DB before this call). If this request gets retried — a network timeout
+        // where we don't know whether Mercado Pago already received it, an internal
+        // SDK retry — Mercado Pago recognizes the same key and returns the original
+        // payment instead of creating (and charging) a second one.
+        const response = await payment.create({ body: paymentData, requestOptions: { idempotencyKey: String(orderData.id) } });
 
         return {
             success: true,
@@ -116,7 +121,7 @@ export const createBoletoPayment = async (orderData) => {
             }
         };
 
-        const response = await payment.create({ body: paymentData });
+        const response = await payment.create({ body: paymentData, requestOptions: { idempotencyKey: String(orderData.id) } });
 
         return {
             success: true,
@@ -174,7 +179,7 @@ export const processCreditCardPayment = async (orderData, cardToken, installment
             }
         };
 
-        const response = await payment.create({ body: paymentData });
+        const response = await payment.create({ body: paymentData, requestOptions: { idempotencyKey: String(orderData.id) } });
 
         logger.info('✅ Card payment created:', {
             id: response.id,

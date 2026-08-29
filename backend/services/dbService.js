@@ -1,12 +1,5 @@
 import { sequelize, User, Product, Order, Banner, AuditLog } from '../models/index.js';
 import { QueryTypes } from 'sequelize';
-import { testDatabaseConnection } from '../config/database.js';
-
-// Initialize (alias for compatibility with old firebaseService.initializeFirebase)
-export const initializeFirebase = async () => {
-  await testDatabaseConnection();
-  return true;
-};
 
 export const createOrder = async (orderData) => {
   const t = await sequelize.transaction();
@@ -70,7 +63,11 @@ const STOCK_RESTORING_STATUSES = new Set(['cancelled', 'rejected']);
 
 const adjustStockForOrder = async (order, direction, t) => {
   for (const item of order.items || []) {
-    const product = await Product.findByPk(item.id, { transaction: t });
+    // SELECT ... FOR UPDATE — without this, two concurrent transactions touching the
+    // same product (e.g. two orders paid near-simultaneously, or a retried webhook)
+    // can both read the same currentStock under REPEATABLE READ and both decrement
+    // from it, silently overselling. Locking the row serializes them.
+    const product = await Product.findByPk(item.id, { transaction: t, lock: t.LOCK.UPDATE });
     if (!product) continue; // product may have been removed since the order was placed
     const currentStock = product.stock || 0;
     const nextStock = direction < 0
@@ -83,7 +80,11 @@ const adjustStockForOrder = async (order, direction, t) => {
 export const updateOrderStatus = async (orderId, status, additionalData = {}) => {
   const t = await sequelize.transaction();
   try {
-    const order = await Order.findByPk(orderId, { transaction: t });
+    // Lock the order row too — without it, two concurrent calls for the same order
+    // (e.g. Mercado Pago's own webhook retry landing twice) could both read the same
+    // previousStatus before either commits, and both pass the "genuine transition"
+    // check below, double-decrementing stock for one paid order.
+    const order = await Order.findByPk(orderId, { transaction: t, lock: t.LOCK.UPDATE });
     if (!order) throw new Error('Order not found');
 
     const previousStatus = order.status;
@@ -301,7 +302,6 @@ export const deleteBanner = async (id) => {
 };
 
 export default {
-  initializeFirebase,
   createOrder,
   getOrderById,
   getAllOrders,
