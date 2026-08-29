@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit, Save, X, Truck } from 'lucide-react';
 import { getShippingRules, createShippingRule, updateShippingRule, deleteShippingRule } from '../../services/shippingService';
 import { useAuth } from '../../context/AuthContext';
+import { useConfirm } from '../../components/ui/ConfirmDialogProvider';
 
 const ShippingRules = () => {
     const { currentUser } = useAuth();
+    const confirm = useConfirm();
     const [rules, setRules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -81,7 +83,7 @@ const ShippingRules = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Tem certeza que deseja excluir esta regra?')) return;
+        if (!(await confirm('Tem certeza que deseja excluir esta regra?'))) return;
 
         if (!currentUser) {
             setError('Usuário não autenticado');

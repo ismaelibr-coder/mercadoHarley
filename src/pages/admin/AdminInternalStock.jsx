@@ -22,6 +22,7 @@ import {
     updatePricingConfig
 } from '../../services/internalStockService';
 import { useToast } from '../../components/ui/ToastProvider';
+import { useConfirm } from '../../components/ui/ConfirmDialogProvider';
 
 const initialItemForm = {
     name: '',
@@ -38,6 +39,7 @@ const formatMoney = (value) => new Intl.NumberFormat('pt-BR', {
 
 const AdminInternalStock = () => {
     const { showToast } = useToast();
+    const confirm = useConfirm();
     const [loading, setLoading] = useState(true);
     const [savingConfig, setSavingConfig] = useState(false);
     const [savingItem, setSavingItem] = useState(false);
@@ -163,7 +165,7 @@ const AdminInternalStock = () => {
             return;
         }
 
-        if (!window.confirm(`Remover fornecedor ${supplierName}?`)) {
+        if (!(await confirm(`Remover fornecedor ${supplierName}?`))) {
             return;
         }
 
@@ -239,7 +241,7 @@ const AdminInternalStock = () => {
     };
 
     const handleDeleteItem = async (itemId) => {
-        if (!window.confirm('Deseja realmente excluir este item do estoque interno?')) {
+        if (!(await confirm('Deseja realmente excluir este item do estoque interno?'))) {
             return;
         }
 

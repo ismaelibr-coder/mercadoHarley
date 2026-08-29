@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Image, Plus, Trash2, Edit, ExternalLink } from 'lucide-react';
 import { getAllBanners, deleteBanner } from '../../services/bannerService';
 import { useToast } from '../../components/ui/ToastProvider';
+import { useConfirm } from '../../components/ui/ConfirmDialogProvider';
 
 const AdminBanners = () => {
     const { showToast } = useToast();
+    const confirm = useConfirm();
     const [banners, setBanners] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
@@ -27,7 +29,7 @@ const AdminBanners = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Tem certeza que deseja excluir este banner?')) return;
+        if (!(await confirm('Tem certeza que deseja excluir este banner?'))) return;
 
         try {
             await deleteBanner(id);

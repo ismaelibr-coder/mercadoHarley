@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash2, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { getAllProducts, deleteProduct } from '../../services/productService';
 import { useToast } from '../../components/ui/ToastProvider';
+import { useConfirm } from '../../components/ui/ConfirmDialogProvider';
 import RatingStars from '../../components/ui/RatingStars';
 
 const PAGE_SIZE = 20;
 
 const AdminProducts = () => {
     const { showToast } = useToast();
+    const confirm = useConfirm();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -111,7 +113,7 @@ const AdminProducts = () => {
     };
 
     const handleDelete = async (id, name) => {
-        if (!window.confirm(`Tem certeza que deseja excluir "${name}"?`)) return;
+        if (!(await confirm(`Tem certeza que deseja excluir "${name}"?`))) return;
         try {
             await deleteProduct(id);
             setProducts((prev) => prev.filter((p) => p.id !== id));
@@ -126,7 +128,7 @@ const AdminProducts = () => {
     const handleBulkDelete = async () => {
         const ids = [...selectedIds];
         if (ids.length === 0) return;
-        if (!window.confirm(`Excluir ${ids.length} produto${ids.length === 1 ? '' : 's'} selecionado${ids.length === 1 ? '' : 's'}? Essa ação não pode ser desfeita.`)) return;
+        if (!(await confirm(`Excluir ${ids.length} produto${ids.length === 1 ? '' : 's'} selecionado${ids.length === 1 ? '' : 's'}? Essa ação não pode ser desfeita.`))) return;
 
         const results = await Promise.allSettled(ids.map((id) => deleteProduct(id)));
         const succeededIds = ids.filter((_, i) => results[i].status === 'fulfilled');

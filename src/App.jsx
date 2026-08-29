@@ -32,6 +32,7 @@ import AdminInternalStock from './pages/admin/AdminInternalStock';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './components/ui/ToastProvider';
+import { ConfirmDialogProvider } from './components/ui/ConfirmDialogProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 
@@ -39,6 +40,7 @@ function App() {
   return (
     <Router>
       <ToastProvider>
+      <ConfirmDialogProvider>
       <AuthProvider>
         <CartProvider>
           <Routes>
@@ -125,6 +127,7 @@ function App() {
           </Routes>
         </CartProvider>
       </AuthProvider>
+      </ConfirmDialogProvider>
       </ToastProvider>
     </Router>
   );
