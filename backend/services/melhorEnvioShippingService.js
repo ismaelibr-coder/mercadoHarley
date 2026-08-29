@@ -1,5 +1,6 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -9,12 +10,12 @@ const MELHOR_ENVIO_API_URL = process.env.MELHOR_ENVIO_SANDBOX === 'true'
 
 const MELHOR_ENVIO_TOKEN = process.env.MELHOR_ENVIO_TOKEN;
 
-// Log token status on startup
-console.log('🔑 Melhor Envio Configuration:');
-console.log('   API URL:', MELHOR_ENVIO_API_URL);
-console.log('   Token exists:', !!MELHOR_ENVIO_TOKEN);
-console.log('   Token length:', MELHOR_ENVIO_TOKEN?.length || 0);
-console.log('   Token preview:', MELHOR_ENVIO_TOKEN?.substring(0, 50) + '...');
+// Log token status on startup — never log any part of the token itself (even a
+// "preview" substring leaks most of a short API token into server logs).
+logger.info('🔑 Melhor Envio Configuration:');
+logger.info('   API URL:', MELHOR_ENVIO_API_URL);
+logger.info('   Token exists:', !!MELHOR_ENVIO_TOKEN);
+logger.info('   Token length:', MELHOR_ENVIO_TOKEN?.length || 0);
 
 // Helper to make authenticated requests
 const melhorEnvioRequest = async (method, endpoint, data = null) => {
@@ -41,7 +42,7 @@ const melhorEnvioRequest = async (method, endpoint, data = null) => {
         const response = await axios(config);
         return response.data;
     } catch (error) {
-        console.error('Melhor Envio API Error:', error.response?.data || error.message);
+        logger.error('Melhor Envio API Error:', error.response?.data || error.message);
         throw new Error(error.response?.data?.message || 'Erro ao comunicar com Melhor Envio');
     }
 };
@@ -53,8 +54,8 @@ const melhorEnvioRequest = async (method, endpoint, data = null) => {
  */
 export const createShippingLabel = async (orderData) => {
     try {
-        console.log('📦 Creating shipping label for order:', orderData.id);
-        console.log('📋 Order data:', JSON.stringify(orderData, null, 2));
+        logger.info('📦 Creating shipping label for order:', orderData.id);
+        logger.info('📋 Order data:', JSON.stringify(orderData, null, 2));
 
         // Handle both shipping and shippingAddress structures
         const shipping = orderData.shipping || orderData.shippingAddress || {};
@@ -134,15 +135,15 @@ export const createShippingLabel = async (orderData) => {
             }
         };
 
-        console.log('📤 Sending to Melhor Envio:', JSON.stringify(shippingData, null, 2));
+        logger.info('📤 Sending to Melhor Envio:', JSON.stringify(shippingData, null, 2));
 
         const result = await melhorEnvioRequest('POST', '/cart', shippingData);
 
-        console.log('✅ Shipping label created:', result);
+        logger.info('✅ Shipping label created:', result);
         return result;
     } catch (error) {
-        console.error('❌ Error creating shipping label:', error);
-        console.error('❌ Error details:', error.response?.data || error.message);
+        logger.error('❌ Error creating shipping label:', error);
+        logger.error('❌ Error details:', error.response?.data || error.message);
         throw error;
     }
 };
@@ -154,16 +155,16 @@ export const createShippingLabel = async (orderData) => {
  */
 export const purchaseShippingLabel = async (orderId) => {
     try {
-        console.log('💳 Purchasing shipping label:', orderId);
+        logger.info('💳 Purchasing shipping label:', orderId);
 
         const result = await melhorEnvioRequest('POST', '/shipment/checkout', {
             orders: [orderId]
         });
 
-        console.log('✅ Label purchased:', result);
+        logger.info('✅ Label purchased:', result);
         return result;
     } catch (error) {
-        console.error('❌ Error purchasing label:', error);
+        logger.error('❌ Error purchasing label:', error);
         throw error;
     }
 };
@@ -175,16 +176,16 @@ export const purchaseShippingLabel = async (orderId) => {
  */
 export const generateShippingLabelPDF = async (orderId) => {
     try {
-        console.log('📄 Generating label PDF:', orderId);
+        logger.info('📄 Generating label PDF:', orderId);
 
         const result = await melhorEnvioRequest('POST', '/shipment/generate', {
             orders: [orderId]
         });
 
-        console.log('✅ Label PDF generated:', result);
+        logger.info('✅ Label PDF generated:', result);
         return result;
     } catch (error) {
-        console.error('❌ Error generating PDF:', error);
+        logger.error('❌ Error generating PDF:', error);
         throw error;
     }
 };
@@ -196,17 +197,17 @@ export const generateShippingLabelPDF = async (orderId) => {
  */
 export const printShippingLabel = async (orderId) => {
     try {
-        console.log('🖨️ Getting label print URL:', orderId);
+        logger.info('🖨️ Getting label print URL:', orderId);
 
         const result = await melhorEnvioRequest('POST', '/shipment/print', {
             mode: 'private',
             orders: [orderId]
         });
 
-        console.log('✅ Label print URL:', result);
+        logger.info('✅ Label print URL:', result);
         return result.url;
     } catch (error) {
-        console.error('❌ Error getting print URL:', error);
+        logger.error('❌ Error getting print URL:', error);
         throw error;
     }
 };
@@ -218,16 +219,16 @@ export const printShippingLabel = async (orderId) => {
  */
 export const requestPickup = async (orderIds) => {
     try {
-        console.log('🚚 Requesting pickup for orders:', orderIds);
+        logger.info('🚚 Requesting pickup for orders:', orderIds);
 
         const result = await melhorEnvioRequest('POST', '/shipment/request-pickup', {
             orders: orderIds
         });
 
-        console.log('✅ Pickup requested:', result);
+        logger.info('✅ Pickup requested:', result);
         return result;
     } catch (error) {
-        console.error('❌ Error requesting pickup:', error);
+        logger.error('❌ Error requesting pickup:', error);
         throw error;
     }
 };
@@ -239,14 +240,14 @@ export const requestPickup = async (orderIds) => {
  */
 export const getTrackingInfo = async (trackingCode) => {
     try {
-        console.log('📍 Getting tracking info:', trackingCode);
+        logger.info('📍 Getting tracking info:', trackingCode);
 
         const result = await melhorEnvioRequest('GET', `/shipment/tracking?code=${trackingCode}`);
 
-        console.log('✅ Tracking info:', result);
+        logger.info('✅ Tracking info:', result);
         return result;
     } catch (error) {
-        console.error('❌ Error getting tracking info:', error);
+        logger.error('❌ Error getting tracking info:', error);
         throw error;
     }
 };
@@ -258,14 +259,14 @@ export const getTrackingInfo = async (trackingCode) => {
  */
 export const getShipmentDetails = async (orderId) => {
     try {
-        console.log('📦 Getting shipment details:', orderId);
+        logger.info('📦 Getting shipment details:', orderId);
 
         const result = await melhorEnvioRequest('GET', `/orders/${orderId}`);
 
-        console.log('✅ Shipment details:', result);
+        logger.info('✅ Shipment details:', result);
         return result;
     } catch (error) {
-        console.error('❌ Error getting shipment details:', error);
+        logger.error('❌ Error getting shipment details:', error);
         throw error;
     }
 };

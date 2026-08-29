@@ -2,6 +2,7 @@ import axios from 'axios';
 import { ShippingRule } from '../models/index.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/database.js';
+import logger from '../utils/logger.js';
 
 /**
  * Calculate shipping options based on CEP and total weight
@@ -74,7 +75,7 @@ const getStateFromCEP = async (cep) => {
             return null;
         }
     } catch (error) {
-        console.warn('ViaCEP lookup failed, falling back to CEP prefix mapping:', error.message);
+        logger.warn('ViaCEP lookup failed, falling back to CEP prefix mapping:', error.message);
     }
 
     const prefix = parseInt(cleanCEP.substring(0, 2), 10);

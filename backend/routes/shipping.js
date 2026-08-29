@@ -2,6 +2,7 @@ import express from 'express';
 import { calculateShipping, getAllShippingRules, createShippingRule, updateShippingRule, deleteShippingRule } from '../services/shippingService.js';
 import { verifyAdmin } from '../middleware/auth.js';
 import { calculateMelhorEnvioShipping } from '../services/melhorEnvioService.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -26,19 +27,19 @@ router.post('/calculate', async (req, res) => {
         const melhorEnvioOptions = await calculateMelhorEnvioShipping(cep, parseFloat(weight), dimensions);
 
         if (melhorEnvioOptions && melhorEnvioOptions.length > 0) {
-            console.log('✅ Using Melhor Envio shipping options');
+            logger.info('✅ Using Melhor Envio shipping options');
             return res.json(melhorEnvioOptions);
         }
 
         // If Melhor Envio fails or token not configured, return error
-        console.error('❌ Melhor Envio API failed or returned no options');
-        console.error('⚠️ AÇÃO NECESSÁRIA: Verifique se MELHOR_ENVIO_TOKEN está configurado em backend/.env');
-        console.error('   Gere novo token: https://melhorenvio.com.br/painel/gerenciar/tokens');
+        logger.error('❌ Melhor Envio API failed or returned no options');
+        logger.error('⚠️ AÇÃO NECESSÁRIA: Verifique se MELHOR_ENVIO_TOKEN está configurado em backend/.env');
+        logger.error('   Gere novo token: https://melhorenvio.com.br/painel/gerenciar/tokens');
         return res.status(503).json({
             error: 'Frete indisponível neste momento. Verifique o CEP ou opte por retirada em loja.'
         });
     } catch (error) {
-        console.error('Error calculating shipping:', error);
+        logger.error('Error calculating shipping:', error);
 
         // Return specific error message if available
         if (error.message.includes('CEP')) {
@@ -57,7 +58,7 @@ router.get('/rules', verifyAdmin, async (req, res) => {
         const rules = await getAllShippingRules();
         res.json(rules);
     } catch (error) {
-        console.error('Error getting shipping rules:', error);
+        logger.error('Error getting shipping rules:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -68,7 +69,7 @@ router.post('/rules', verifyAdmin, async (req, res) => {
         const ruleId = await createShippingRule(req.body);
         res.status(201).json({ id: ruleId });
     } catch (error) {
-        console.error('Error creating shipping rule:', error);
+        logger.error('Error creating shipping rule:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -79,7 +80,7 @@ router.put('/rules/:id', verifyAdmin, async (req, res) => {
         await updateShippingRule(req.params.id, req.body);
         res.json({ success: true });
     } catch (error) {
-        console.error('Error updating shipping rule:', error);
+        logger.error('Error updating shipping rule:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -90,7 +91,7 @@ router.delete('/rules/:id', verifyAdmin, async (req, res) => {
         await deleteShippingRule(req.params.id);
         res.json({ success: true });
     } catch (error) {
-        console.error('Error deleting shipping rule:', error);
+        logger.error('Error deleting shipping rule:', error);
         res.status(500).json({ error: error.message });
     }
 });

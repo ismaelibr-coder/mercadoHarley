@@ -1,5 +1,6 @@
 import { AuditLog } from '../models/index.js';
 import { v4 as uuidv4 } from 'uuid';
+import logger from '../utils/logger.js';
 
 /**
  * Audit log middleware for tracking administrative actions
@@ -28,7 +29,7 @@ export const auditLog = (action) => async (req, res, next) => {
             // Salvar log no MySQL (não bloquear resposta)
             AuditLog.create(logEntry)
                 .catch(error => {
-                    console.error('Error saving audit log:', error);
+                    logger.error('Error saving audit log:', error);
                 });
         }
 
@@ -56,6 +57,6 @@ export const auditAuthFailure = async (email, reason, req) => {
             }
         });
     } catch (error) {
-        console.error('Error saving auth failure audit log:', error);
+        logger.error('Error saving auth failure audit log:', error);
     }
 };

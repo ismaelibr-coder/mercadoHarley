@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import logger from '../utils/logger.js';
 dotenv.config();
 
 import bcrypt from 'bcrypt';
@@ -15,8 +16,8 @@ const args = process.argv.slice(2);
 const usersArg = process.env.ADMIN_USERS || args.join(',');
 
 if (!usersArg) {
-    console.error('Usage: ADMIN_USERS="email1@example.com:Name One,email2@example.com:Name Two" node scripts/create-admins-mysql.js');
-    console.error('Or as CLI args: node scripts/create-admins-mysql.js "email1@example.com:Name One" "email2@example.com:Name Two"');
+    logger.error('Usage: ADMIN_USERS="email1@example.com:Name One,email2@example.com:Name Two" node scripts/create-admins-mysql.js');
+    logger.error('Or as CLI args: node scripts/create-admins-mysql.js "email1@example.com:Name One" "email2@example.com:Name Two"');
     process.exit(1);
 }
 
@@ -30,7 +31,7 @@ const admins = usersArg.split(',').map((entry) => {
 async function upsertAdmins() {
     try {
         await sequelize.authenticate();
-        console.log('✅ Conectado ao banco');
+        logger.info('✅ Conectado ao banco');
 
         for (const { email, name } of admins) {
             let user = await User.findOne({ where: { email } });
@@ -38,7 +39,7 @@ async function upsertAdmins() {
             if (user) {
                 // Existing user: only promote to admin — password is left untouched.
                 await user.update({ isAdmin: true, userType: 'admin' });
-                console.log(`✅ ${email} promovido a admin (senha inalterada)`);
+                logger.info(`✅ ${email} promovido a admin (senha inalterada)`);
                 continue;
             }
 
@@ -55,21 +56,21 @@ async function upsertAdmins() {
                 userType: 'admin'
             });
 
-            console.log(`✅ Admin criado: ${email} -> id: ${id}`);
+            logger.info(`✅ Admin criado: ${email} -> id: ${id}`);
 
             if (process.env.RESEND_API_KEY) {
                 const result = await sendTemporaryPassword(email, tempPassword);
                 if (result?.success) {
-                    console.log(`   ✉️  Senha temporária enviada por e-mail para ${email}`);
+                    logger.info(`   ✉️  Senha temporária enviada por e-mail para ${email}`);
                 } else {
-                    console.log(`   ⚠️  E-mail não enviado — senha temporária: ${tempPassword}`);
+                    logger.info(`   ⚠️  E-mail não enviado — senha temporária: ${tempPassword}`);
                 }
             } else {
-                console.log(`   ℹ️  RESEND_API_KEY não configurado — senha temporária: ${tempPassword}`);
+                logger.info(`   ℹ️  RESEND_API_KEY não configurado — senha temporária: ${tempPassword}`);
             }
         }
     } catch (err) {
-        console.error('❌ Erro:', err);
+        logger.error('❌ Erro:', err);
         process.exit(1);
     } finally {
         try {

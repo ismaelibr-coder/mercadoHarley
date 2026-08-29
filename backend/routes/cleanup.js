@@ -1,6 +1,7 @@
 import express from 'express';
 import { Order, Product, Banner } from '../models/index.js';
 import { verifyAdmin } from '../middleware/auth.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ router.delete('/cleanup-database', verifyAdmin, async (req, res) => {
             });
         }
 
-        console.log('🧹 Iniciando limpeza do banco de dados...');
+        logger.info('🧹 Iniciando limpeza do banco de dados...');
 
         const deletedData = {
             products: 0,
@@ -28,16 +29,16 @@ router.delete('/cleanup-database', verifyAdmin, async (req, res) => {
         };
 
         // Deletar todos os produtos
-        console.log('🗑️ Deletando produtos...');
+        logger.info('🗑️ Deletando produtos...');
         deletedData.products = await Product.destroy({ where: {}, truncate: false });
-        console.log(`✅ ${deletedData.products} produtos deletados`);
+        logger.info(`✅ ${deletedData.products} produtos deletados`);
 
         // Deletar todos os pedidos
-        console.log('🗑️ Deletando pedidos...');
+        logger.info('🗑️ Deletando pedidos...');
         deletedData.orders = await Order.destroy({ where: {}, truncate: false });
-        console.log(`✅ ${deletedData.orders} pedidos deletados`);
+        logger.info(`✅ ${deletedData.orders} pedidos deletados`);
 
-        console.log('🎉 Limpeza concluída com sucesso!');
+        logger.info('🎉 Limpeza concluída com sucesso!');
 
         res.json({
             success: true,
@@ -47,7 +48,7 @@ router.delete('/cleanup-database', verifyAdmin, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Erro ao limpar banco de dados:', error);
+        logger.error('❌ Erro ao limpar banco de dados:', error);
         res.status(500).json({
             error: 'Erro ao limpar banco de dados',
             details: error.message
@@ -77,7 +78,7 @@ router.get('/cleanup-database/preview', verifyAdmin, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Erro ao buscar preview:', error);
+        logger.error('Erro ao buscar preview:', error);
         res.status(500).json({ error: error.message });
     }
 });

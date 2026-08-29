@@ -1,6 +1,7 @@
 import { Order } from '../models/index.js';
 import { Op } from 'sequelize';
 import sequelize from '../config/database.js';
+import logger from '../utils/logger.js';
 
 /**
  * Get sales metrics for dashboard
@@ -55,7 +56,7 @@ export const getSalesMetrics = async (startDate, endDate) => {
             averageTicket
         };
     } catch (error) {
-        console.error('Error getting sales metrics:', error);
+        logger.error('Error getting sales metrics:', error);
         throw error;
     }
 };
@@ -74,7 +75,7 @@ export const getPendingOrdersCount = async () => {
 
         return count;
     } catch (error) {
-        console.error('Error getting pending orders:', error);
+        logger.error('Error getting pending orders:', error);
         throw error;
     }
 };
@@ -146,7 +147,7 @@ export const getSalesByPeriod = async (period = 'day', limit = 30) => {
             a.date.localeCompare(b.date)
         );
     } catch (error) {
-        console.error('Error getting sales by period:', error);
+        logger.error('Error getting sales by period:', error);
         throw error;
     }
 };
@@ -176,7 +177,7 @@ export const getBestSellingProducts = async (limit = 10) => {
                 try {
                     items = JSON.parse(order.items);
                 } catch (e) {
-                    console.warn('Error parsing items JSON:', e);
+                    logger.warn('Error parsing items JSON:', e);
                     return;
                 }
             } else if (Array.isArray(order.items)) {
@@ -204,7 +205,7 @@ export const getBestSellingProducts = async (limit = 10) => {
             .sort((a, b) => b.revenue - a.revenue)
             .slice(0, limit);
     } catch (error) {
-        console.error('Error getting best-selling products:', error);
+        logger.error('Error getting best-selling products:', error);
         throw error;
     }
 };
@@ -252,7 +253,7 @@ export const getDashboardMetrics = async () => {
             }
         };
     } catch (error) {
-        console.error('Error getting dashboard metrics:', error);
+        logger.error('Error getting dashboard metrics:', error);
         throw error;
     }
 };
@@ -340,7 +341,7 @@ export const getSalesReportPavilhaoVsOnline = async (startDate, endDate) => {
             sellerBreakdown: sellerMetrics
         };
     } catch (error) {
-        console.error('Error getting sales report:', error);
+        logger.error('Error getting sales report:', error);
         throw error;
     }
 };

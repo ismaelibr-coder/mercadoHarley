@@ -1,4 +1,5 @@
 import express from 'express';
+import logger from '../utils/logger.js';
 import {
     createPixPayment,
     createBoletoPayment,
@@ -62,7 +63,7 @@ router.post('/pix', optionalAuth, validateOrder, async (req, res, next) => {
         });
 
         // Update order with payment info
-        console.log('💾 Saving payment info to order:', {
+        logger.info('💾 Saving payment info to order:', {
             orderId: order.id,
             paymentId: paymentResult.paymentId,
             paymentIdType: typeof paymentResult.paymentId

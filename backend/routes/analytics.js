@@ -1,4 +1,5 @@
 import express from 'express';
+import logger from '../utils/logger.js';
 import {
     getDashboardMetrics,
     getSalesByPeriod,
@@ -15,7 +16,7 @@ router.get('/metrics', verifyAdmin, async (req, res) => {
         const metrics = await getDashboardMetrics();
         res.json(metrics);
     } catch (error) {
-        console.error('Error getting metrics:', error);
+        logger.error('Error getting metrics:', error);
         res.status(500).json({ error: 'Failed to get metrics' });
     }
 });
@@ -37,7 +38,7 @@ router.get('/sales-chart', verifyAdmin, async (req, res) => {
             data: chartData
         });
     } catch (error) {
-        console.error('Error getting sales chart:', error);
+        logger.error('Error getting sales chart:', error);
         res.status(500).json({ error: 'Failed to get sales chart data' });
     }
 });
@@ -52,7 +53,7 @@ router.get('/best-sellers', verifyAdmin, async (req, res) => {
             products: bestSellers
         });
     } catch (error) {
-        console.error('Error getting best sellers:', error);
+        logger.error('Error getting best sellers:', error);
         res.status(500).json({ error: 'Failed to get best sellers' });
     }
 });
@@ -83,7 +84,7 @@ router.get('/pavilhao-report', verifyAdmin, async (req, res) => {
             data: report
         });
     } catch (error) {
-        console.error('Error getting pavilhao report:', error);
+        logger.error('Error getting pavilhao report:', error);
         res.status(500).json({ error: 'Failed to get pavilhao report' });
     }
 });

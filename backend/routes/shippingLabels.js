@@ -2,6 +2,7 @@ import express from 'express';
 import { getOrderById } from '../services/dbService.js';
 import { Order } from '../models/index.js';
 import { verifyAdmin } from '../middleware/auth.js';
+import logger from '../utils/logger.js';
 import {
     createShippingLabel,
     purchaseShippingLabel,
@@ -28,33 +29,33 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
             return res.status(404).json({ error: 'Order not found' });
         }
 
-        console.log('📦 Creating shipping label for order:', orderId);
-        console.log('📋 Complete order structure:', JSON.stringify(order, null, 2));
+        logger.info('📦 Creating shipping label for order:', orderId);
+        logger.info('📋 Complete order structure:', JSON.stringify(order, null, 2));
 
         // Step 1: Create label in cart
         const cartItem = await createShippingLabel(order);
         const melhorEnvioId = cartItem.id;
 
-        console.log('✅ Cart item created:', melhorEnvioId);
+        logger.info('✅ Cart item created:', melhorEnvioId);
 
         // Step 2: Purchase label
         const purchaseResult = await purchaseShippingLabel(melhorEnvioId);
 
-        console.log('✅ Label purchased');
+        logger.info('✅ Label purchased');
 
         // Step 3: Generate label PDF
         const generateResult = await generateShippingLabelPDF(melhorEnvioId);
 
-        console.log('✅ Label generated');
+        logger.info('✅ Label generated');
 
         // Step 4: Get print URL
         const labelUrl = await printShippingLabel(melhorEnvioId);
 
-        console.log('✅ Label URL:', labelUrl);
+        logger.info('✅ Label URL:', labelUrl);
 
         // Step 5: Wait and retry to get Correios tracking code
         // Correios assigns tracking code after PDF generation, but it takes time
-        console.log('⏳ Waiting for Correios to assign tracking code...');
+        logger.info('⏳ Waiting for Correios to assign tracking code...');
 
         let shipmentDetails = null;
         let correiosTracking = null;
@@ -69,7 +70,7 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
 
         while (attempts < maxAttempts && !correiosTracking) {
             if (attempts > 0) {
-                console.log(`⏳ Attempt ${attempts + 1}/${maxAttempts}: Waiting ${delays[attempts] / 1000}s...`);
+                logger.info(`⏳ Attempt ${attempts + 1}/${maxAttempts}: Waiting ${delays[attempts] / 1000}s...`);
             }
 
             await new Promise(resolve => setTimeout(resolve, delays[attempts]));
@@ -78,23 +79,23 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
 
             if (isCorreiosCode(shipmentDetails.tracking)) {
                 correiosTracking = shipmentDetails.tracking;
-                console.log('✅ Correios tracking code found:', correiosTracking);
+                logger.info('✅ Correios tracking code found:', correiosTracking);
                 break;
             }
 
             attempts++;
-            console.log(`   - tracking: ${shipmentDetails.tracking || 'null'}`);
-            console.log(`   - protocol: ${shipmentDetails.protocol}`);
+            logger.info(`   - tracking: ${shipmentDetails.tracking || 'null'}`);
+            logger.info(`   - protocol: ${shipmentDetails.protocol}`);
         }
 
         // Use Correios code if available, otherwise use Melhor Envio protocol
         const trackingCode = correiosTracking || shipmentDetails.protocol;
         const hasCorreiosCode = !!correiosTracking;
 
-        console.log('📦 Final tracking code:', trackingCode);
-        console.log('   - Is Correios code:', hasCorreiosCode);
-        console.log('   - Correios tracking:', shipmentDetails.tracking);
-        console.log('   - Melhor Envio protocol:', shipmentDetails.protocol);
+        logger.info('📦 Final tracking code:', trackingCode);
+        logger.info('   - Is Correios code:', hasCorreiosCode);
+        logger.info('   - Correios tracking:', shipmentDetails.tracking);
+        logger.info('   - Melhor Envio protocol:', shipmentDetails.protocol);
 
         // Calculate estimated delivery date
         const deliveryDate = new Date();
@@ -123,19 +124,19 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
             status: 'processing'
         });
 
-        console.log('✅ Order updated with shipping info');
+        logger.info('✅ Order updated with shipping info');
 
         // Step 7: Send shipping notification email ONLY if we have Correios tracking code
         try {
             if (hasCorreiosCode) {
                 await sendShippingNotification(order, correiosTracking, deliveryDate);
-                console.log('📧 Shipping notification email sent with Correios tracking');
+                logger.info('📧 Shipping notification email sent with Correios tracking');
             } else {
-                console.log('⚠️ Skipping email - no Correios tracking code yet');
-                console.log('   Admin can manually update tracking code later');
+                logger.info('⚠️ Skipping email - no Correios tracking code yet');
+                logger.info('   Admin can manually update tracking code later');
             }
         } catch (emailError) {
-            console.error('❌ Error sending shipping email:', emailError);
+            logger.error('❌ Error sending shipping email:', emailError);
         }
 
         res.json({
@@ -149,7 +150,7 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error creating shipping label:', error);
+        logger.error('❌ Error creating shipping label:', error);
         res.status(500).json({
             error: 'Failed to create shipping label',
             message: error.message
@@ -176,12 +177,12 @@ router.post('/:orderId/pickup', verifyAdmin, async (req, res) => {
             return res.status(400).json({ error: 'No shipping label found for this order' });
         }
 
-        console.log('🚚 Requesting pickup for order:', orderId);
+        logger.info('🚚 Requesting pickup for order:', orderId);
 
         // Request pickup
         const pickupResult = await requestPickup([melhorEnvioId]);
 
-        console.log('✅ Pickup requested:', pickupResult);
+        logger.info('✅ Pickup requested:', pickupResult);
 
         // Update order status
         const orderRecord = await Order.findByPk(orderId);
@@ -201,9 +202,9 @@ router.post('/:orderId/pickup', verifyAdmin, async (req, res) => {
         // Send shipping notification email
         try {
             await sendOrderStatusUpdate(order, 'shipped');
-            console.log('📧 Shipping notification email sent');
+            logger.info('📧 Shipping notification email sent');
         } catch (emailError) {
-            console.error('❌ Error sending shipping email:', emailError);
+            logger.error('❌ Error sending shipping email:', emailError);
         }
 
         res.json({
@@ -213,7 +214,7 @@ router.post('/:orderId/pickup', verifyAdmin, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error requesting pickup:', error);
+        logger.error('❌ Error requesting pickup:', error);
         res.status(500).json({
             error: 'Failed to request pickup',
             message: error.message
@@ -240,7 +241,7 @@ router.get('/:orderId/tracking', verifyAdmin, async (req, res) => {
             return res.status(400).json({ error: 'No tracking code found for this order' });
         }
 
-        console.log('📍 Getting tracking info for:', trackingCode);
+        logger.info('📍 Getting tracking info for:', trackingCode);
 
         const trackingInfo = await getTrackingInfo(trackingCode);
 
@@ -251,7 +252,7 @@ router.get('/:orderId/tracking', verifyAdmin, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error getting tracking info:', error);
+        logger.error('❌ Error getting tracking info:', error);
         res.status(500).json({
             error: 'Failed to get tracking info',
             message: error.message
@@ -284,7 +285,7 @@ router.get('/:orderId/label', verifyAdmin, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error getting label:', error);
+        logger.error('❌ Error getting label:', error);
         res.status(500).json({
             error: 'Failed to get label',
             message: error.message

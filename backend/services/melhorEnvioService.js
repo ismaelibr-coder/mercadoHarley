@@ -1,5 +1,6 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import logger from '../utils/logger.js';
 dotenv.config();
 
 const SANDBOX_URL = 'https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate';
@@ -22,9 +23,9 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
     const weightInKg = weightKg || 1;
 
     if (!token) {
-        console.error('❌ MELHOR_ENVIO_TOKEN not configured!');
-        console.error('   Action required: Set MELHOR_ENVIO_TOKEN in backend/.env');
-        console.error('   Generate token: https://melhorenvio.com.br/painel/gerenciar/tokens');
+        logger.error('❌ MELHOR_ENVIO_TOKEN not configured!');
+        logger.error('   Action required: Set MELHOR_ENVIO_TOKEN in backend/.env');
+        logger.error('   Generate token: https://melhorenvio.com.br/painel/gerenciar/tokens');
         return null; // Return null to indicate failure
     }
 
@@ -54,7 +55,7 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
             services: '1,2,3,4' // SEDEX, PAC, etc. (Simplifying to generic calculation)
         };
 
-        console.log('📦 Calculating Melhor Envio shipping:', {
+        logger.info('📦 Calculating Melhor Envio shipping:', {
             from: normalizeCep(fromCep),
             to: normalizeCep(toCep),
             weight: `${weightInKg}kg`,
@@ -62,7 +63,7 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
             sandbox: isSandbox
         });
 
-        console.log('📤 Full payload:', JSON.stringify(payload, null, 2));
+        logger.info('📤 Full payload:', JSON.stringify(payload, null, 2));
 
         const response = await axios.post(apiUrl, payload, {
             headers: {
@@ -74,12 +75,12 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
             timeout: 10000
         });
 
-        console.log(`📥 API Response: ${response.data.length} services returned`);
+        logger.info(`📥 API Response: ${response.data.length} services returned`);
 
         // Log any services with errors
         const servicesWithErrors = response.data.filter(opt => opt.error);
         if (servicesWithErrors.length > 0) {
-            console.log('⚠️ Services with errors:', servicesWithErrors.map(s => ({
+            logger.info('⚠️ Services with errors:', servicesWithErrors.map(s => ({
                 company: s.company?.name,
                 service: s.name,
                 error: s.error
@@ -97,10 +98,10 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
                 serviceId: opt.id
             }));
 
-        console.log(`✅ Melhor Envio returned ${validOptions.length} valid options`);
+        logger.info(`✅ Melhor Envio returned ${validOptions.length} valid options`);
 
         if (validOptions.length > 0) {
-            console.log('💰 Prices:', validOptions.map(o => `${o.name}: R$ ${o.price.toFixed(2)}`));
+            logger.info('💰 Prices:', validOptions.map(o => `${o.name}: R$ ${o.price.toFixed(2)}`));
         }
 
         // If no valid options, check if all services had errors
@@ -133,7 +134,7 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
         // Detailed error logging
         if (error.response?.data) {
             const apiError = error.response.data;
-            console.error('❌ Melhor Envio API Error:', {
+            logger.error('❌ Melhor Envio API Error:', {
                 status: error.response.status,
                 errors: apiError.errors,
                 message: apiError.message
@@ -141,34 +142,34 @@ export const calculateMelhorEnvioShipping = async (toCep, weightKg, dimensions) 
 
             // Check for authentication errors
             if (error.response.status === 401) {
-                console.error('🔐 Authentication Error Details:');
-                console.error('   - Token configured:', !!token);
-                console.error('   - Token length:', token?.length || 0);
-                console.error('   - Response:', JSON.stringify(apiError, null, 2));
-                console.error('   - Possible causes:');
-                console.error('     1. Token expired or invalid');
-                console.error('     2. Token missing required scopes: shipping-calculate');
-                console.error('     3. Account inactive or in wrong mode (sandbox vs production)');
-                console.error('     4. Need to generate new token at: https://melhorenvio.com.br/painel/gerenciar/tokens');
+                logger.error('🔐 Authentication Error Details:');
+                logger.error('   - Token configured:', !!token);
+                logger.error('   - Token length:', token?.length || 0);
+                logger.error('   - Response:', JSON.stringify(apiError, null, 2));
+                logger.error('   - Possible causes:');
+                logger.error('     1. Token expired or invalid');
+                logger.error('     2. Token missing required scopes: shipping-calculate');
+                logger.error('     3. Account inactive or in wrong mode (sandbox vs production)');
+                logger.error('     4. Need to generate new token at: https://melhorenvio.com.br/painel/gerenciar/tokens');
             }
 
             // Check for specific errors
             if (apiError.errors?.['to.postal_code']) {
-                console.error('CEP de destino inválido:', normalizeCep(toCep));
-                console.warn('⚠️ Melhor Envio: CEP inválido, fazendo fallback para regras internas');
+                logger.error('CEP de destino inválido:', normalizeCep(toCep));
+                logger.warn('⚠️ Melhor Envio: CEP inválido, fazendo fallback para regras internas');
                 return null;
             }
             if (apiError.errors?.['from.postal_code']) {
-                console.error('CEP de origem inválido:', normalizeCep(fromCep));
+                logger.error('CEP de origem inválido:', normalizeCep(fromCep));
                             return null;
             }
         } else if (error.message && error.message.includes('muito pesado')) {
             // Re-throw our custom errors
-            console.error('❌ Shipping Error:', error.message);
-            console.warn('⚠️ Melhor Envio: Erro de peso/dimensões, fazendo fallback para regras internas');
+            logger.error('❌ Shipping Error:', error.message);
+            logger.warn('⚠️ Melhor Envio: Erro de peso/dimensões, fazendo fallback para regras internas');
             return null;
         } else {
-            console.error('❌ Melhor Envio Error:', error);
+            logger.error('❌ Melhor Envio Error:', error);
         }
 
         return null; // Fallback on error

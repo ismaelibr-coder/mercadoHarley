@@ -1,4 +1,5 @@
 import { Banner } from '../models/index.js';
+import logger from '../utils/logger.js';
 
 /**
  * Get all banners ordered by priority
@@ -11,7 +12,7 @@ export const getAllBanners = async () => {
         });
         return banners;
     } catch (error) {
-        console.error('Error getting all banners:', error);
+        logger.error('Error getting all banners:', error);
         throw error;
     }
 };
@@ -28,7 +29,7 @@ export const getActiveBanners = async () => {
         });
         return banners;
     } catch (error) {
-        console.error('Error getting active banners:', error);
+        logger.error('Error getting active banners:', error);
         throw error;
     }
 };
@@ -49,7 +50,7 @@ export const getActiveBannersByType = async (displayType) => {
         });
         return banners;
     } catch (error) {
-        console.error('Error getting active banners by type:', error);
+        logger.error('Error getting active banners by type:', error);
         throw error;
     }
 };
@@ -69,7 +70,7 @@ export const getBannerById = async (id) => {
 
         return banner;
     } catch (error) {
-        console.error('Error getting banner:', error);
+        logger.error('Error getting banner:', error);
         throw error;
     }
 };
@@ -93,7 +94,7 @@ export const createBanner = async (data) => {
 
         return banner;
     } catch (error) {
-        console.error('Error creating banner:', error);
+        logger.error('Error creating banner:', error);
         throw error;
     }
 };
@@ -126,7 +127,7 @@ export const updateBanner = async (id, data) => {
         await banner.update(updateData);
         return banner;
     } catch (error) {
-        console.error('Error updating banner:', error);
+        logger.error('Error updating banner:', error);
         throw error;
     }
 };
@@ -146,7 +147,7 @@ export const deleteBanner = async (id) => {
 
         await banner.destroy();
     } catch (error) {
-        console.error('Error deleting banner:', error);
+        logger.error('Error deleting banner:', error);
         throw error;
     }
 };

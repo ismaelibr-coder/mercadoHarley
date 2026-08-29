@@ -1,5 +1,6 @@
 import express from 'express';
 import { verifyAdmin } from '../middleware/auth.js';
+import logger from '../utils/logger.js';
 import {
     getAllBanners,
     getActiveBanners,
@@ -20,7 +21,7 @@ router.get('/active', async (req, res) => {
         const banners = await getActiveBanners();
         res.json({ banners });
     } catch (error) {
-        console.error('Error fetching active banners:', error);
+        logger.error('Error fetching active banners:', error);
         res.status(500).json({ error: 'Failed to fetch banners' });
     }
 });
@@ -34,7 +35,7 @@ router.get('/', verifyAdmin, async (req, res) => {
         const banners = await getAllBanners();
         res.json({ banners });
     } catch (error) {
-        console.error('Error fetching banners:', error);
+        logger.error('Error fetching banners:', error);
         res.status(500).json({ error: 'Failed to fetch banners' });
     }
 });
@@ -48,7 +49,7 @@ router.get('/:id', verifyAdmin, async (req, res) => {
         const banner = await getBannerById(req.params.id);
         res.json(banner);
     } catch (error) {
-        console.error('Error fetching banner:', error);
+        logger.error('Error fetching banner:', error);
         if (error.message === 'Banner not found') {
             res.status(404).json({ error: 'Banner not found' });
         } else {
@@ -84,7 +85,7 @@ router.post('/', verifyAdmin, async (req, res) => {
 
         res.status(201).json(banner);
     } catch (error) {
-        console.error('Error creating banner:', error);
+        logger.error('Error creating banner:', error);
         res.status(500).json({ error: 'Failed to create banner' });
     }
 });
@@ -115,7 +116,7 @@ router.put('/:id', verifyAdmin, async (req, res) => {
         const banner = await updateBanner(req.params.id, updateData);
         res.json(banner);
     } catch (error) {
-        console.error('Error updating banner:', error);
+        logger.error('Error updating banner:', error);
         if (error.message === 'Banner not found') {
             res.status(404).json({ error: 'Banner not found' });
         } else {
@@ -133,7 +134,7 @@ router.delete('/:id', verifyAdmin, async (req, res) => {
         await deleteBanner(req.params.id);
         res.json({ message: 'Banner deleted successfully' });
     } catch (error) {
-        console.error('Error deleting banner:', error);
+        logger.error('Error deleting banner:', error);
         if (error.message === 'Banner not found') {
             res.status(404).json({ error: 'Banner not found' });
         } else {

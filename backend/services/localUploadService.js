@@ -4,6 +4,7 @@ import fsPromises from 'fs/promises';
 import path from 'path';
 import dotenv from 'dotenv';
 import sharp from 'sharp';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -110,7 +111,7 @@ export const saveImage = async (file, options = {}) => {
             outputBuffer = result.buffer;
             outputType = { ext: result.ext };
         } catch (error) {
-            console.error('Image normalization failed, saving original upload instead:', error);
+            logger.error('Image normalization failed, saving original upload instead:', error);
             outputBuffer = file.buffer;
             outputType = detectedType;
         }

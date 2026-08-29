@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { User } from '../models/index.js';
 import dotenv from 'dotenv';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -108,7 +109,7 @@ export const loginUser = async (email, password) => {
             }
         };
     } catch (error) {
-        console.error('Login error:', error);
+        logger.error('Login error:', error);
         throw error;
     }
 };
@@ -159,7 +160,7 @@ export const registerUser = async (userData) => {
             }
         };
     } catch (error) {
-        console.error('Register error:', error);
+        logger.error('Register error:', error);
         throw error;
     }
 };
@@ -182,7 +183,7 @@ export const refreshAccessToken = async (refreshToken) => {
             token: newToken
         };
     } catch (error) {
-        console.error('Refresh token error:', error);
+        logger.error('Refresh token error:', error);
         throw error;
     }
 };

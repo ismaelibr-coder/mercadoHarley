@@ -5,6 +5,7 @@ import { sendOrderStatusUpdate } from '../services/emailService.js';
 import { verifyAdmin, authenticate } from '../middleware/auth.js';
 import { auditLog } from '../middleware/auditLog.js';
 import { validateOrder } from '../middleware/validation.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.get('/', authenticate, async (req, res) => {
         const orders = isAdmin ? await getAllOrders() : await getOrdersByUserId(req.userId);
         res.json({ orders });
     } catch (error) {
-        console.error('Error fetching orders:', error);
+        logger.error('Error fetching orders:', error);
         res.status(500).json({ error: 'Failed to fetch orders' });
     }
 });
@@ -38,7 +39,7 @@ router.get('/:id', authenticate, async (req, res) => {
 
         res.status(403).json({ error: 'Access denied' });
     } catch (error) {
-        console.error('Error fetching order:', error);
+        logger.error('Error fetching order:', error);
         if (error.message.includes('not found')) {
             return res.status(404).json({ error: 'Order not found' });
         }
@@ -92,7 +93,7 @@ router.post('/', authenticate, validateOrder, auditLog('CREATE_ORDER'), async (r
             message: 'Order created successfully'
         });
     } catch (error) {
-        console.error('Error creating order:', error);
+        logger.error('Error creating order:', error);
         res.status(500).json({ error: error.message || 'Failed to create order' });
     }
 });
@@ -116,7 +117,7 @@ router.put('/:id/status', verifyAdmin, auditLog('UPDATE_ORDER_STATUS'), async (r
         try {
             await sendOrderStatusUpdate(updatedOrder, status);
         } catch (emailError) {
-            console.warn('Email sending failed:', emailError);
+            logger.warn('Email sending failed:', emailError);
             // Don't fail the request if email fails
         }
 
@@ -126,7 +127,7 @@ router.put('/:id/status', verifyAdmin, auditLog('UPDATE_ORDER_STATUS'), async (r
             message: 'Order status updated successfully'
         });
     } catch (error) {
-        console.error('Error updating order status:', error);
+        logger.error('Error updating order status:', error);
         if (error.message.includes('not found')) {
             return res.status(404).json({ error: 'Order not found' });
         }

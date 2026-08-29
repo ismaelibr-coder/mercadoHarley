@@ -2,6 +2,7 @@ import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -16,7 +17,10 @@ export const sequelize = new Sequelize(
         host: process.env.DB_HOST || 'localhost',
         port: process.env.DB_PORT || 3306,
         dialect: 'mysql',
-        logging: process.env.NODE_ENV === 'development' ? console.log : false,
+        // Sequelize already gates this to development via the ternary; use logger.info
+        // (not .debug) so SQL query logs stay visible by default like they did before,
+        // rather than getting silently hidden behind LOG_LEVEL=debug.
+        logging: process.env.NODE_ENV === 'development' ? logger.info : false,
         dialectOptions: {
             charset: 'utf8mb4'
         },
@@ -35,10 +39,10 @@ export const sequelize = new Sequelize(
 export const testDatabaseConnection = async () => {
     try {
         await sequelize.authenticate();
-        console.log('✅ Database connection successful');
+        logger.info('✅ Database connection successful');
         return true;
     } catch (error) {
-        console.error('❌ Database connection failed:', error.message);
+        logger.error('❌ Database connection failed:', error.message);
         throw error;
     }
 };
@@ -49,10 +53,10 @@ export const testDatabaseConnection = async () => {
 export const syncDatabase = async ({ force = false, alter = false } = {}) => {
     try {
         await sequelize.sync({ force, alter });
-        console.log('✅ Database synchronized');
+        logger.info('✅ Database synchronized');
         return true;
     } catch (error) {
-        console.error('❌ Database sync failed:', error.message);
+        logger.error('❌ Database sync failed:', error.message);
         throw error;
     }
 };
@@ -62,7 +66,7 @@ export const syncDatabase = async ({ force = false, alter = false } = {}) => {
  */
 export const closeDatabase = async () => {
     await sequelize.close();
-    console.log('✅ Database connection closed');
+    logger.info('✅ Database connection closed');
 };
 
 export default sequelize;

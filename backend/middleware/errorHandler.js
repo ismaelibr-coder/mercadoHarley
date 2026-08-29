@@ -1,5 +1,7 @@
+import logger from '../utils/logger.js';
+
 export const errorHandler = (err, req, res, next) => {
-    console.error('Error:', err);
+    logger.error('Error:', err);
 
     // Mercado Pago errors
     if (err.cause && err.cause.length > 0) {

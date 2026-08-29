@@ -6,6 +6,7 @@ import { updateUserProfile } from '../services/dbService.js';
 import { authenticate } from '../middleware/auth.js';
 import { User } from '../models/index.js';
 import { sendPasswordReset } from '../services/emailService.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -73,7 +74,7 @@ router.post('/register', sensitiveActionLimiter, async (req, res) => {
             user: result.user
         });
     } catch (error) {
-        console.error('Register error:', error);
+        logger.error('Register error:', error);
 
         if (error.message.includes('already exists')) {
             return res.status(409).json({ error: 'User already exists' });
@@ -106,7 +107,7 @@ router.post('/login', loginLimiter, async (req, res) => {
             user: result.user
         });
     } catch (error) {
-        console.error('Login error:', error);
+        logger.error('Login error:', error);
 
         if (error.message.includes('not found') || error.message.includes('Invalid')) {
             return res.status(401).json({ error: 'Invalid credentials' });
@@ -135,7 +136,7 @@ router.post('/refresh', async (req, res) => {
             token: result.token
         });
     } catch (error) {
-        console.error('Refresh token error:', error);
+        logger.error('Refresh token error:', error);
         res.status(401).json({ error: 'Invalid refresh token' });
     }
 });
@@ -155,7 +156,7 @@ router.get('/me', authenticate, async (req, res) => {
             user: req.user
         });
     } catch (error) {
-        console.error('Get profile error:', error);
+        logger.error('Get profile error:', error);
         res.status(500).json({ error: 'Failed to get profile' });
     }
 });
@@ -189,7 +190,7 @@ router.put('/profile', authenticate, async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Update profile error:', error);
+        logger.error('Update profile error:', error);
 
         if (error.message.includes('not found')) {
             return res.status(404).json({ error: 'User not found' });
@@ -247,7 +248,7 @@ router.post('/forgot-password', sensitiveActionLimiter, async (req, res) => {
 
         res.json({ success: true, emailSent: result?.success || false });
     } catch (error) {
-        console.error('Forgot password error:', error);
+        logger.error('Forgot password error:', error);
         res.status(500).json({ error: error.message || 'Failed to process request' });
     }
 });
@@ -297,7 +298,7 @@ router.post('/reset-password', sensitiveActionLimiter, async (req, res) => {
 
         res.json({ success: true, message: 'Senha redefinida com sucesso.' });
     } catch (error) {
-        console.error('Reset password error:', error);
+        logger.error('Reset password error:', error);
         res.status(500).json({ error: error.message || 'Failed to reset password' });
     }
 });
@@ -324,7 +325,7 @@ router.put('/change-password', authenticate, async (req, res) => {
 
         res.json({ success: true, message: 'Password changed successfully' });
     } catch (error) {
-        console.error('Change password error:', error);
+        logger.error('Change password error:', error);
         res.status(500).json({ error: 'Failed to change password' });
     }
 });

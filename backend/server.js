@@ -21,6 +21,7 @@ import internalStockRouter from './routes/internalStock.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'url';
+import logger from './utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,7 +34,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const REQUIRED_ENV_VARS = ['JWT_SECRET', 'DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
 const missingEnvVars = REQUIRED_ENV_VARS.filter((name) => !process.env[name]);
 if (missingEnvVars.length > 0) {
-    console.error(`❌ Variáveis de ambiente obrigatórias ausentes: ${missingEnvVars.join(', ')}`);
+    logger.error(`❌ Variáveis de ambiente obrigatórias ausentes: ${missingEnvVars.join(', ')}`);
     process.exit(1);
 }
 
@@ -130,7 +131,7 @@ if (!uploadsDir) {
 
     if (existingPaths.length > 0) {
         uploadsDir = existingPaths[0];
-        console.log(`✅ Found uploads directory: ${uploadsDir}`);
+        logger.info(`✅ Found uploads directory: ${uploadsDir}`);
     }
 }
 
@@ -142,7 +143,7 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-console.log(`📁 Serving uploads from: ${uploadsDir}`);
+logger.info(`📁 Serving uploads from: ${uploadsDir}`);
 app.use('/api/uploads', express.static(uploadsDir));
 // Also try /uploads in case nginx allows it
 app.use('/uploads', express.static(uploadsDir));
@@ -161,16 +162,16 @@ if (process.env.NODE_ENV === 'production') {
 // Initialize Database
 async function initializeDatabase() {
     try {
-        console.log('🔄 Testing database connection...');
+        logger.info('🔄 Testing database connection...');
         await testDatabaseConnection();
         
-        console.log('🔄 Syncing database schema...');
+        logger.info('🔄 Syncing database schema...');
         await syncDatabase({ alter: process.env.NODE_ENV === 'development' });
         
-        console.log('✅ Database initialized successfully');
+        logger.info('✅ Database initialized successfully');
         return true;
     } catch (error) {
-        console.error('❌ Failed to initialize database:', error);
+        logger.error('❌ Failed to initialize database:', error);
         process.exit(1);
     }
 }
@@ -219,7 +220,7 @@ async function startServer() {
         await initializeDatabase();
         
         app.listen(PORT, () => {
-            console.log(`
+            logger.info(`
 ╔═══════════════════════════════════════╗
 ║   🏍️  Sick Grip Backend API             ║
 ║                                       ║
@@ -232,7 +233,7 @@ async function startServer() {
             `);
         });
     } catch (error) {
-        console.error('❌ Failed to start server:', error);
+        logger.error('❌ Failed to start server:', error);
         process.exit(1);
     }
 }

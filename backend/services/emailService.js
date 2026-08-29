@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import dotenv from 'dotenv';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -23,7 +24,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 export const sendWelcomeEmail = async (user) => {
     try {
         if (!process.env.RESEND_API_KEY) {
-            console.warn('RESEND_API_KEY not found. Skipping welcome email.');
+            logger.warn('RESEND_API_KEY not found. Skipping welcome email.');
             return;
         }
 
@@ -91,14 +92,14 @@ export const sendWelcomeEmail = async (user) => {
         });
 
         if (error) {
-            console.error('Error sending welcome email:', error);
+            logger.error('Error sending welcome email:', error);
             return { success: false, error };
         }
 
-        console.log('Welcome email sent successfully:', data);
+        logger.info('Welcome email sent successfully:', data);
         return { success: true, data };
     } catch (err) {
-        console.error('Exception sending welcome email:', err);
+        logger.error('Exception sending welcome email:', err);
         return { success: false, error: err };
     }
 };
@@ -110,7 +111,7 @@ export const sendWelcomeEmail = async (user) => {
 export const sendOrderConfirmation = async (order) => {
     try {
         if (!process.env.RESEND_API_KEY) {
-            console.warn('RESEND_API_KEY not found. Skipping order confirmation email.');
+            logger.warn('RESEND_API_KEY not found. Skipping order confirmation email.');
             return;
         }
 
@@ -176,14 +177,14 @@ export const sendOrderConfirmation = async (order) => {
         });
 
         if (error) {
-            console.error('Error sending order confirmation email:', error);
+            logger.error('Error sending order confirmation email:', error);
             return { success: false, error };
         }
 
-        console.log('Order confirmation email sent successfully:', data);
+        logger.info('Order confirmation email sent successfully:', data);
         return { success: true, data };
     } catch (err) {
-        console.error('Exception sending order confirmation email:', err);
+        logger.error('Exception sending order confirmation email:', err);
         return { success: false, error: err };
     }
 };
@@ -196,7 +197,7 @@ export const sendOrderConfirmation = async (order) => {
 export const sendOrderStatusUpdate = async (order, status) => {
     try {
         if (!process.env.RESEND_API_KEY) {
-            console.warn('RESEND_API_KEY not found. Skipping status update email.');
+            logger.warn('RESEND_API_KEY not found. Skipping status update email.');
             return;
         }
 
@@ -276,14 +277,14 @@ export const sendOrderStatusUpdate = async (order, status) => {
         });
 
         if (error) {
-            console.error('Error sending status update email:', error);
+            logger.error('Error sending status update email:', error);
             return { success: false, error };
         }
 
-        console.log('Status update email sent successfully:', data);
+        logger.info('Status update email sent successfully:', data);
         return { success: true, data };
     } catch (err) {
-        console.error('Exception sending status update email:', err);
+        logger.error('Exception sending status update email:', err);
         return { success: false, error: err };
     }
 };
@@ -297,13 +298,13 @@ export const sendOrderStatusUpdate = async (order, status) => {
 export const sendShippingNotification = async (order, trackingCode, estimatedDelivery) => {
     try {
         if (!process.env.RESEND_API_KEY) {
-            console.warn('RESEND_API_KEY not found. Skipping shipping notification email.');
+            logger.warn('RESEND_API_KEY not found. Skipping shipping notification email.');
             return;
         }
 
         // Only send email if we have a valid tracking code
         if (!trackingCode || trackingCode === 'null' || trackingCode === null) {
-            console.warn('No valid tracking code. Skipping shipping notification email.');
+            logger.warn('No valid tracking code. Skipping shipping notification email.');
             return;
         }
 
@@ -397,14 +398,14 @@ export const sendShippingNotification = async (order, trackingCode, estimatedDel
         });
 
         if (error) {
-            console.error('Error sending shipping notification email:', error);
+            logger.error('Error sending shipping notification email:', error);
             return { success: false, error };
         }
 
-        console.log('Shipping notification email sent successfully:', data);
+        logger.info('Shipping notification email sent successfully:', data);
         return { success: true, data };
     } catch (err) {
-        console.error('Exception sending shipping notification email:', err);
+        logger.error('Exception sending shipping notification email:', err);
         return { success: false, error: err };
     }
 };
@@ -417,7 +418,7 @@ export const sendShippingNotification = async (order, trackingCode, estimatedDel
 export const sendPasswordReset = async (email, link) => {
     try {
         if (!process.env.RESEND_API_KEY) {
-            console.warn('RESEND_API_KEY not found. Skipping password reset email.');
+            logger.warn('RESEND_API_KEY not found. Skipping password reset email.');
             return;
         }
 
@@ -472,14 +473,14 @@ export const sendPasswordReset = async (email, link) => {
         });
 
         if (error) {
-            console.error('Error sending password reset email:', error);
+            logger.error('Error sending password reset email:', error);
             return { success: false, error };
         }
 
-        console.log('Password reset email sent successfully:', data);
+        logger.info('Password reset email sent successfully:', data);
         return { success: true, data };
     } catch (err) {
-        console.error('Exception sending password reset email:', err);
+        logger.error('Exception sending password reset email:', err);
         return { success: false, error: err };
     }
 };
@@ -492,7 +493,7 @@ export const sendPasswordReset = async (email, link) => {
 export const sendTemporaryPassword = async (email, tempPassword) => {
     try {
         if (!process.env.RESEND_API_KEY) {
-            console.warn('RESEND_API_KEY not found. Skipping temporary password email.');
+            logger.warn('RESEND_API_KEY not found. Skipping temporary password email.');
             return { success: false, reason: 'no_api_key' };
         }
 
@@ -539,14 +540,14 @@ export const sendTemporaryPassword = async (email, tempPassword) => {
         });
 
         if (error) {
-            console.error('Error sending temporary password email:', error);
+            logger.error('Error sending temporary password email:', error);
             return { success: false, error };
         }
 
-        console.log('Temporary password email sent successfully:', data);
+        logger.info('Temporary password email sent successfully:', data);
         return { success: true, data };
     } catch (err) {
-        console.error('Exception sending temporary password email:', err);
+        logger.error('Exception sending temporary password email:', err);
         return { success: false, error: err };
     }
 };

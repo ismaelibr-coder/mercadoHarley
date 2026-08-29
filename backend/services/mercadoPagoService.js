@@ -1,5 +1,6 @@
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import dotenv from 'dotenv';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
@@ -11,7 +12,7 @@ const client = new MercadoPagoConfig({
 
 const payment = new Payment(client);
 
-console.log('✅ Mercado Pago configured');
+logger.info('✅ Mercado Pago configured');
 
 // Helper to check if mock mode is enabled
 const isMockMode = () => process.env.MOCK_PAYMENTS === 'true';
@@ -20,7 +21,7 @@ const isMockMode = () => process.env.MOCK_PAYMENTS === 'true';
 export const createPixPayment = async (orderData) => {
     try {
         if (isMockMode()) {
-            console.log('⚠️ MOCK MODE: Creating simulated PIX payment');
+            logger.info('⚠️ MOCK MODE: Creating simulated PIX payment');
             return {
                 success: true,
                 paymentId: `mock_pix_${Date.now()}`,
@@ -62,9 +63,9 @@ export const createPixPayment = async (orderData) => {
             ticketUrl: response.point_of_interaction?.transaction_data?.ticket_url
         };
     } catch (error) {
-        console.error('Error creating PIX payment:', error);
+        logger.error('Error creating PIX payment:', error);
         if (error.cause) {
-            console.error('Mercado Pago Error Cause:', JSON.stringify(error.cause, null, 2));
+            logger.error('Mercado Pago Error Cause:', JSON.stringify(error.cause, null, 2));
         }
         throw new Error(error.message || 'Erro ao criar pagamento PIX');
     }
@@ -74,7 +75,7 @@ export const createPixPayment = async (orderData) => {
 export const createBoletoPayment = async (orderData) => {
     try {
         if (isMockMode()) {
-            console.log('⚠️ MOCK MODE: Creating simulated Boleto payment');
+            logger.info('⚠️ MOCK MODE: Creating simulated Boleto payment');
             const expirationDate = new Date();
             expirationDate.setDate(expirationDate.getDate() + 3);
             return {
@@ -126,7 +127,7 @@ export const createBoletoPayment = async (orderData) => {
             expirationDate: response.date_of_expiration
         };
     } catch (error) {
-        console.error('Error creating Boleto payment:', error);
+        logger.error('Error creating Boleto payment:', error);
         throw new Error(error.message || 'Erro ao criar boleto');
     }
 };
@@ -135,7 +136,7 @@ export const createBoletoPayment = async (orderData) => {
 export const processCreditCardPayment = async (orderData, cardToken, installments = 1, paymentMethodId) => {
     try {
         if (isMockMode()) {
-            console.log('⚠️ MOCK MODE: Processing simulated Credit Card payment');
+            logger.info('⚠️ MOCK MODE: Processing simulated Credit Card payment');
             return {
                 success: true,
                 paymentId: `mock_card_${Date.now()}`,
@@ -145,7 +146,7 @@ export const processCreditCardPayment = async (orderData, cardToken, installment
             };
         }
 
-        console.log('💳 Processing card payment:', {
+        logger.info('💳 Processing card payment:', {
             amount: orderData.total,
             installments,
             paymentMethod: paymentMethodId
@@ -175,7 +176,7 @@ export const processCreditCardPayment = async (orderData, cardToken, installment
 
         const response = await payment.create({ body: paymentData });
 
-        console.log('✅ Card payment created:', {
+        logger.info('✅ Card payment created:', {
             id: response.id,
             status: response.status,
             installments: response.installments
@@ -189,9 +190,9 @@ export const processCreditCardPayment = async (orderData, cardToken, installment
             installments: response.installments
         };
     } catch (error) {
-        console.error('❌ Error processing credit card:', error);
+        logger.error('❌ Error processing credit card:', error);
         if (error.cause) {
-            console.error('Mercado Pago Error Cause:', JSON.stringify(error.cause, null, 2));
+            logger.error('Mercado Pago Error Cause:', JSON.stringify(error.cause, null, 2));
         }
         throw new Error(error.message || 'Erro ao processar cartão de crédito');
     }
@@ -214,7 +215,7 @@ export const getPaymentStatus = async (paymentId) => {
             statusDetail: response.status_detail
         };
     } catch (error) {
-        console.error('Error getting payment status:', error);
+        logger.error('Error getting payment status:', error);
         throw new Error('Erro ao consultar status do pagamento');
     }
 };

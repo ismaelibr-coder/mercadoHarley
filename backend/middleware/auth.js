@@ -1,5 +1,6 @@
 import { verifyToken } from '../services/authService.js';
 import { User } from '../models/index.js';
+import logger from '../utils/logger.js';
 
 const resolveUserFromToken = async (decodedToken) => {
     const tokenUid = decodedToken?.uid;
@@ -48,7 +49,7 @@ export const authenticate = async (req, res, next) => {
         req.userId = user.uid;
         next();
     } catch (error) {
-        console.error('Authentication error:', error);
+        logger.error('Authentication error:', error);
         res.status(401).json({ error: 'Invalid token' });
     }
 };
@@ -85,7 +86,7 @@ export const verifyAdmin = async (req, res, next) => {
         const user = await resolveUserFromToken(decodedToken);
 
         if (!user.isAdmin) {
-            console.warn(`Unauthorized admin access attempt by: ${user.email || decodedToken.email}`);
+            logger.warn(`Unauthorized admin access attempt by: ${user.email || decodedToken.email}`);
             return res.status(403).json({ error: 'Admin access denied' });
         }
 
@@ -93,7 +94,7 @@ export const verifyAdmin = async (req, res, next) => {
         req.userId = user.uid;
         next();
     } catch (error) {
-        console.error('Admin auth error:', error);
+        logger.error('Admin auth error:', error);
         res.status(403).json({ error: 'Admin access denied' });
     }
 };

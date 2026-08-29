@@ -1,6 +1,7 @@
 import express from 'express';
 import { verifyAdmin } from '../middleware/auth.js';
 import { getFilterSettings, updateFilterSettings } from '../services/settingsStore.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -9,7 +10,7 @@ router.get('/filters', (req, res) => {
     try {
         res.json(getFilterSettings());
     } catch (error) {
-        console.error('Error getting settings:', error);
+        logger.error('Error getting settings:', error);
         res.status(500).json({ error: 'Failed to get settings' });
     }
 });
@@ -23,7 +24,7 @@ router.put('/filters', verifyAdmin, (req, res) => {
 
         res.json({ success: true, settings });
     } catch (error) {
-        console.error('Error updating settings:', error);
+        logger.error('Error updating settings:', error);
         res.status(500).json({ error: 'Failed to update settings' });
     }
 });

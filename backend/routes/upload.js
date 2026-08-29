@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import { saveImage, deleteImage } from '../services/localUploadService.js';
 import { verifyAdmin } from '../middleware/auth.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -41,7 +42,7 @@ router.post('/image', verifyAdmin, upload.single('image'), async (req, res) => {
             filename: result.filename
         });
     } catch (error) {
-        console.error('Upload error:', error);
+        logger.error('Upload error:', error);
         // saveImage rejects files whose real content isn't a recognized image format —
         // that's a client input problem (400), not a server failure (500).
         if (error.message && error.message.includes('não reconhecido')) {
@@ -67,7 +68,7 @@ router.delete('/image/:filename', verifyAdmin, async (req, res) => {
             result: result
         });
     } catch (error) {
-        console.error('Delete error:', error);
+        logger.error('Delete error:', error);
         res.status(500).json({ error: 'Failed to delete image' });
     }
 });

@@ -3,6 +3,7 @@ import { createProduct, getAllProducts, getProductById, updateProduct, deletePro
 import { validateProduct, validateProductUpdate } from '../middleware/validation.js';
 import { verifyAdmin } from '../middleware/auth.js';
 import { auditLog } from '../middleware/auditLog.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ router.get('/', async (req, res) => {
         const products = await getAllProducts();
         res.json(products);
     } catch (error) {
-        console.error('Error fetching products:', error);
+        logger.error('Error fetching products:', error);
         res.status(500).json({ error: 'Failed to fetch products' });
     }
 });
@@ -29,7 +30,7 @@ router.get('/:id', async (req, res) => {
         const product = await getProductById(req.params.id);
         res.json(product);
     } catch (error) {
-        console.error('Error fetching product:', error);
+        logger.error('Error fetching product:', error);
         if (error.message.includes('not found')) {
             return res.status(404).json({ error: 'Product not found' });
         }
@@ -51,7 +52,7 @@ router.post('/', verifyAdmin, validateProduct, auditLog('CREATE_PRODUCT'), async
             message: 'Product created successfully'
         });
     } catch (error) {
-        console.error('Error creating product:', error);
+        logger.error('Error creating product:', error);
         res.status(500).json({ error: error.message || 'Failed to create product' });
     }
 });
@@ -72,7 +73,7 @@ router.put('/:id', verifyAdmin, validateProductUpdate, auditLog('UPDATE_PRODUCT'
             message: 'Product updated successfully'
         });
     } catch (error) {
-        console.error('Error updating product:', error);
+        logger.error('Error updating product:', error);
         if (error.message.includes('not found')) {
             return res.status(404).json({ error: 'Product not found' });
         }
@@ -93,7 +94,7 @@ router.delete('/:id', verifyAdmin, auditLog('DELETE_PRODUCT'), async (req, res) 
             message: 'Product deleted successfully'
         });
     } catch (error) {
-        console.error('Error deleting product:', error);
+        logger.error('Error deleting product:', error);
         if (error.message.includes('not found')) {
             return res.status(404).json({ error: 'Product not found' });
         }
