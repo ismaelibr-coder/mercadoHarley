@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://www.sickgrip.com.br';
+import { API_URL } from '../config/api.js';
 
 // Generate unique order number
 export const generateOrderNumber = () => {

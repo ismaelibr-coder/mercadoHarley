@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-const envUrl = import.meta.env.VITE_API_URL;
-const API_URL = (envUrl && envUrl.startsWith('http')) ? envUrl : 'http://localhost:3001';
+import { API_URL } from '../config/api.js';
 
 /**
  * Get dashboard metrics

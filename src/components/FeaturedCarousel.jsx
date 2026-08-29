@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { API_URL } from '../config/api.js';
 
 const FeaturedCarousel = () => {
     const [products, setProducts] = useState([]);
@@ -10,8 +11,6 @@ const FeaturedCarousel = () => {
     useEffect(() => {
         const fetchFeaturedProducts = async () => {
             try {
-                const API_URL = import.meta.env.VITE_API_URL || 'https://www.sickgrip.com.br';
-                
                 // Fetch featured products from API
                 const response = await fetch(`${API_URL}/api/products?featured=true&limit=5`);
                 const data = await response.json();

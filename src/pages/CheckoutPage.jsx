@@ -8,6 +8,7 @@ import { useToast } from '../components/ui/ToastProvider';
 
 import { createPixPayment, createBoletoPayment, processCreditCardPayment, initMercadoPago } from '../services/paymentService';
 import { calculateShipping } from '../services/shippingService';
+import { createOrder } from '../services/orderService';
 
 const CheckoutPage = () => {
     const { cartItems, cartTotal, clearCart, updateQuantity, removeFromCart } = useCart();
@@ -308,6 +309,11 @@ const CheckoutPage = () => {
                 zipCode: formData.cep,
                 method: selectedShipping ? selectedShipping.name : 'Padrão',
                 price: shippingCost,
+                // The server never trusts this price — it re-quotes shipping itself and
+                // matches this id against a fresh Melhor Envio option (see
+                // orderCalculationService.js). Sent only so the server knows which
+                // option the customer picked, not to report its cost.
+                serviceId: selectedShipping?.id || null,
                 deliveryDays: selectedShipping ? selectedShipping.deliveryDays : 0
             },
             items: cartItems.map(item => ({
@@ -468,28 +474,17 @@ const CheckoutPage = () => {
                     total: 0
                 };
 
-                const token = localStorage.getItem('auth_token');
-                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/orders`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(orderData)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Erro ao criar pedido');
-                }
-
-                const result = await response.json();
+                // Uses the shared orderService (same as every other checkout flow)
+                // instead of a hand-rolled fetch — was duplicating createOrder() with
+                // its own copy of the auth header and its own (drifted) API_URL fallback.
+                const result = await createOrder(orderData);
                 clearCart();
                 setOrderId(result.order.id);
                 navigate(`/order-confirmation/${result.order.id}`);
             } catch (error) {
                 console.error('Erro ao processar pedido:', error);
-                showToast(`Erro ao processar pedido: ${error.message}`, { type: 'error' });
+                const message = error.response?.data?.error || error.message || 'Erro ao criar pedido';
+                showToast(`Erro ao processar pedido: ${message}`, { type: 'error' });
             } finally {
                 setLoading(false);
             }
@@ -660,7 +655,7 @@ const CheckoutPage = () => {
                                         className={`w-full bg-black border ${errors.email ? 'border-red-500' : 'border-gray-700'} rounded p-3 text-white focus:border-sick-red focus:outline-none transition-colors disabled:opacity-60`}
                                     />
                                     {errors.email && <span id="checkout-email-error" role="alert" className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.email}</span>}
-                                    {currentUser && <p className="text-gray-500 text-xs mt-1">E-mail da sua conta</p>}
+                                    {currentUser && <p className="text-gray-400 text-xs mt-1">E-mail da sua conta</p>}
                                 </div>
                                 <div>
                                     <label htmlFor="checkout-cpf" className="block text-gray-400 text-sm mb-2">CPF</label>
@@ -714,7 +709,7 @@ const CheckoutPage = () => {
                                         )}
                                     </div>
                                     {errors.cep && <span id="checkout-cep-error" role="alert" className="text-red-500 text-xs flex items-center gap-1 mt-1"><AlertCircle className="w-3 h-3" /> {errors.cep}</span>}
-                                    <p className="text-gray-500 text-xs mt-1">O endereço será preenchido automaticamente</p>
+                                    <p className="text-gray-400 text-xs mt-1">O endereço será preenchido automaticamente</p>
                                 </div>
                                 <div>
                                     <label htmlFor="checkout-city" className="block text-gray-400 text-sm mb-2">Cidade</label>
@@ -883,7 +878,7 @@ const CheckoutPage = () => {
                                                         type="button"
                                                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                                         aria-label={`Diminuir quantidade de ${item.name}`}
-                                                        className="p-1 text-gray-300 hover:text-harley-orange transition-colors"
+                                                        className="p-2.5 text-gray-300 hover:text-harley-orange transition-colors"
                                                     >
                                                         <Minus className="w-3 h-3" />
                                                     </button>
@@ -892,7 +887,7 @@ const CheckoutPage = () => {
                                                         type="button"
                                                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                                         aria-label={`Aumentar quantidade de ${item.name}`}
-                                                        className="p-1 text-gray-300 hover:text-harley-orange transition-colors"
+                                                        className="p-2.5 text-gray-300 hover:text-harley-orange transition-colors"
                                                     >
                                                         <Plus className="w-3 h-3" />
                                                     </button>
@@ -901,7 +896,7 @@ const CheckoutPage = () => {
                                                     type="button"
                                                     onClick={() => removeFromCart(item.id)}
                                                     aria-label={`Remover ${item.name} do pedido`}
-                                                    className="p-1 text-gray-500 hover:text-red-500 transition-colors"
+                                                    className="p-2.5 text-gray-400 hover:text-red-500 transition-colors"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>

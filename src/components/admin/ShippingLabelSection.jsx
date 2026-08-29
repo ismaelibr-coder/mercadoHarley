@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import { Package, Truck, Download, MapPin, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { API_URL } from '../../config/api.js';
 
 const ShippingLabelSection = ({ orderId, shippingData, onUpdate }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const { currentUser } = useAuth();
-
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
     // Get auth token from authenticated user
     const getAuthToken = async () => {

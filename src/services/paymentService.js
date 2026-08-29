@@ -1,7 +1,7 @@
 // Payment Service - Backend API Integration
 // This service now calls the backend API instead of Mercado Pago directly
+import { API_URL } from '../config/api.js';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const MP_PUBLIC_KEY = import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY;
 
 // Initialize Mercado Pago SDK (client-side for card tokenization)
