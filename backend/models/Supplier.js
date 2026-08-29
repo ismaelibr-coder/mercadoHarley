@@ -8,8 +8,7 @@ export const Supplier = sequelize.define('Supplier', {
     },
     name: {
         type: DataTypes.STRING(120),
-        allowNull: false,
-        unique: true
+        allowNull: false
     },
     active: {
         type: DataTypes.BOOLEAN,
@@ -35,7 +34,10 @@ export const Supplier = sequelize.define('Supplier', {
     tableName: 'suppliers',
     timestamps: true,
     indexes: [
-        { unique: true, fields: ['name'] },
+        // Named — see the comment on Order.orderNumber for why: an unnamed unique
+        // index isn't reliably recognized as already existing across dev's
+        // sync({ alter: true }) restarts, and duplicates accumulate.
+        { unique: true, fields: ['name'], name: 'suppliers_name_unique' },
         { fields: ['active'] }
     ]
 });

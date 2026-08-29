@@ -10,7 +10,11 @@ export const Order = sequelize.define('Order', {
     orderNumber: {
         type: DataTypes.STRING(100),
         allowNull: false,
-        unique: true
+        // A named (not boolean) unique constraint — sequelize.sync({ alter: true })
+        // (dev only) doesn't reliably recognize an unnamed unique index as already
+        // existing across restarts and creates a new one each time, eventually
+        // hitting MySQL's 64-key-per-table limit. Naming it makes it idempotent.
+        unique: 'orders_order_number_unique'
     },
     userId: {
         type: DataTypes.STRING(255),

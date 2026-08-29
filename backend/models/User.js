@@ -9,7 +9,12 @@ export const User = sequelize.define('User', {
     email: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
+        // Named (not boolean true) — see models/Order.js's orderNumber for why:
+        // an unnamed unique constraint isn't reliably recognized as already
+        // existing by sequelize.sync({ alter: true }) (dev only) across restarts,
+        // and MySQL silently accumulates a fresh duplicate index every time —
+        // this table hit MySQL's 64-key-per-table limit from exactly this bug.
+        unique: 'users_email_unique',
         lowercase: true,
         validate: {
             isEmail: true
@@ -28,7 +33,7 @@ export const User = sequelize.define('User', {
     },
     cpf: {
         type: DataTypes.STRING(14),
-        unique: true
+        unique: 'users_cpf_unique'
     },
     address: {
         type: DataTypes.JSON,
