@@ -38,14 +38,15 @@ router.post('/pix', optionalAuth, validateOrder, async (req, res, next) => {
 
         // Recompute subtotal/discount/total server-side from real product prices —
         // never trust the amounts the client sent (price tampering protection).
-        const { subtotal, discount, total, items } = await calculateOrderTotal(orderData.items, {
-            shippingPrice: orderData.shipping?.price,
+        const { subtotal, discount, shipping, total, items } = await calculateOrderTotal(orderData.items, {
+            shipping: orderData.shipping,
             paymentMethod: 'pix'
         });
         orderData.items = items;
         orderData.subtotal = subtotal;
         orderData.discount = discount;
         orderData.total = total;
+        if (orderData.shipping) orderData.shipping.price = shipping;
 
         // Create order in database first
         const order = await createOrderRecord({
@@ -99,14 +100,15 @@ router.post('/boleto', optionalAuth, validateOrder, async (req, res, next) => {
 
         // Recompute subtotal/discount/total server-side from real product prices —
         // never trust the amounts the client sent (price tampering protection).
-        const { subtotal, discount, total, items } = await calculateOrderTotal(orderData.items, {
-            shippingPrice: orderData.shipping?.price,
+        const { subtotal, discount, shipping, total, items } = await calculateOrderTotal(orderData.items, {
+            shipping: orderData.shipping,
             paymentMethod: 'boleto'
         });
         orderData.items = items;
         orderData.subtotal = subtotal;
         orderData.discount = discount;
         orderData.total = total;
+        if (orderData.shipping) orderData.shipping.price = shipping;
 
         // Create order in database
         const order = await createOrderRecord({
@@ -163,14 +165,15 @@ router.post('/credit-card', optionalAuth, validateCreditCardPayment, async (req,
 
         // Recompute subtotal/discount/total server-side from real product prices —
         // never trust the amounts the client sent (price tampering protection).
-        const { subtotal, discount, total, items } = await calculateOrderTotal(orderData.items, {
-            shippingPrice: orderData.shipping?.price,
+        const { subtotal, discount, shipping, total, items } = await calculateOrderTotal(orderData.items, {
+            shipping: orderData.shipping,
             paymentMethod: 'credit_card'
         });
         orderData.items = items;
         orderData.subtotal = subtotal;
         orderData.discount = discount;
         orderData.total = total;
+        if (orderData.shipping) orderData.shipping.price = shipping;
 
         // Create order in database
         const order = await createOrderRecord({

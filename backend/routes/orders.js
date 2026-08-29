@@ -4,7 +4,7 @@ import { calculateOrderTotal } from '../services/orderCalculationService.js';
 import { sendOrderStatusUpdate } from '../services/emailService.js';
 import { verifyAdmin, authenticate } from '../middleware/auth.js';
 import { auditLog } from '../middleware/auditLog.js';
-import { validateOrder } from '../middleware/validation.js';
+import { validateOrder, validateOrderStatus } from '../middleware/validation.js';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
@@ -75,14 +75,15 @@ router.post('/', authenticate, validateOrder, auditLog('CREATE_ORDER'), async (r
 
             // Recompute subtotal/discount/total server-side from real product prices —
             // never trust the amounts the client sent (price tampering protection).
-            const { subtotal, discount, total, items } = await calculateOrderTotal(orderData.items, {
-                shippingPrice: orderData.shipping?.price,
+            const { subtotal, discount, shipping, total, items } = await calculateOrderTotal(orderData.items, {
+                shipping: orderData.shipping,
                 paymentMethod: orderData.payment?.method
             });
             orderData.items = items;
             orderData.subtotal = subtotal;
             orderData.discount = discount;
             orderData.total = total;
+            if (orderData.shipping) orderData.shipping.price = shipping;
         }
 
         const order = await createOrder(orderData);
@@ -102,14 +103,10 @@ router.post('/', authenticate, validateOrder, auditLog('CREATE_ORDER'), async (r
  * PUT /api/orders/:id/status
  * Update order status (admin only)
  */
-router.put('/:id/status', verifyAdmin, auditLog('UPDATE_ORDER_STATUS'), async (req, res) => {
+router.put('/:id/status', verifyAdmin, validateOrderStatus, auditLog('UPDATE_ORDER_STATUS'), async (req, res) => {
     try {
         const { status } = req.body;
         const orderId = req.params.id;
-
-        if (!status) {
-            return res.status(400).json({ error: 'Status is required' });
-        }
 
         const updatedOrder = await updateOrderStatus(orderId, status);
 
