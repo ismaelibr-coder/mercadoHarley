@@ -168,6 +168,25 @@ export const validateOrder = (req, res, next) => {
     next();
 };
 
+// Every status dbService.js/emailService.js actually know how to handle — an
+// unrecognized value would silently leave stock/notifications inconsistent.
+const ORDER_STATUSES = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'rejected'];
+
+export const validateOrderStatus = (req, res, next) => {
+    const schema = Joi.object({
+        status: Joi.string().valid(...ORDER_STATUSES).required()
+    }).unknown(true);
+
+    const { error } = schema.validate(req.body);
+    if (error) {
+        return res.status(400).json({
+            error: 'Dados inválidos',
+            details: error.details[0].message
+        });
+    }
+    next();
+};
+
 /**
  * Validate the /api/payments/credit-card body, which wraps the same order
  * payload one level deeper: { orderData, cardToken, installments, paymentMethodId }.

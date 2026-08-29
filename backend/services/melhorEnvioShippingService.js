@@ -54,8 +54,9 @@ const melhorEnvioRequest = async (method, endpoint, data = null) => {
  */
 export const createShippingLabel = async (orderData) => {
     try {
+        // Only the order id — orderData carries customer name/CPF/phone/address, which
+        // has no business being written to server logs in full.
         logger.info('📦 Creating shipping label for order:', orderData.id);
-        logger.info('📋 Order data:', JSON.stringify(orderData, null, 2));
 
         // Handle both shipping and shippingAddress structures
         const shipping = orderData.shipping || orderData.shippingAddress || {};
@@ -135,7 +136,9 @@ export const createShippingLabel = async (orderData) => {
             }
         };
 
-        logger.info('📤 Sending to Melhor Envio:', JSON.stringify(shippingData, null, 2));
+        // shippingData.to carries the customer's name/CPF/phone/address (required by
+        // Melhor Envio's API) — log only the destination city/state, not the full payload.
+        logger.info('📤 Sending to Melhor Envio:', shippingData.to?.city, shippingData.to?.state_abbr);
 
         const result = await melhorEnvioRequest('POST', '/cart', shippingData);
 

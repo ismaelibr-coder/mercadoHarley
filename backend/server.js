@@ -200,14 +200,14 @@ app.use('/api/webhooks', limiter, webhooksRouter);
 app.use('/api/products', limiter, productsRouter);
 app.use('/api/shipping', limiter, shippingRouter);
 app.use('/api/upload', limiter, uploadRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/banners', bannerRoutes);
+app.use('/api/analytics', limiter, analyticsRoutes);
+app.use('/api/banners', limiter, bannerRoutes);
 app.use('/api/auth', limiter, authRoutes);
 app.use('/api/orders', limiter, orderRoutes);
 app.use('/api/shipping-labels', limiter, shippingLabelsRouter);
-app.use('/api/settings', settingsRouter);
+app.use('/api/settings', limiter, settingsRouter);
 app.use('/api/internal-stock', limiter, internalStockRouter);
-app.use('/api/admin', cleanupRoutes); // Admin cleanup routes
+app.use('/api/admin', limiter, cleanupRoutes); // Admin cleanup routes — includes a destructive DELETE, must be rate limited too
 
 
 // Error handling

@@ -29,8 +29,9 @@ router.post('/:orderId/create', verifyAdmin, async (req, res) => {
             return res.status(404).json({ error: 'Order not found' });
         }
 
-        logger.info('📦 Creating shipping label for order:', orderId);
-        logger.info('📋 Complete order structure:', JSON.stringify(order, null, 2));
+        // Logs the order id and item count only — the full order (name/CPF/phone/
+        // address) used to be dumped here, which put customer PII into server logs.
+        logger.info('📦 Creating shipping label for order:', orderId, `(${order.items?.length || 0} itens)`);
 
         // Step 1: Create label in cart
         const cartItem = await createShippingLabel(order);
