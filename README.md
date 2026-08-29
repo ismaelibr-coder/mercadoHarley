@@ -10,7 +10,9 @@ cartão de crédito) e cálculo de frete via Melhor Envio.
 - **Pagamentos**: SDK Mercado Pago (PIX, boleto, cartão + parcelamento)
 - **Frete**: Melhor Envio
 - **E-mail**: Resend
-- **Upload de imagens**: armazenamento local em disco (`backend/uploads` — não há integração com Cloudinary apesar do nome de algumas variáveis legadas)
+- **Upload de imagens**: armazenamento local em disco (`backend/uploads` — não há integração com Cloudinary apesar do nome de algumas variáveis legadas). Fotos de produto são normalizadas no upload (canvas branco 1200×1200 via `sharp`, sem cortar a imagem original); banners passam direto.
+- **Estoque interno**: módulo separado (`/admin/internal-stock`) para controle de fornecedores e precificação — independente do estoque público de vendas
+- **Logs**: estruturados via `pino` (`backend/utils/logger.js`) — JSON em produção, colorido em dev; nível controlado por `LOG_LEVEL` (padrão `info`)
 
 ## Setup
 
