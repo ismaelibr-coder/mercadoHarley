@@ -5,7 +5,9 @@ set -euo pipefail
 # Usage:
 # DEPLOY_HOST=your.host DEPLOY_USER=root DEPLOY_PATH=/home/app/mercado-harley ./scripts/deploy-backend.sh
 # Optional:
-# DEPLOY_PORT=22 DEPLOY_PASSWORD=secret BACKEND_SUBDIR=backend PM2_APP_NAME=mercado-harley-backend
+# DEPLOY_PORT=22 DEPLOY_SSH_KEY=~/.ssh/id_ed25519 BACKEND_SUBDIR=backend PM2_APP_NAME=mercado-harley-backend
+# DEPLOY_PASSWORD is only a fallback for hosts without a key installed yet — prefer
+# DEPLOY_SSH_KEY, which takes priority when both are set.
 
 if [ -z "${DEPLOY_HOST:-}" ] || [ -z "${DEPLOY_USER:-}" ] || [ -z "${DEPLOY_PATH:-}" ]; then
   echo "DEPLOY_HOST, DEPLOY_USER and DEPLOY_PATH must be set. Aborting."
@@ -14,6 +16,7 @@ fi
 
 DEPLOY_PORT="${DEPLOY_PORT:-22}"
 DEPLOY_PASSWORD="${DEPLOY_PASSWORD:-}"
+DEPLOY_SSH_KEY="${DEPLOY_SSH_KEY:-}"
 BACKEND_SUBDIR="${BACKEND_SUBDIR:-backend}"
 PM2_APP_NAME="${PM2_APP_NAME:-mercado-harley-backend}"
 
@@ -30,7 +33,9 @@ cleanup() {
 
 trap cleanup EXIT
 
-if [ -n "${DEPLOY_PASSWORD}" ]; then
+if [ -n "${DEPLOY_SSH_KEY}" ]; then
+  SSH_CMD=(ssh -i "${DEPLOY_SSH_KEY}" -p "${DEPLOY_PORT}" -o StrictHostKeyChecking=accept-new)
+elif [ -n "${DEPLOY_PASSWORD}" ]; then
   if ! command -v sshpass >/dev/null 2>&1; then
     ASKPASS_FILE="$(mktemp)"
     cat > "${ASKPASS_FILE}" <<EOF
