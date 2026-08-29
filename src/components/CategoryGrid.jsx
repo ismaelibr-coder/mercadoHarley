@@ -53,7 +53,7 @@ const CategoryGrid = () => {
                             {category.name}
                         </h3>
 
-                        <p className="text-sm text-gray-500 group-hover:text-gray-400">
+                        <p className="text-sm text-gray-400 group-hover:text-gray-300">
                             {category.description}
                         </p>
                     </div>

@@ -31,6 +31,13 @@ const CategoryPage = () => {
         'vestuario': {
             title: 'Vestuário',
             allowedCategories: ['Vestuário', 'Jaquetas', 'Capacetes', 'Luvas', 'Botas', 'Camisetas']
+        },
+        // CategoryGrid.jsx links a card here (id: 'eletrica') — this key was missing,
+        // so that card always fell through to the `{ allowedCategories: [] }` default
+        // below and landed on a permanently empty "0 produtos" page.
+        'eletrica': {
+            title: 'Elétrica & Iluminação',
+            allowedCategories: ['Iluminação']
         }
     };
 

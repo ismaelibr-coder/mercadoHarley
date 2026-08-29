@@ -12,11 +12,19 @@ const SIZES = {
  * in ProductPage, CategoryPage and ProductList — this is the single source of
  * truth going forward.
  *
- * `reviewCount` is optional and only rendered when a real number is passed —
- * there is no review system yet, so we never fabricate a count.
+ * Renders nothing unless `reviewCount` is a real positive number. There is no
+ * review system yet — every caller currently passes only `product.rating`,
+ * which is a fixed admin-set default (5) with no customer feedback behind it.
+ * Showing 5 fabricated stars with no review count is worse for trust than
+ * showing nothing: a real shopper reads it as a fake rating on a
+ * zero-review product. Once real reviews exist, pass reviewCount to render.
  */
 const RatingStars = ({ rating = 0, size = 'md', reviewCount, className = '' }) => {
     const sizeClass = SIZES[size] || SIZES.md;
+
+    if (!(typeof reviewCount === 'number' && reviewCount > 0)) {
+        return null;
+    }
 
     return (
         <div className={`flex items-center gap-1 ${className}`}>

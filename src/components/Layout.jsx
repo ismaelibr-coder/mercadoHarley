@@ -252,6 +252,7 @@ const Layout = ({ children }) => {
                                 <li><Link to="/category/pecas" className="hover:text-harley-orange transition-colors">Peças</Link></li>
                                 <li><Link to="/category/acessorios" className="hover:text-harley-orange transition-colors">Acessórios</Link></li>
                                 <li><Link to="/about" className="hover:text-harley-orange transition-colors">Sobre Nós</Link></li>
+                                <li><Link to="/terms" className="hover:text-harley-orange transition-colors">Termos e Trocas</Link></li>
                             </ul>
                         </div>
 
@@ -270,7 +271,7 @@ const Layout = ({ children }) => {
                         </div>
                     </div>
 
-                    <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
+                    <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
                         <p>&copy; 2024 SICK GRIP. Todos os direitos reservados.</p>
                     </div>
                 </div>

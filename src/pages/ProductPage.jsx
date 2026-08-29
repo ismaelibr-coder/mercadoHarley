@@ -163,9 +163,20 @@ const ProductPage = () => {
                         </div>
 
                         <div className="mb-8">
-                            <div className="text-4xl font-bold text-white mb-4">
+                            <div className="text-4xl font-bold text-white mb-1">
                                 R$ {typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
                             </div>
+                            {typeof product.price === 'number' && product.price > 0 && (
+                                // Matches the "Até 12x nos cartões" promise already made in
+                                // InfoBar — surfaced here too, at the actual decision point,
+                                // instead of only after typing a card number at checkout.
+                                // Doesn't claim "sem juros": real installment terms (interest
+                                // beyond a threshold) come from Mercado Pago's own account
+                                // config, not a flat price/12 split — see CreditCardForm.jsx.
+                                <p className="text-gray-400 text-sm mb-4">
+                                    ou em até 12x de R$ {(product.price / 12).toFixed(2)} no cartão
+                                </p>
+                            )}
 
                             {/* Stock Status */}
                             <div className="flex items-center gap-2">

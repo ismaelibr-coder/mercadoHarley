@@ -126,11 +126,11 @@ const CartSidebar = () => {
                                             </p>
                                         </div>
                                         <div className="flex items-center justify-between mt-2">
-                                            <div className="flex items-center gap-2 bg-gray-800 rounded p-1">
+                                            <div className="flex items-center gap-1 bg-gray-800 rounded p-1">
                                                 <button
                                                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                                     aria-label={`Diminuir quantidade de ${item.name}`}
-                                                    className="p-1 hover:text-harley-orange transition-colors"
+                                                    className="p-2.5 hover:text-harley-orange transition-colors"
                                                 >
                                                     <Minus className="w-3 h-3" />
                                                 </button>
@@ -138,7 +138,7 @@ const CartSidebar = () => {
                                                 <button
                                                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                                     aria-label={`Aumentar quantidade de ${item.name}`}
-                                                    className="p-1 hover:text-harley-orange transition-colors"
+                                                    className="p-2.5 hover:text-harley-orange transition-colors"
                                                 >
                                                     <Plus className="w-3 h-3" />
                                                 </button>
@@ -146,7 +146,7 @@ const CartSidebar = () => {
                                             <button
                                                 onClick={() => removeFromCart(item.id)}
                                                 aria-label={`Remover ${item.name} do carrinho`}
-                                                className="text-gray-500 hover:text-red-500 transition-colors"
+                                                className="p-2.5 text-gray-400 hover:text-red-500 transition-colors"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
