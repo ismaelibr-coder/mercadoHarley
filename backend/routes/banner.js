@@ -82,7 +82,7 @@ router.get('/:id', verifyAdmin, async (req, res) => {
  */
 router.post('/', verifyAdmin, async (req, res) => {
     try {
-        const { title, image, link, order, active } = req.body;
+        const { title, image, link, placement, order, active } = req.body;
 
         // Validation
         if (!title || !image || !link || !link.type || !link.value) {
@@ -97,6 +97,7 @@ router.post('/', verifyAdmin, async (req, res) => {
             title,
             image,
             link,
+            placement,
             order: order || 0,
             active: active !== undefined ? active : true
         });
@@ -114,7 +115,7 @@ router.post('/', verifyAdmin, async (req, res) => {
  */
 router.put('/:id', verifyAdmin, async (req, res) => {
     try {
-        const { title, image, link, order, active } = req.body;
+        const { title, image, link, placement, order, active } = req.body;
 
         const updateData = {};
         if (title !== undefined) updateData.title = title;
@@ -128,6 +129,7 @@ router.put('/:id', verifyAdmin, async (req, res) => {
             }
             updateData.link = link;
         }
+        if (placement !== undefined) updateData.placement = placement;
         if (order !== undefined) updateData.order = order;
         if (active !== undefined) updateData.active = active;
 
