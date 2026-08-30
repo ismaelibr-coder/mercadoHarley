@@ -1,6 +1,5 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../config/database.js';
-import { Product } from './Product.js';
 
 export const Review = sequelize.define('Review', {
     id: {
@@ -11,13 +10,16 @@ export const Review = sequelize.define('Review', {
         type: DataTypes.STRING(255),
         allowNull: false
     },
+    // No DB-level FK to products.id on purpose: production's `products` table
+    // was created with utf8mb4_unicode_ci, but a fresh table synced by
+    // Sequelize gets the connection's default collation instead, and MySQL
+    // refuses to create a FK across mismatched collations (error 3780) —
+    // that mismatch took prod down on deploy (crash-looped on every startup
+    // since sync() never completed). The column/index/lookup logic in
+    // reviewService.js don't need a hard DB constraint to work correctly.
     productId: {
         type: DataTypes.STRING(255),
-        allowNull: false,
-        references: {
-            model: Product,
-            key: 'id'
-        }
+        allowNull: false
     },
     userId: {
         type: DataTypes.STRING(255),
