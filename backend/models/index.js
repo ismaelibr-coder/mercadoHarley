@@ -8,6 +8,10 @@ import AuditLog from './AuditLog.js';
 import PricingConfig from './PricingConfig.js';
 import Supplier from './Supplier.js';
 import InternalStockItem from './InternalStockItem.js';
+import Review from './Review.js';
+import CustomerGalleryItem from './CustomerGalleryItem.js';
+import Testimonial from './Testimonial.js';
+import VideoSettings from './VideoSettings.js';
 
 Supplier.hasMany(InternalStockItem, {
     foreignKey: 'supplierId',
@@ -29,7 +33,11 @@ export {
     AuditLog,
     PricingConfig,
     Supplier,
-    InternalStockItem
+    InternalStockItem,
+    Review,
+    CustomerGalleryItem,
+    Testimonial,
+    VideoSettings
 };
 
 export default {
@@ -42,5 +50,9 @@ export default {
     AuditLog,
     PricingConfig,
     Supplier,
-    InternalStockItem
+    InternalStockItem,
+    Review,
+    CustomerGalleryItem,
+    Testimonial,
+    VideoSettings
 };

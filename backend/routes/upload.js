@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { saveImage, deleteImage } from '../services/localUploadService.js';
+import { saveImage, deleteImage, saveVideo } from '../services/localUploadService.js';
 import { verifyAdmin } from '../middleware/auth.js';
 import logger from '../utils/logger.js';
 
@@ -19,6 +19,24 @@ const upload = multer({
             cb(null, true);
         } else {
             cb(new Error('Only image files are allowed'), false);
+        }
+    }
+});
+
+// Separate multer instance for video: much bigger size ceiling, and a
+// video/* filter instead of image/* — kept as its own upload() call rather
+// than widening the image one so the 10MB image limit doesn't accidentally
+// grow for product/banner photos.
+const uploadVideo = multer({
+    storage,
+    limits: {
+        fileSize: 80 * 1024 * 1024 // 80MB limit
+    },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('video/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only video files are allowed'), false);
         }
     }
 });
@@ -49,6 +67,30 @@ router.post('/image', verifyAdmin, upload.single('image'), async (req, res) => {
             return res.status(400).json({ error: error.message });
         }
         res.status(500).json({ error: 'Failed to upload image' });
+    }
+});
+
+// POST /api/upload/video - Upload video (hero background, etc.)
+router.post('/video', verifyAdmin, uploadVideo.single('video'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No video file provided' });
+        }
+
+        const uploadBaseUrl = process.env.UPLOADS_BASE_URL || `${req.protocol}://${req.get('host')}/uploads`;
+        const result = await saveVideo(req.file, { baseUrl: uploadBaseUrl });
+
+        res.json({
+            success: true,
+            url: result.url,
+            filename: result.filename
+        });
+    } catch (error) {
+        logger.error('Video upload error:', error);
+        if (error.message && error.message.includes('não reconhecido')) {
+            return res.status(400).json({ error: error.message });
+        }
+        res.status(500).json({ error: 'Failed to upload video' });
     }
 });
 

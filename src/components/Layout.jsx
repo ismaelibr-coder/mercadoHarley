@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { Menu, X, ShoppingCart, Phone, Mail, Instagram, User, LogOut, Search } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Menu, X, ShoppingCart, Phone, Mail, Instagram, User, LogOut, Search, ShieldCheck } from 'lucide-react';
 import CartSidebar from './CartSidebar';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import WhatsAppButton from './WhatsAppButton';
 import InfoBar from './InfoBar';
+import PaymentBrandIcons from './PaymentBrandIcons';
+import { useCategoryCounts } from '../hooks/useCategoryCounts.js';
 
 const Layout = ({ children }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,6 +16,27 @@ const Layout = ({ children }) => {
     const { cartCount, isCartOpen, setIsCartOpen } = useCart();
     const { currentUser, logout } = useAuth();
     const navigate = useNavigate();
+    // Defaults to hidden while counts are loading, so an empty category never
+    // flashes visible-then-gone — it only ever appears once we've confirmed it
+    // actually has stock.
+    const { counts: categoryCounts, loading: countsLoading } = useCategoryCounts();
+    const showCategory = (key) => !countsLoading && categoryCounts[key] > 0;
+
+    // Brief scale "bump" on the cart badge whenever an item is added — visual
+    // confirmation right where the eye already is, complementing the sidebar
+    // that opens on add. Only bumps on increase, not on removal.
+    const [cartBump, setCartBump] = useState(false);
+    const previousCartCount = useRef(cartCount);
+    useEffect(() => {
+        if (cartCount > previousCartCount.current) {
+            setCartBump(true);
+            const timeout = setTimeout(() => setCartBump(false), 400);
+            previousCartCount.current = cartCount;
+            return () => clearTimeout(timeout);
+        }
+        previousCartCount.current = cartCount;
+        return undefined;
+    }, [cartCount]);
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
     const toggleCart = () => setIsCartOpen(!isCartOpen);
@@ -58,10 +81,10 @@ const Layout = ({ children }) => {
                         {/* Desktop Navigation */}
                         <nav className="hidden md:flex items-center gap-4 lg:gap-6">
                             <Link to="/" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Início</Link>
-                            <Link to="/category/pecas" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Peças</Link>
+                            {showCategory('pecas') && <Link to="/category/pecas" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Peças</Link>}
                             <Link to="/custom-parts" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Peças Customizadas</Link>
-                            <Link to="/category/acessorios" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Acessórios</Link>
-                            <Link to="/category/vestuario" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Vestuário</Link>
+                            {showCategory('acessorios') && <Link to="/category/acessorios" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Acessórios</Link>}
+                            {showCategory('vestuario') && <Link to="/category/vestuario" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Vestuário</Link>}
                             <Link to="/contato" className="font-bold hover:text-harley-orange transition-colors uppercase text-sm tracking-wide">Contato</Link>
                         </nav>
 
@@ -201,10 +224,10 @@ const Layout = ({ children }) => {
                                 </div>
                             )}
                             <Link to="/" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Início</Link>
-                            <Link to="/category/pecas" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Peças</Link>
+                            {showCategory('pecas') && <Link to="/category/pecas" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Peças</Link>}
                             <Link to="/custom-parts" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Peças Customizadas</Link>
-                            <Link to="/category/acessorios" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Acessórios</Link>
-                            <Link to="/category/vestuario" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Vestuário</Link>
+                            {showCategory('acessorios') && <Link to="/category/acessorios" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Acessórios</Link>}
+                            {showCategory('vestuario') && <Link to="/category/vestuario" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Vestuário</Link>}
                             <Link to="/contato" className="font-bold hover:text-harley-orange transition-colors uppercase" onClick={toggleMenu}>Contato</Link>
                             {!currentUser && (
                                 <Link to="/login" className="font-bold hover:text-harley-orange transition-colors uppercase flex items-center gap-2 pt-4 border-t border-gray-800" onClick={toggleMenu}>
@@ -249,8 +272,8 @@ const Layout = ({ children }) => {
                             <h3 className="font-display font-bold text-lg uppercase mb-6 text-white">Navegação</h3>
                             <ul className="space-y-3 text-gray-400">
                                 <li><Link to="/" className="hover:text-harley-orange transition-colors">Início</Link></li>
-                                <li><Link to="/category/pecas" className="hover:text-harley-orange transition-colors">Peças</Link></li>
-                                <li><Link to="/category/acessorios" className="hover:text-harley-orange transition-colors">Acessórios</Link></li>
+                                {showCategory('pecas') && <li><Link to="/category/pecas" className="hover:text-harley-orange transition-colors">Peças</Link></li>}
+                                {showCategory('acessorios') && <li><Link to="/category/acessorios" className="hover:text-harley-orange transition-colors">Acessórios</Link></li>}
                                 <li><Link to="/about" className="hover:text-harley-orange transition-colors">Sobre Nós</Link></li>
                                 <li><Link to="/terms" className="hover:text-harley-orange transition-colors">Termos e Trocas</Link></li>
                             </ul>
@@ -271,8 +294,21 @@ const Layout = ({ children }) => {
                         </div>
                     </div>
 
-                    <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-                        <p>&copy; 2024 SICK GRIP. Todos os direitos reservados.</p>
+                    {/* Trust elements — Visa/Mastercard/Elo are the networks Mercado Pago's
+                        standard Brazil checkout routes by default; no unearned "verified
+                        secure site" seal — just the plain, true fact that checkout runs over
+                        HTTPS. */}
+                    <div className="border-t border-gray-800 pt-8 pb-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <PaymentBrandIcons />
+                        <div className="flex items-center gap-2 text-gray-500 text-xs">
+                            <ShieldCheck className="w-4 h-4 text-harley-orange" aria-hidden="true" />
+                            <span>Compra 100% segura — conexão HTTPS criptografada</span>
+                        </div>
+                    </div>
+
+                    <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm space-y-1">
+                        <p>&copy; {new Date().getFullYear()} SICK GRIP. Todos os direitos reservados.</p>
+                        <p className="text-gray-500">CNPJ: 62.517.348/0001-08</p>
                     </div>
                 </div>
             </footer>

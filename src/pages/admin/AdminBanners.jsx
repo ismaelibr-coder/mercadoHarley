@@ -89,6 +89,7 @@ const AdminBanners = () => {
                             <tr>
                                 <th className="text-left p-4 text-gray-400 font-bold uppercase text-sm">Preview</th>
                                 <th className="text-left p-4 text-gray-400 font-bold uppercase text-sm">Título</th>
+                                <th className="text-left p-4 text-gray-400 font-bold uppercase text-sm">Onde aparece</th>
                                 <th className="text-left p-4 text-gray-400 font-bold uppercase text-sm">Tipo de Link</th>
                                 <th className="text-left p-4 text-gray-400 font-bold uppercase text-sm">Ordem</th>
                                 <th className="text-left p-4 text-gray-400 font-bold uppercase text-sm">Status</th>
@@ -106,13 +107,14 @@ const AdminBanners = () => {
                                         />
                                     </td>
                                     <td className="p-4 text-white font-bold">{banner.title}</td>
+                                    <td className="p-4 text-gray-400 text-sm">{banner.placement || '—'}</td>
                                     <td className="p-4 text-gray-400">
                                         <span className="inline-flex items-center gap-1">
-                                            {getLinkTypeLabel(banner.link.type)}
-                                            {banner.link.type === 'external' && <ExternalLink className="w-3 h-3" />}
+                                            {getLinkTypeLabel(banner.link?.type)}
+                                            {banner.link?.type === 'external' && <ExternalLink className="w-3 h-3" />}
                                         </span>
                                     </td>
-                                    <td className="p-4 text-gray-400">{banner.order}</td>
+                                    <td className="p-4 text-gray-400">{banner.displayOrder}</td>
                                     <td className="p-4">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${banner.active
                                                 ? 'bg-green-900/30 text-green-500'

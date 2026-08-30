@@ -4,7 +4,9 @@ import { Helmet } from 'react-helmet-async';
 const SEO = ({
     title = 'SICK GRIP - Peças e Acessórios para Harley-Davidson',
     description = 'Encontre as melhores peças, acessórios e equipamentos para sua Harley-Davidson. Entrega para todo Brasil com qualidade garantida.',
-    image = '/og-image.jpg',
+    // '/og-image.jpg' never existed in public/ — every page except ProductPage
+    // (which passes its own product photo) was sharing a 404'd preview image.
+    image = '/sick-grip-logo.png',
     url = window.location.href,
     type = 'website'
 }) => {

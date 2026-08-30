@@ -4,6 +4,7 @@ import logger from '../utils/logger.js';
 import {
     getAllBanners,
     getActiveBanners,
+    getActiveBannerByPlacement,
     getBannerById,
     createBanner,
     updateBanner,
@@ -23,6 +24,23 @@ router.get('/active', async (req, res) => {
     } catch (error) {
         logger.error('Error fetching active banners:', error);
         res.status(500).json({ error: 'Failed to fetch banners' });
+    }
+});
+
+/**
+ * GET /api/banners/placement/:placement
+ * Public — the one active institutional banner (hero, or a category card
+ * background) for a given placement, or null if none is configured. Callers
+ * (FeaturedCarousel.jsx, CategoryGrid.jsx) fall back to their existing default
+ * (product carousel / icon) when this returns null.
+ */
+router.get('/placement/:placement', async (req, res) => {
+    try {
+        const banner = await getActiveBannerByPlacement(req.params.placement);
+        res.json({ banner });
+    } catch (error) {
+        logger.error('Error fetching banner by placement:', error);
+        res.status(500).json({ error: 'Failed to fetch banner' });
     }
 });
 

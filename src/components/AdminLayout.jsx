@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, Home, ShoppingBag, Image, Settings, Boxes } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, Home, ShoppingBag, Image, Settings, Boxes, Users, MessageSquareQuote, Video } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const AdminLayout = () => {
@@ -53,6 +53,30 @@ const AdminLayout = () => {
                         <span className="font-bold">Banners</span>
                     </Link>
 
+
+                    <Link
+                        to="/admin/customer-gallery"
+                        className="flex items-center gap-3 px-4 py-3 rounded hover:bg-gray-800 transition-colors mb-2"
+                    >
+                        <Users className="w-5 h-5" />
+                        <span className="font-bold">Galeria de Clientes</span>
+                    </Link>
+
+                    <Link
+                        to="/admin/testimonials"
+                        className="flex items-center gap-3 px-4 py-3 rounded hover:bg-gray-800 transition-colors mb-2"
+                    >
+                        <MessageSquareQuote className="w-5 h-5" />
+                        <span className="font-bold">Depoimentos</span>
+                    </Link>
+
+                    <Link
+                        to="/admin/video"
+                        className="flex items-center gap-3 px-4 py-3 rounded hover:bg-gray-800 transition-colors mb-2"
+                    >
+                        <Video className="w-5 h-5" />
+                        <span className="font-bold">Vídeo</span>
+                    </Link>
 
                     <Link
                         to="/admin/settings"

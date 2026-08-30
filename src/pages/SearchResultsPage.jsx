@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { SearchX } from 'lucide-react';
 import { getAllProducts } from '../services/productService';
-import { useCart } from '../context/CartContext';
-import ConditionBadge from '../components/ui/ConditionBadge';
-import RatingStars from '../components/ui/RatingStars';
+import ProductCard from '../components/ProductCard';
 import SEO from '../components/SEO';
 
 const matches = (product, query) => {
@@ -18,7 +16,6 @@ const matches = (product, query) => {
 const SearchResultsPage = () => {
     const [searchParams] = useSearchParams();
     const query = (searchParams.get('q') || '').trim();
-    const { addToCart } = useCart();
     const [allProducts, setAllProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -62,40 +59,8 @@ const SearchResultsPage = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {results.map((product) => (
-                            <div key={product.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden hover:border-sick-red transition-all group">
-                                <Link to={`/product/${product.id}`}>
-                                    <div className="relative overflow-hidden aspect-square bg-white p-4">
-                                        <img
-                                            src={product.image}
-                                            alt={product.name}
-                                            loading="lazy"
-                                            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
-                                        />
-                                        <ConditionBadge condition={product.condition} className="absolute top-3 right-3" />
-                                    </div>
-                                </Link>
-                                <div className="p-4">
-                                    <span className="text-xs text-sick-red font-bold uppercase tracking-wide">{product.category}</span>
-                                    <Link to={`/product/${product.id}`}>
-                                        <h3 className="text-lg font-display font-bold text-white my-2 hover:text-sick-red transition-colors line-clamp-2 min-h-[3.5rem]">
-                                            {product.name}
-                                        </h3>
-                                    </Link>
-                                    <RatingStars rating={product.rating} size="sm" className="mb-3" />
-                                    <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-800">
-                                        <span className="text-xl font-bold text-white">
-                                            R$ {typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
-                                        </span>
-                                        <button
-                                            onClick={() => addToCart(product)}
-                                            className="bg-sick-red text-white px-3 py-1.5 rounded font-bold uppercase text-xs hover:bg-red-800 transition-colors"
-                                        >
-                                            Adicionar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                        {results.map((product, index) => (
+                            <ProductCard key={product.id} product={product} delay={(index % 6) * 60} />
                         ))}
                     </div>
                 )}

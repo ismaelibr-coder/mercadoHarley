@@ -142,7 +142,45 @@ export const deleteImage = async (filename) => {
     return { deleted: true, filename: safeName };
 };
 
+// Same magic-bytes-not-mimetype approach as images — mp4's "ftyp" box sits at
+// byte offset 4, not the start, so it can't reuse the same signature shape.
+const VIDEO_SIGNATURES = [
+    {
+        ext: '.mp4',
+        check: (b) => b.length >= 12 && b.toString('ascii', 4, 8) === 'ftyp'
+    },
+    {
+        ext: '.webm',
+        // EBML header, shared by WebM and Matroska — good enough here since
+        // browsers/ffmpeg-less <video> playback is the only consumer.
+        check: (b) => b.length >= 4 && b[0] === 0x1A && b[1] === 0x45 && b[2] === 0xDF && b[3] === 0xA3
+    }
+];
+
+const detectVideoType = (buffer) => VIDEO_SIGNATURES.find((sig) => sig.check(buffer)) || null;
+
+// Videos are saved as-is — no sharp-style normalization; a hero background
+// video should keep its original encoding, resolution and framerate.
+export const saveVideo = async (file, options = {}) => {
+    await ensureUploadsDir();
+
+    const detectedType = detectVideoType(file.buffer);
+    if (!detectedType) {
+        throw new Error('Arquivo não reconhecido como um vídeo válido (MP4 ou WEBM)');
+    }
+
+    const filename = buildFilename(detectedType);
+    const filePath = path.join(uploadsDir, filename);
+    const uploadsBaseUrl = options.baseUrl || fallbackUploadsBaseUrl;
+    const url = uploadsBaseUrl.replace(/\/uploads$/, '/api/uploads') + `/${filename}`;
+
+    await fsPromises.writeFile(filePath, file.buffer);
+
+    return { filename, url, path: filePath };
+};
+
 export default {
     saveImage,
-    deleteImage
+    deleteImage,
+    saveVideo
 };

@@ -38,6 +38,37 @@ export const uploadImage = async (file, options = {}) => {
 };
 
 /**
+ * Upload a video file (hero background, etc.) — same shape as uploadImage
+ * but hits the video endpoint (bigger size limit, video/* filter server-side).
+ * @param {File} file - Video file
+ * @returns {Promise<Object>} - Upload result with URL
+ */
+export const uploadVideo = async (file) => {
+    try {
+        const token = localStorage.getItem('auth_token');
+
+        if (!token) {
+            throw new Error('User not authenticated');
+        }
+
+        const formData = new FormData();
+        formData.append('video', file);
+
+        const response = await axios.post(`${API_URL}/api/upload/video`, formData, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        return response.data;
+    } catch (error) {
+        console.error('Video upload error:', error);
+        throw error.response?.data || error;
+    }
+};
+
+/**
  * Delete image from Cloudinary
  * @param {string} publicId - Cloudinary public ID
  * @returns {Promise<Object>} - Delete result

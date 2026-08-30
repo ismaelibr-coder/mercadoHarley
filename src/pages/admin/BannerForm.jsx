@@ -19,12 +19,23 @@ const BannerForm = () => {
         image: '',
         linkType: 'category',
         linkValue: '',
-        displayType: 'carousel',
+        placement: 'hero',
         order: 0,
         active: true
     });
 
     const categories = ['Peças', 'Vestuário', 'Acessórios'];
+
+    // Where this banner shows on the site. 'hero' replaces the homepage's product
+    // carousel when active; the 4 category-* placements become that category
+    // card's background image on the home instead of the default icon.
+    const PLACEMENTS = [
+        { value: 'hero', label: 'Hero (topo da home)' },
+        { value: 'category-pecas', label: 'Card de categoria — Peças' },
+        { value: 'category-acessorios', label: 'Card de categoria — Acessórios' },
+        { value: 'category-vestuario', label: 'Card de categoria — Vestuário' },
+        { value: 'category-eletrica', label: 'Card de categoria — Elétrica & Iluminação' }
+    ];
 
     useEffect(() => {
         loadProducts();
@@ -48,10 +59,10 @@ const BannerForm = () => {
             setFormData({
                 title: banner.title,
                 image: banner.image,
-                linkType: banner.link.type,
-                linkValue: banner.link.value,
-                displayType: banner.displayType || 'carousel',
-                order: banner.order,
+                linkType: banner.link?.type || 'category',
+                linkValue: banner.link?.value || '',
+                placement: banner.placement || 'hero',
+                order: banner.displayOrder,
                 active: banner.active
             });
         } catch (error) {
@@ -80,7 +91,7 @@ const BannerForm = () => {
                     type: formData.linkType,
                     value: formData.linkValue
                 },
-                displayType: formData.displayType,
+                placement: formData.placement,
                 order: parseInt(formData.order),
                 active: formData.active
             };
@@ -132,18 +143,19 @@ const BannerForm = () => {
                     </div>
 
                     <div>
-                        <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Tipo de Exibição *</label>
+                        <label className="block text-gray-400 text-sm mb-2 font-bold uppercase">Onde aparece *</label>
                         <select
-                            name="displayType"
-                            value={formData.displayType}
+                            name="placement"
+                            value={formData.placement}
                             onChange={handleChange}
                             required
                             className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none"
                         >
-                            <option value="carousel">Carrossel (Rotativo)</option>
-                            <option value="hero">Hero (Fixo)</option>
+                            {PLACEMENTS.map((p) => (
+                                <option key={p.value} value={p.value}>{p.label}</option>
+                            ))}
                         </select>
-                        <p className="text-xs text-gray-500 mt-1">Carrossel: múltiplos banners rotativos | Hero: banner fixo estilo destaque</p>
+                        <p className="text-xs text-gray-500 mt-1">Só um banner ativo por local é usado por vez. Ativar um novo aqui não apaga o anterior — ele fica inativo e pode ser reativado.</p>
                     </div>
 
                     <div>

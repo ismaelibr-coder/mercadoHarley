@@ -1,47 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getAllProducts } from '../services/productService';
-import { Link } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
 import ProductFilters from '../components/ProductFilters';
-import ConditionBadge from '../components/ui/ConditionBadge';
-import RatingStars from '../components/ui/RatingStars';
+import ProductCard from '../components/ProductCard';
+import { CATEGORY_MAP } from '../config/categories.js';
 
 const CategoryPage = () => {
     const { type } = useParams();
-    const { addToCart } = useCart();
     const [products, setProducts] = useState([]);
     const [initialProducts, setInitialProducts] = useState([]); // Store all fetched products for filtering
     const [loading, setLoading] = useState(true);
 
-    // Map URL parameter to display title and allowed categories
-    const categoryMap = {
-        'todos': {
-            title: 'Todos os Produtos',
-            allowedCategories: null // All categories
-        },
-        'pecas': {
-            title: 'Peças',
-            allowedCategories: ['Peças', 'Escapamentos', 'Guidões', 'Bancos', 'Performance', 'Iluminação', 'Freios', 'Suspensão']
-        },
-        'acessorios': {
-            title: 'Acessórios',
-            allowedCategories: ['Acessórios', 'Alforges', 'Retrovisores', 'Manoplas']
-        },
-        'vestuario': {
-            title: 'Vestuário',
-            allowedCategories: ['Vestuário', 'Jaquetas', 'Capacetes', 'Luvas', 'Botas', 'Camisetas']
-        },
-        // CategoryGrid.jsx links a card here (id: 'eletrica') — this key was missing,
-        // so that card always fell through to the `{ allowedCategories: [] }` default
-        // below and landed on a permanently empty "0 produtos" page.
-        'eletrica': {
-            title: 'Elétrica & Iluminação',
-            allowedCategories: ['Iluminação']
-        }
-    };
-
-    const currentCategory = categoryMap[type] || { title: 'Produtos', allowedCategories: [] };
+    const currentCategory = CATEGORY_MAP[type] || { title: 'Produtos', allowedCategories: [] };
 
     useEffect(() => {
         loadProducts();
@@ -176,41 +146,8 @@ const CategoryPage = () => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {sortedProducts.map((product) => (
-                                <div key={product.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden hover:border-sick-red transition-all group">
-                                    <Link to={`/product/${product.id}`}>
-                                        <div className="relative overflow-hidden aspect-square bg-white p-4">
-                                            <img
-                                                src={product.image}
-                                                alt={product.name}
-                                                className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
-                                            />
-                                            <ConditionBadge condition={product.condition} className="absolute top-3 right-3" />
-                                        </div>
-                                    </Link>
-                                    <div className="p-4">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-xs text-sick-red font-bold uppercase tracking-wide">
-                                                {product.category}
-                                            </span>
-                                        </div>
-                                        <Link to={`/product/${product.id}`}>
-                                            <h3 className="text-lg font-display font-bold text-white mb-2 hover:text-sick-red transition-colors line-clamp-2 min-h-[3.5rem]">
-                                                {product.name}
-                                            </h3>
-                                        </Link>
-                                        <RatingStars rating={product.rating} size="sm" className="mb-3" />
-                                        <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-800">
-                                            <span className="text-xl font-bold text-white">R$ {typeof product.price === 'number' ? product.price.toFixed(2) : product.price}</span>
-                                            <button
-                                                onClick={() => addToCart(product)}
-                                                className="bg-sick-red text-white px-3 py-1.5 rounded font-bold uppercase text-xs hover:bg-red-700 transition-colors"
-                                            >
-                                                Adicionar
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                            {sortedProducts.map((product, index) => (
+                                <ProductCard key={product.id} product={product} delay={(index % 6) * 60} />
                             ))}
                         </div>
                     )}

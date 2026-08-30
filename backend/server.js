@@ -18,6 +18,10 @@ import cleanupRoutes from './routes/cleanup.js';
 import shippingLabelsRouter from './routes/shippingLabels.js';
 import settingsRouter from './routes/settings.js';
 import internalStockRouter from './routes/internalStock.js';
+import reviewsRouter from './routes/reviews.js';
+import customerGalleryRouter from './routes/customerGallery.js';
+import testimonialsRouter from './routes/testimonials.js';
+import videoSettingsRouter from './routes/videoSettings.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'url';
@@ -83,10 +87,19 @@ app.use(helmet({
     },
 }));
 
-// Rate limiting
+// Rate limiting — the production limits (100 req/15min general, 20/15min for
+// payments) are tuned for real traffic, not for an active local dev session
+// where a single browser tab reloading the homepage fires a dozen requests
+// (products, category counts, 5 banner placements, reviews...) and gets
+// exhausted within minutes of normal testing. Much looser in development so a
+// local preview session doesn't start silently failing (every fetch that hits
+// 429 fails safe to "empty" in the UI — search returns 0, category cards
+// disappear, etc. — which looks exactly like a bug but is just this).
+const isDev = process.env.NODE_ENV === 'development';
+
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // 100 requests por IP
+    max: isDev ? 2000 : 100,
     message: 'Muitas requisições, tente novamente mais tarde.',
     standardHeaders: true,
     legacyHeaders: false,
@@ -96,7 +109,7 @@ const limiter = rateLimit({
 // card-testing / order-spam abuse (see also the per-order stock check in dbService).
 const paymentsLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 20,
+    max: isDev ? 500 : 20,
     message: 'Muitas tentativas de pagamento, tente novamente mais tarde.',
     standardHeaders: true,
     legacyHeaders: false,
@@ -207,7 +220,13 @@ app.use('/api/orders', limiter, orderRoutes);
 app.use('/api/shipping-labels', limiter, shippingLabelsRouter);
 app.use('/api/settings', limiter, settingsRouter);
 app.use('/api/internal-stock', limiter, internalStockRouter);
+app.use('/api/customer-gallery', limiter, customerGalleryRouter);
+app.use('/api/testimonials', limiter, testimonialsRouter);
+app.use('/api/video-settings', limiter, videoSettingsRouter);
 app.use('/api/admin', limiter, cleanupRoutes); // Admin cleanup routes — includes a destructive DELETE, must be rate limited too
+// reviews.js defines its own full paths (/products/:id/reviews, /reviews), so it
+// mounts at the bare /api prefix rather than a single fixed sub-path.
+app.use('/api', limiter, reviewsRouter);
 
 
 // Error handling

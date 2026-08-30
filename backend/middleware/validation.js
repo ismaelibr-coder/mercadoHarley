@@ -171,6 +171,14 @@ export const validateInternalStockItemCreate = validate(
     }).unknown(false)
 );
 
+export const validateReview = validate(
+    Joi.object({
+        productId: Joi.string().required(),
+        rating: Joi.number().integer().min(1).max(5).required(),
+        comment: Joi.string().trim().min(10).max(1000).required()
+    }).unknown(false)
+);
+
 export const validateInternalStockItemUpdate = validate(
     Joi.object({
         name: Joi.string().trim().min(2).max(200).optional(),

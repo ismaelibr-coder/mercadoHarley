@@ -7,6 +7,8 @@ import SEO from '../components/SEO';
 import ShippingCalculator from '../components/ShippingCalculator';
 import ConditionBadge from '../components/ui/ConditionBadge';
 import RatingStars from '../components/ui/RatingStars';
+import ProductReviews from '../components/ProductReviews';
+import { getProductReviews } from '../services/reviewService';
 
 const ProductPage = () => {
     const { id } = useParams();
@@ -17,6 +19,14 @@ const ProductPage = () => {
     const [quantity, setQuantity] = useState(1);
     const [activeImage, setActiveImage] = useState(0);
     const [relatedProducts, setRelatedProducts] = useState([]);
+    const [reviewSummary, setReviewSummary] = useState({ average: 0, count: 0 });
+
+    useEffect(() => {
+        if (!id) return;
+        getProductReviews(id)
+            .then(({ average, count }) => setReviewSummary({ average, count }))
+            .catch((err) => console.error('Error loading review summary:', err));
+    }, [id]);
 
     useEffect(() => {
         const loadProduct = async () => {
@@ -159,7 +169,7 @@ const ProductPage = () => {
                             <h1 className="text-3xl md:text-5xl font-display font-bold text-white mt-2 mb-4">
                                 {product.name}
                             </h1>
-                            <RatingStars rating={product.rating} />
+                            <RatingStars rating={reviewSummary.average} reviewCount={reviewSummary.count} />
                         </div>
 
                         <div className="mb-8">
@@ -299,6 +309,8 @@ const ProductPage = () => {
                         </div>
                     </div>
                 )}
+
+                <ProductReviews productId={product.id} />
             </div>
 
             {/* Sticky add-to-cart bar (mobile only — desktop has the inline action row above) */}

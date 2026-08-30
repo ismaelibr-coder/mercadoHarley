@@ -8,26 +8,29 @@ const CustomPartsPage = () => {
     const whatsappMessage = encodeURIComponent('Olá! Gostaria de um orçamento para peças customizadas.');
     const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
+    // Fotos de banco (Unsplash) usadas só como ilustração de referência — não
+    // são fotos de trabalhos reais da SICK GRIP ainda. Trocar por foto real
+    // assim que houver registro fotográfico de um serviço entregue.
     const customExamples = [
         {
             title: 'Escapamento Custom',
-            description: 'Escapamento artesanal em aço inox com acabamento cromado',
-            image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=2070&auto=format&fit=crop'
+            description: 'Ponteiras artesanais com curva e acabamento sob medida',
+            image: 'https://images.unsplash.com/photo-1786011625634-872c2772b79b?q=80&w=1200&auto=format&fit=crop'
         },
         {
             title: 'Guidão Personalizado',
             description: 'Guidão sob medida com altura e ângulo customizados',
-            image: 'https://images.unsplash.com/photo-1558981001-1995369a39cd?q=80&w=2070&auto=format&fit=crop'
+            image: 'https://images.unsplash.com/photo-1658064272931-c56408b25267?q=80&w=1200&auto=format&fit=crop'
         },
         {
             title: 'Banco Exclusivo',
             description: 'Banco com costura personalizada e estofamento premium',
-            image: 'https://images.unsplash.com/photo-1622185135505-2d795043df06?q=80&w=2069&auto=format&fit=crop'
+            image: 'https://images.unsplash.com/photo-1649894159916-f3d688281f8d?q=80&w=1200&auto=format&fit=crop'
         },
         {
             title: 'Pintura Customizada',
-            description: 'Pintura artística exclusiva para tanque e paralamas',
-            image: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?q=80&w=2070&auto=format&fit=crop'
+            description: 'Pintura artística exclusiva para tanque e carenagem',
+            image: 'https://images.unsplash.com/photo-1645438736165-4fdb0f7101c7?q=80&w=1200&auto=format&fit=crop'
         }
     ];
 
@@ -83,6 +86,7 @@ const CustomPartsPage = () => {
                         {customExamples.map((example, index) => (
                             <div key={index} className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 hover:border-harley-orange transition-colors group">
                                 <div className="relative h-48 overflow-hidden">
+                                    {/* TODO: substituir por foto real do trabalho */}
                                     <img
                                         src={example.image}
                                         alt={example.title}

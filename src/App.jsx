@@ -29,6 +29,11 @@ import AdminOrderDetailsPage from './pages/admin/AdminOrderDetailsPage';
 import ShippingRules from './pages/admin/ShippingRules';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminInternalStock from './pages/admin/AdminInternalStock';
+import AdminCustomerGallery from './pages/admin/AdminCustomerGallery';
+import CustomerGalleryForm from './pages/admin/CustomerGalleryForm';
+import AdminTestimonials from './pages/admin/AdminTestimonials';
+import TestimonialForm from './pages/admin/TestimonialForm';
+import AdminVideoSettings from './pages/admin/AdminVideoSettings';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './components/ui/ToastProvider';
@@ -123,6 +128,13 @@ function App() {
               <Route path="banners/edit/:id" element={<BannerForm />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="internal-stock" element={<AdminInternalStock />} />
+              <Route path="customer-gallery" element={<AdminCustomerGallery />} />
+              <Route path="customer-gallery/new" element={<CustomerGalleryForm />} />
+              <Route path="customer-gallery/edit/:id" element={<CustomerGalleryForm />} />
+              <Route path="testimonials" element={<AdminTestimonials />} />
+              <Route path="testimonials/new" element={<TestimonialForm />} />
+              <Route path="testimonials/edit/:id" element={<TestimonialForm />} />
+              <Route path="video" element={<AdminVideoSettings />} />
             </Route>
           </Routes>
         </CartProvider>

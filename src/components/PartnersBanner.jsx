@@ -21,25 +21,34 @@ const PartnersBanner = () => {
                     </p>
                 </div>
 
-                <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16">
-                    {partners.map((partner, index) => (
-                        <div
-                            key={index}
-                            className="group relative w-32 h-32 md:w-40 md:h-40 flex items-center justify-center transition-transform duration-300 hover:scale-105"
-                        >
-                            {/* Glow Effect */}
-                            <div className="absolute inset-0 bg-sick-red/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                {/* Faixa com scroll infinito: a lista de parceiros é duplicada e a
+                    animação translada exatamente 50% (metade = 1 cópia), então o
+                    loop não tem salto visível. Pausa no hover pra dar tempo de olhar
+                    um logo específico; grayscale->cor no hover de cada item é mantido. */}
+                <div
+                    className="group/marquee overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]"
+                >
+                    <div className="flex w-max items-center gap-8 md:gap-16 animate-marquee group-hover/marquee:[animation-play-state:paused] motion-reduce:animate-none motion-reduce:flex-wrap motion-reduce:justify-center">
+                        {[...partners, ...partners].map((partner, index) => (
+                            <div
+                                key={index}
+                                className="group relative w-32 h-32 md:w-40 md:h-40 flex-none flex items-center justify-center transition-transform duration-300 hover:scale-105"
+                            >
+                                {/* Glow Effect */}
+                                <div className="absolute inset-0 bg-sick-red/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                            {/* Circle Container */}
-                            <div className="relative w-full h-full rounded-full bg-black flex items-center justify-center p-4 overflow-hidden border border-gray-800 group-hover:border-sick-red transition-all duration-300 shadow-lg shadow-black/50">
-                                <img
-                                    src={partner.logo}
-                                    alt={partner.name}
-                                    className={`w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300 ${partner.className}`}
-                                />
+                                {/* Circle Container */}
+                                <div className="relative w-full h-full rounded-full bg-black flex items-center justify-center p-4 overflow-hidden border border-gray-800 group-hover:border-sick-red transition-all duration-300 shadow-lg shadow-black/50">
+                                    <img
+                                        src={partner.logo}
+                                        alt={partner.name}
+                                        aria-hidden={index >= partners.length}
+                                        className={`w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300 ${partner.className}`}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>

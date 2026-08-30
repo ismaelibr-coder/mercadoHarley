@@ -41,6 +41,22 @@ export const getActiveBanners = async () => {
 };
 
 /**
+ * Get the active banner for a placement ('hero', 'category-pecas', etc.), or
+ * null if none is configured for that slot.
+ * @param {string} placement
+ * @returns {Promise<Object|null>}
+ */
+export const getBannerByPlacement = async (placement) => {
+    try {
+        const response = await axios.get(`${API_URL}/api/banners/placement/${placement}`);
+        return response.data.banner;
+    } catch (error) {
+        console.error('Error fetching banner by placement:', error);
+        return null; // Non-fatal — callers fall back to their default visual.
+    }
+};
+
+/**
  * Get single banner by ID (admin only)
  * @param {string} id - Banner ID
  * @returns {Promise<Object>} - Banner data
