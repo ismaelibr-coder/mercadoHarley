@@ -87,19 +87,25 @@ app.use(helmet({
     },
 }));
 
-// Rate limiting — the production limits (100 req/15min general, 20/15min for
-// payments) are tuned for real traffic, not for an active local dev session
-// where a single browser tab reloading the homepage fires a dozen requests
-// (products, category counts, 5 banner placements, reviews...) and gets
-// exhausted within minutes of normal testing. Much looser in development so a
-// local preview session doesn't start silently failing (every fetch that hits
-// 429 fails safe to "empty" in the UI — search returns 0, category cards
-// disappear, etc. — which looks exactly like a bug but is just this).
+// Rate limiting — much looser in development so a local preview session
+// doesn't start silently failing (every fetch that hits 429 fails safe to
+// "empty" in the UI — search returns 0, category cards disappear, etc. —
+// which looks exactly like a bug but is just this).
+//
+// The production general limit was 100 req/15min, set back when a Home page
+// load fired ~3-4 requests. Since then the Home grew a video Hero, 4 category
+// banners, customer gallery, and testimonials — a single load now fires ~11
+// parallel requests (confirmed by a controlled network capture — no client-
+// side loop, just more content sections than before), so ~9 page loads/
+// reloads from the same IP within 15 minutes was enough to exhaust the old
+// limit and reproduce that exact "sections disappear" symptom in production.
+// Raised to keep the same anti-abuse ceiling in spirit while matching the
+// page's real request volume.
 const isDev = process.env.NODE_ENV === 'development';
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: isDev ? 2000 : 100,
+    max: isDev ? 2000 : 400,
     message: 'Muitas requisições, tente novamente mais tarde.',
     standardHeaders: true,
     legacyHeaders: false,

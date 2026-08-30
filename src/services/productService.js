@@ -6,16 +6,37 @@ const normalizeProduct = (product) => ({
     image: product?.image || product?.images?.[0] || '/images/sickgrip-logo.png'
 });
 
-// Get all products
+// getAllProducts() is called independently by several Home components
+// (useCategoryCounts for the category cards/nav, ProductList for "Destaques
+// da Loja", plus any category/search page mounted at the same time) — before
+// this cache, each one fired its own GET /api/products, so a single page
+// load could hit the same endpoint 2-3 times. A short in-memory cache
+// (shared across callers, both for an in-flight request and its resolved
+// result) collapses those into one real network call. TTL is deliberately
+// short — long enough to cover "several components mounting within the same
+// page load," not long enough to show stale data if a product changes.
+const PRODUCTS_CACHE_TTL_MS = 10_000;
+let productsCache = null; // { promise, timestamp }
+
 export const getAllProducts = async () => {
-    try {
-        const response = await axios.get(`${API_URL}/api/products`);
-        const products = response.data.products || response.data || [];
-        return products.map(normalizeProduct);
-    } catch (error) {
-        console.error('Error fetching products:', error);
-        throw error;
+    const now = Date.now();
+    if (productsCache && now - productsCache.timestamp < PRODUCTS_CACHE_TTL_MS) {
+        return productsCache.promise;
     }
+
+    const promise = axios.get(`${API_URL}/api/products`)
+        .then((response) => {
+            const products = response.data.products || response.data || [];
+            return products.map(normalizeProduct);
+        })
+        .catch((error) => {
+            console.error('Error fetching products:', error);
+            productsCache = null; // don't cache a failure — let the next caller retry
+            throw error;
+        });
+
+    productsCache = { promise, timestamp: now };
+    return promise;
 };
 
 // Get products by category
