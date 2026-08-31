@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, X, ShoppingCart, Phone, Mail, Instagram, User, LogOut, Search, ShieldCheck } from 'lucide-react';
+import { Menu, X, ShoppingCart, Phone, Mail, Instagram, User, LogOut, Search } from 'lucide-react';
 import CartSidebar from './CartSidebar';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import WhatsAppButton from './WhatsAppButton';
 import InfoBar from './InfoBar';
 import PaymentBrandIcons from './PaymentBrandIcons';
+import SecuritySeals from './SecuritySeals';
 import { useCategoryCounts } from '../hooks/useCategoryCounts.js';
 
 const Layout = ({ children }) => {
@@ -290,19 +291,32 @@ const Layout = ({ children }) => {
                                     <Mail className="w-5 h-5 text-harley-orange" />
                                     <span>sickgrip.br@gmail.com</span>
                                 </li>
+                                <li>
+                                    <Link to="/contato" className="hover:text-harley-orange transition-colors font-bold">
+                                        Fale Conosco
+                                    </Link>
+                                </li>
                             </ul>
                         </div>
                     </div>
 
-                    {/* Trust elements — Visa/Mastercard/Elo are the networks Mercado Pago's
-                        standard Brazil checkout routes by default; no unearned "verified
-                        secure site" seal — just the plain, true fact that checkout runs over
-                        HTTPS. */}
-                    <div className="border-t border-gray-800 pt-8 pb-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <PaymentBrandIcons />
-                        <div className="flex items-center gap-2 text-gray-500 text-xs">
-                            <ShieldCheck className="w-4 h-4 text-harley-orange" aria-hidden="true" />
-                            <span>Compra 100% segura — conexão HTTPS criptografada</span>
+                    {/* Trust elements — Visa/Mastercard/Elo/Hipercard/Amex/Diners are the
+                        networks Mercado Pago's standard Brazil checkout routes by default.
+                        The seals below state only what's actually true (real HTTPS, a real
+                        LGPD-compliance claim) — no unearned/borrowed "verified by X" badge;
+                        see SecuritySeals.jsx for why. */}
+                    <div className="border-t border-gray-800 pt-8 pb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                        <div>
+                            <h4 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-3">
+                                Gateways e Formas de Pagamento
+                            </h4>
+                            <PaymentBrandIcons />
+                        </div>
+                        <div>
+                            <h4 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-3">
+                                Selos e Certificações
+                            </h4>
+                            <SecuritySeals />
                         </div>
                     </div>
 

@@ -33,13 +33,45 @@ export const EloMark = () => (
     </div>
 );
 
+export const HipercardMark = () => (
+    <div className={badgeBase} aria-label="Hipercard" role="img">
+        <span className="font-black italic text-[#AB1F23] text-sm tracking-tight">hiper</span>
+    </div>
+);
+
+export const AmexMark = () => (
+    <div className={`${badgeBase} !bg-[#006FCF] px-2`} aria-label="American Express" role="img">
+        <span className="font-black text-white text-[10px] tracking-tight leading-tight text-center">AMERICAN<br />EXPRESS</span>
+    </div>
+);
+
+export const DinersMark = () => (
+    <div className={badgeBase} aria-label="Diners Club" role="img">
+        <svg width="30" height="20" viewBox="0 0 30 20" aria-hidden="true">
+            <circle cx="15" cy="10" r="9" fill="#0079BE" />
+            <path d="M15 3.5a6.5 6.5 0 0 0 0 13 6.5 6.5 0 0 0 0-13Zm-1 2.2v8.6a4.9 4.9 0 0 1 0-8.6Zm2 0a4.9 4.9 0 0 1 0 8.6V5.7Z" fill="#fff" />
+        </svg>
+    </div>
+);
+
+// Text-only badges for methods that aren't card networks (no "flag" to draw).
+const TextBadge = ({ children }) => (
+    <span className="bg-black border border-gray-800 rounded px-3 h-9 flex items-center text-xs font-bold uppercase text-gray-400">
+        {children}
+    </span>
+);
+
 const PaymentBrandIcons = () => (
     <div className="flex items-center gap-2 flex-wrap">
         <VisaMark />
         <MastercardMark />
         <EloMark />
-        <span className="bg-black border border-gray-800 rounded px-3 h-9 flex items-center text-xs font-bold uppercase text-gray-400">PIX</span>
-        <span className="bg-black border border-gray-800 rounded px-3 h-9 flex items-center text-xs font-bold uppercase text-gray-400">Boleto</span>
+        <HipercardMark />
+        <AmexMark />
+        <DinersMark />
+        <TextBadge>PIX</TextBadge>
+        <TextBadge>Transferência</TextBadge>
+        <TextBadge>Boleto</TextBadge>
     </div>
 );
 
