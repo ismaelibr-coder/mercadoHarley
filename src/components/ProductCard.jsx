@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import ConditionBadge from './ui/ConditionBadge';
 import RatingStars from './ui/RatingStars';
 import { useInViewport } from '../hooks/useInViewport.js';
+import { formatCurrency } from '../utils/currency.js';
 
 /**
  * The catalog card — was copy-pasted with tiny differences across
@@ -18,7 +19,6 @@ const ProductCard = ({ product, delay = 0 }) => {
     const [justAdded, setJustAdded] = useState(false);
 
     const secondImage = Array.isArray(product.images) ? product.images[1] : null;
-    const price = typeof product.price === 'number' ? product.price.toFixed(2) : product.price;
 
     const handleAddToCart = () => {
         addToCart(product);
@@ -64,7 +64,7 @@ const ProductCard = ({ product, delay = 0 }) => {
                 </Link>
                 <RatingStars rating={product.rating} size="sm" className="mb-3" />
                 <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-800">
-                    <span className="text-2xl font-bold text-white">R$ {price}</span>
+                    <span className="text-2xl font-bold text-white">{formatCurrency(product.price)}</span>
                     <button
                         onClick={handleAddToCart}
                         aria-label={`Adicionar ${product.name} ao carrinho`}

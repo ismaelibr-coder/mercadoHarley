@@ -5,6 +5,7 @@ import { getAllProducts, deleteProduct } from '../../services/productService';
 import { useToast } from '../../components/ui/ToastProvider';
 import { useConfirm } from '../../components/ui/ConfirmDialogProvider';
 import RatingStars from '../../components/ui/RatingStars';
+import { formatCurrency } from '../../utils/currency.js';
 
 const PAGE_SIZE = 20;
 
@@ -264,7 +265,7 @@ const AdminProducts = () => {
                                         </td>
                                         <td className="p-4 text-white font-bold">{product.name}</td>
                                         <td className="p-4 text-gray-400">{product.category}</td>
-                                        <td className="p-4 text-harley-orange font-bold">{product.price}</td>
+                                        <td className="p-4 text-harley-orange font-bold">{formatCurrency(product.price)}</td>
                                         <td className="p-4">
                                             <span className={`px-3 py-1 rounded font-bold text-sm ${(product.stock || 0) === 0
                                                     ? 'bg-red-900/50 text-red-400'

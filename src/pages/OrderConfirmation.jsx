@@ -4,6 +4,7 @@ import { getOrderById } from '../services/orderService';
 import { CheckCircle, Package, Truck, CreditCard, QrCode, Barcode, Printer, ArrowLeft, SearchX } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import OrderStatusTimeline from '../components/ui/OrderStatusTimeline';
+import { formatCurrency } from '../utils/currency.js';
 
 const OrderConfirmation = () => {
     const { orderId } = useParams();
@@ -220,7 +221,7 @@ const OrderConfirmation = () => {
                                     </div>
                                     <div className="text-right">
                                         <p className="text-harley-orange font-bold">
-                                            R$ {Number(item.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                            {formatCurrency(item.price)}
                                         </p>
                                     </div>
                                 </div>
@@ -249,7 +250,7 @@ const OrderConfirmation = () => {
                         <div className="space-y-2 mb-4">
                             <div className="flex justify-between text-gray-400">
                                 <span>Subtotal</span>
-                                <span>R$ {order.subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                <span>{formatCurrency(order.subtotal)}</span>
                             </div>
                             <div className="flex justify-between text-gray-400">
                                 <span>Frete</span>
@@ -258,12 +259,12 @@ const OrderConfirmation = () => {
                             {order.discount > 0 && (
                                 <div className="flex justify-between text-harley-orange">
                                     <span>Desconto PIX (5%)</span>
-                                    <span>- R$ {parseFloat(order.discount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                    <span>- {formatCurrency(order.discount)}</span>
                                 </div>
                             )}
                             <div className="flex justify-between text-white font-bold text-xl pt-2 border-t border-gray-800">
                                 <span>Total</span>
-                                <span>R$ {parseFloat(order.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                <span>{formatCurrency(order.total)}</span>
                             </div>
                         </div>
                     </div>

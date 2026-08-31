@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Truck, Loader2, AlertCircle } from 'lucide-react';
 import { calculateShipping } from '../services/shippingService';
+import { formatCurrency } from '../utils/currency.js';
 
 const ShippingCalculator = ({ productWeight = 1, dimensions }) => {
     const [cep, setCep] = useState('');
@@ -107,7 +108,7 @@ const ShippingCalculator = ({ productWeight = 1, dimensions }) => {
                                 </p>
                             </div>
                             <p className="text-harley-orange font-bold">
-                                R$ {option.price.toFixed(2)}
+                                {formatCurrency(option.price)}
                             </p>
                         </div>
                     ))}

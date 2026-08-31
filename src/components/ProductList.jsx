@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import ConditionBadge from './ui/ConditionBadge';
 import RatingStars from './ui/RatingStars';
 import { useInViewport } from '../hooks/useInViewport.js';
+import { formatCurrency } from '../utils/currency.js';
 
 // Own component so each featured card can independently track its own
 // scroll-in entrance and "just added to cart" state.
@@ -64,7 +65,7 @@ const FeaturedCard = ({ product, delay }) => {
 
                 <div className="flex items-center justify-between mt-auto">
                     <span className="text-3xl font-bold text-sick-red">
-                        R$ {product.price}
+                        {formatCurrency(product.price)}
                     </span>
                     <button
                         onClick={handleAddToCart}

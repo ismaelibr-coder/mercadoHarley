@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
+import { formatCurrency } from '../utils/currency.js';
 
 const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
@@ -122,7 +123,7 @@ const CartSidebar = () => {
                                                 {item.name}
                                             </h3>
                                             <p className="text-harley-orange font-bold text-sm">
-                                                {item.price}
+                                                {formatCurrency(item.price)}
                                             </p>
                                         </div>
                                         <div className="flex items-center justify-between mt-2">
@@ -163,7 +164,7 @@ const CartSidebar = () => {
                             <div className="flex items-center justify-between mb-4">
                                 <span className="text-gray-400">Subtotal</span>
                                 <span className="text-2xl font-bold text-white">
-                                    R$ {cartTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    {formatCurrency(cartTotal)}
                                 </span>
                             </div>
                             <Link

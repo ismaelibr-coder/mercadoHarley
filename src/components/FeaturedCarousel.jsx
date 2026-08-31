@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { API_URL } from '../config/api.js';
 import { getBannerByPlacement } from '../services/bannerService.js';
 import { getVideoSettings } from '../services/videoSettingsService.js';
+import { formatCurrency } from '../utils/currency.js';
 
 // Used only if the /api/video-settings fetch fails outright (offline API,
 // etc.) — the DB row itself always exists once the backend has started at
@@ -190,10 +191,10 @@ const FeaturedCarousel = () => {
 
     const currentProduct = products[currentIndex];
 
-    // Safe access for price
-    const formattedPrice = currentProduct.price
-        ? `R$ ${Number(currentProduct.price).toFixed(2).replace('.', ',')}`
-        : 'R$ 0,00';
+    // Was manually swapping the decimal point for a comma without ever adding
+    // the thousand separator ("1299,00" instead of "1.299,00") — formatCurrency
+    // handles both correctly.
+    const formattedPrice = formatCurrency(currentProduct.price || 0);
 
     return (
         <div className="relative w-full h-[500px] md:h-[600px] bg-black overflow-hidden group">

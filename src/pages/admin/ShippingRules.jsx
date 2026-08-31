@@ -3,6 +3,7 @@ import { Plus, Trash2, Edit, Save, X, Truck } from 'lucide-react';
 import { getShippingRules, createShippingRule, updateShippingRule, deleteShippingRule } from '../../services/shippingService';
 import { useAuth } from '../../context/AuthContext';
 import { useConfirm } from '../../components/ui/ConfirmDialogProvider';
+import { formatCurrency } from '../../utils/currency.js';
 
 const ShippingRules = () => {
     const { currentUser } = useAuth();
@@ -274,7 +275,7 @@ const ShippingRules = () => {
                                     </div>
                                 </td>
                                 <td className="p-4">{rule.minWeight} - {rule.maxWeight}</td>
-                                <td className="p-4">R$ {(rule.price || 0).toFixed(2)}</td>
+                                <td className="p-4">{formatCurrency(rule.price)}</td>
                                 <td className="p-4">{rule.deliveryDays} dias</td>
                                 <td className="p-4 text-right">
                                     <div className="flex justify-end gap-2">

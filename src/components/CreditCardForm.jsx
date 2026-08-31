@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Lock } from 'lucide-react';
+import { formatCurrency } from '../utils/currency.js';
 
 const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
     const [mp, setMp] = useState(null);
@@ -254,7 +255,7 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
                             {installmentOptions.map(option => (
                                 <option key={option.installments} value={option.installments}>
                                     {option.recommendedMessage ||
-                                        `${option.installments}x de R$ ${option.installmentAmount.toFixed(2)}${option.installments === 1 ? ' à vista' : ''}`}
+                                        `${option.installments}x de ${formatCurrency(option.installmentAmount)}${option.installments === 1 ? ' à vista' : ''}`}
                                 </option>
                             ))}
                         </select>
@@ -278,7 +279,7 @@ const CreditCardForm = ({ total, onPaymentSuccess, onError }) => {
                 disabled={loading || !paymentMethodId}
                 className="w-full bg-sick-red text-white py-4 rounded font-bold uppercase hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                {loading ? 'Processando...' : `Pagar R$ ${total.toFixed(2)}`}
+                {loading ? 'Processando...' : `Pagar ${formatCurrency(total)}`}
             </button>
         </div>
     );

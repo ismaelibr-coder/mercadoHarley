@@ -4,6 +4,7 @@ import { getAllOrders, updateOrderStatus } from '../../services/orderService';
 import { useNavigate, Link } from 'react-router-dom';
 import { Package, Search, Filter, ChevronDown, ChevronUp, CheckCircle, XCircle, Clock, Truck, AlertCircle } from 'lucide-react';
 import { useToast } from '../../components/ui/ToastProvider';
+import { formatCurrency } from '../../utils/currency.js';
 
 // Dates come from Sequelize now (a real Date/ISO string), not the old
 // Firestore Timestamp objects `.toDate ? ... : fallback` was written for —
@@ -102,7 +103,7 @@ const AdminOrdersPage = () => {
         const searchLower = searchTerm.toLowerCase();
         const dateString = formatOrderDate(order.createdAt) || '';
         const statusLabel = getStatusLabel(order.status).toLowerCase();
-        const totalString = parseFloat(order.total || 0).toFixed(2);
+        const totalString = formatCurrency(order.total);
 
         const matchesSearch =
             order.orderNumber?.toLowerCase().includes(searchLower) ||
@@ -210,7 +211,7 @@ const AdminOrdersPage = () => {
                                             {formatOrderDate(order.createdAt) || '-'}
                                         </td>
                                         <td className="p-4 text-harley-orange font-bold">
-                                            R$ {parseFloat(order.total || 0).toFixed(2)}
+                                            {formatCurrency(order.total)}
                                         </td>
                                         <td className="p-4">
                                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase border ${getStatusColor(order.status)}`}>

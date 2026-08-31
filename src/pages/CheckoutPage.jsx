@@ -9,6 +9,7 @@ import { useToast } from '../components/ui/ToastProvider';
 import { createPixPayment, createBoletoPayment, processCreditCardPayment, initMercadoPago } from '../services/paymentService';
 import { calculateShipping } from '../services/shippingService';
 import { createOrder } from '../services/orderService';
+import { formatCurrency } from '../utils/currency.js';
 
 const CheckoutPage = () => {
     const { cartItems, cartTotal, clearCart, updateQuantity, removeFromCart } = useCart();
@@ -523,7 +524,7 @@ const CheckoutPage = () => {
                                                         <p className="text-gray-400 text-sm">Qtd: {item.quantity}</p>
                                                     </div>
                                                 </div>
-                                                <p className="text-sick-red font-bold">R$ 0,00</p>
+                                                <p className="text-sick-red font-bold">{formatCurrency((item.price || 0) * (item.quantity || 1))}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -547,7 +548,7 @@ const CheckoutPage = () => {
                                 <div className="bg-gray-800 p-4 rounded border border-gray-700">
                                     <div className="flex justify-between text-lg font-bold">
                                         <span className="text-white">Total:</span>
-                                        <span className="text-sick-red">R$ 0,00</span>
+                                        <span className="text-sick-red">{formatCurrency(cartTotal)}</span>
                                     </div>
                                 </div>
 
@@ -792,7 +793,7 @@ const CheckoutPage = () => {
                                                                 <div className="text-gray-400 text-sm">Entrega em {option.deliveryDays} dias úteis</div>
                                                             </div>
                                                         </div>
-                                                        <div className="text-sick-red font-bold">R$ {option.price.toFixed(2)}</div>
+                                                        <div className="text-sick-red font-bold">{formatCurrency(option.price)}</div>
                                                     </label>
                                                 ))}
                                             </div>
@@ -902,7 +903,7 @@ const CheckoutPage = () => {
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="text-harley-orange font-bold flex-none">{item.price}</div>
+                                        <div className="text-harley-orange font-bold flex-none">{formatCurrency(item.price)}</div>
                                     </div>
                                 ))}
                             </div>
@@ -910,28 +911,28 @@ const CheckoutPage = () => {
                             <div className="border-t border-gray-800 pt-4 space-y-2">
                                 <div className="flex justify-between text-gray-400">
                                     <span>Subtotal</span>
-                                    <span>R$ {cartTotal.toFixed(2)}</span>
+                                    <span>{formatCurrency(cartTotal)}</span>
                                 </div>
                                 {selectedShipping && (
                                     <div className="flex justify-between text-gray-400">
                                         <span>Frete</span>
-                                        <span>R$ {selectedShipping.price.toFixed(2)}</span>
+                                        <span>{formatCurrency(selectedShipping.price)}</span>
                                     </div>
                                 )}
                                 {paymentMethod === 'pix' && (
                                     <div className="flex justify-between text-green-500">
                                         <span>Desconto PIX (5%)</span>
-                                        <span>- R$ {(cartTotal * 0.05).toFixed(2)}</span>
+                                        <span>- {formatCurrency(cartTotal * 0.05)}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between text-white text-xl font-bold pt-2 border-t border-gray-800">
                                     <span>Total</span>
                                     <span className="text-harley-orange">
-                                        R$ {(
+                                        {formatCurrency(
                                             cartTotal +
                                             (selectedShipping ? selectedShipping.price : 0) -
                                             (paymentMethod === 'pix' ? cartTotal * 0.05 : 0)
-                                        ).toFixed(2)}
+                                        )}
                                     </span>
                                 </div>
                             </div>

@@ -4,6 +4,7 @@ import { getOrderById, updateOrderStatus } from '../../services/orderService';
 import { ArrowLeft, Package, Truck, MapPin, User, CreditCard, Calendar } from 'lucide-react';
 import ShippingLabelSection from '../../components/admin/ShippingLabelSection';
 import { useToast } from '../../components/ui/ToastProvider';
+import { formatCurrency } from '../../utils/currency.js';
 
 const AdminOrderDetailsPage = () => {
     const { id } = useParams();
@@ -138,7 +139,7 @@ const AdminOrderDetailsPage = () => {
                                             <p className="text-gray-400 text-sm">Qtd: {item.quantity || 0}</p>
                                         </div>
                                         <p className="font-bold text-harley-orange">
-                                            R$ {((item.price || 0) * (item.quantity || 0)).toFixed(2)}
+                                            {formatCurrency((item.price || 0) * (item.quantity || 0))}
                                         </p>
                                     </div>
                                 )) || <p className="text-gray-500">Nenhum item encontrado.</p>}
@@ -146,11 +147,7 @@ const AdminOrderDetailsPage = () => {
                             <div className="mt-6 pt-4 border-t border-gray-800 flex justify-between items-center">
                                 <span className="text-gray-400">Total</span>
                                 <span className="text-2xl font-bold text-harley-orange">
-                                    {/* Number(...) first — order.total comes from a Sequelize
-                                        DECIMAL column, which the API can still hand back as a
-                                        string ("1190.00") depending on the request path; .toFixed
-                                        only exists on Number and throws on a string. */}
-                                    R$ {Number(order.total || 0).toFixed(2)}
+                                    {formatCurrency(order.total)}
                                 </span>
                             </div>
                         </div>

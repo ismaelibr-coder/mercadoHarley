@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { getUserOrders } from '../services/orderService';
 import { useNavigate } from 'react-router-dom';
 import { Package, Clock, CheckCircle, XCircle, Truck, ChevronRight, ShoppingBag, Search } from 'lucide-react';
+import { formatCurrency } from '../utils/currency.js';
 
 const STATUS_OPTIONS = [
     { value: 'all', label: 'Todos os status' },
@@ -181,7 +182,7 @@ const MyOrdersPage = () => {
                                         <div className="text-right">
                                             <p className="text-gray-400 text-xs uppercase mb-1">Total</p>
                                             <p className="text-white font-bold text-xl">
-                                                R$ {parseFloat(order.total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                {formatCurrency(order.total)}
                                             </p>
                                         </div>
                                         <ChevronRight className="w-6 h-6 text-gray-600 group-hover:text-harley-orange transition-colors" />

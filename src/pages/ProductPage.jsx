@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Star, ShoppingCart, Minus, Plus, XCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { getProductById, getProductsByCategory } from '../services/productService';
 import { getCategorySlug } from '../config/categories.js';
+import { formatCurrency } from '../utils/currency.js';
 import { useCart } from '../context/CartContext';
 import SEO from '../components/SEO';
 import ShippingCalculator from '../components/ShippingCalculator';
@@ -188,7 +189,7 @@ const ProductPage = () => {
 
                         <div className="mb-8">
                             <div className="text-4xl font-bold text-white mb-1">
-                                R$ {typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
+                                {formatCurrency(product.price)}
                             </div>
                             {typeof product.price === 'number' && product.price > 0 && (
                                 // Matches the "Até 12x nos cartões" promise already made in
@@ -198,7 +199,7 @@ const ProductPage = () => {
                                 // beyond a threshold) come from Mercado Pago's own account
                                 // config, not a flat price/12 split — see CreditCardForm.jsx.
                                 <p className="text-gray-400 text-sm mb-4">
-                                    ou em até 12x de R$ {(product.price / 12).toFixed(2)} no cartão
+                                    ou em até 12x de {formatCurrency(product.price / 12)} no cartão
                                 </p>
                             )}
 
@@ -315,7 +316,7 @@ const ProductPage = () => {
                                     <div className="p-3">
                                         <p className="text-white text-sm font-medium line-clamp-2">{item.name}</p>
                                         <p className="text-harley-orange font-bold text-sm mt-1">
-                                            R$ {typeof item.price === 'number' ? item.price.toFixed(2) : item.price}
+                                            {formatCurrency(item.price)}
                                         </p>
                                     </div>
                                 </Link>
