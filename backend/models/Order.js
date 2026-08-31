@@ -41,17 +41,36 @@ export const Order = sequelize.define('Order', {
         type: DataTypes.JSON,
         defaultValue: null
     },
+    // DECIMAL columns come back from mysql2/Sequelize as strings by default
+    // (avoids silent float-precision loss on money at the driver level) — but
+    // every consumer of an Order (API JSON responses, admin screens doing
+    // arithmetic or .toFixed() on these) expects a real number, not "1190.00".
+    // A custom getter normalizes at the model boundary instead of requiring
+    // every call site to remember Number(order.total) — storage precision in
+    // the DB is unaffected, this only changes what JS sees after a read.
     total: {
         type: DataTypes.DECIMAL(12, 2),
-        allowNull: false
+        allowNull: false,
+        get() {
+            const value = this.getDataValue('total');
+            return value === null || value === undefined ? value : parseFloat(value);
+        }
     },
     subtotal: {
         type: DataTypes.DECIMAL(12, 2),
-        allowNull: false
+        allowNull: false,
+        get() {
+            const value = this.getDataValue('subtotal');
+            return value === null || value === undefined ? value : parseFloat(value);
+        }
     },
     discount: {
         type: DataTypes.DECIMAL(10, 2),
-        defaultValue: 0
+        defaultValue: 0,
+        get() {
+            const value = this.getDataValue('discount');
+            return value === null || value === undefined ? value : parseFloat(value);
+        }
     },
     status: {
         type: DataTypes.STRING(50),

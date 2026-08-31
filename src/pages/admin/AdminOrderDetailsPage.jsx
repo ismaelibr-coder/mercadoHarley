@@ -133,7 +133,11 @@ const AdminOrderDetailsPage = () => {
                             <div className="mt-6 pt-4 border-t border-gray-800 flex justify-between items-center">
                                 <span className="text-gray-400">Total</span>
                                 <span className="text-2xl font-bold text-harley-orange">
-                                    R$ {(order.total || 0).toFixed(2)}
+                                    {/* Number(...) first — order.total comes from a Sequelize
+                                        DECIMAL column, which the API can still hand back as a
+                                        string ("1190.00") depending on the request path; .toFixed
+                                        only exists on Number and throws on a string. */}
+                                    R$ {Number(order.total || 0).toFixed(2)}
                                 </span>
                             </div>
                         </div>
