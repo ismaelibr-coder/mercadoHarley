@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Image, Plus, Trash2, Edit, ExternalLink } from 'lucide-react';
+import { Image, Plus, Trash2, Edit, ExternalLink, Info } from 'lucide-react';
 import { getAllBanners, deleteBanner } from '../../services/bannerService';
 import { useToast } from '../../components/ui/ToastProvider';
 import { useConfirm } from '../../components/ui/ConfirmDialogProvider';
@@ -50,6 +50,19 @@ const AdminBanners = () => {
         return labels[type] || type;
     };
 
+    // Same labels as BannerForm.jsx's PLACEMENTS options — keeps the list
+    // readable (raw values like "category-pecas" mean nothing at a glance).
+    const getPlacementLabel = (placement) => {
+        const labels = {
+            hero: 'Hero (topo da home)',
+            'category-pecas': 'Card categoria — Peças',
+            'category-acessorios': 'Card categoria — Acessórios',
+            'category-vestuario': 'Card categoria — Vestuário',
+            'category-eletrica': 'Card categoria — Elétrica'
+        };
+        return labels[placement] || placement;
+    };
+
     return (
         <div>
             <div className="mb-8 flex items-center justify-between">
@@ -58,6 +71,10 @@ const AdminBanners = () => {
                         Banners
                     </h1>
                     <p className="text-gray-400">Gerencie os banners da home page</p>
+                    <p className="text-gray-500 text-xs mt-2 flex items-center gap-1.5">
+                        <Info className="w-3.5 h-3.5 flex-none" aria-hidden="true" />
+                        O banner com "Onde aparece: hero" controla só o título e o link do topo da home — o vídeo de fundo é cadastrado à parte, em <Link to="/admin/video" className="underline hover:text-harley-orange">Vídeo</Link>.
+                    </p>
                 </div>
                 <Link
                     to="/admin/banners/new"
@@ -107,7 +124,14 @@ const AdminBanners = () => {
                                         />
                                     </td>
                                     <td className="p-4 text-white font-bold">{banner.title}</td>
-                                    <td className="p-4 text-gray-400 text-sm">{banner.placement || '—'}</td>
+                                    <td className="p-4 text-gray-400 text-sm">
+                                        {banner.placement ? getPlacementLabel(banner.placement) : '—'}
+                                        {banner.placement === 'hero' && (
+                                            <span className="block text-[10px] text-harley-orange/70 mt-0.5">
+                                                título/link só — vídeo fica em "Vídeo"
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className="p-4 text-gray-400">
                                         <span className="inline-flex items-center gap-1">
                                             {getLinkTypeLabel(banner.link?.type)}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Save } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Save, Info } from 'lucide-react';
 import { getVideoSettings, updateVideoSettings } from '../../services/videoSettingsService';
 import VideoUpload from '../../components/VideoUpload';
 import ImageUpload from '../../components/ImageUpload';
@@ -71,6 +72,10 @@ const AdminVideoSettings = () => {
                     Vídeo do Hero
                 </h1>
                 <p className="text-gray-400">Vídeo de fundo em loop exibido no topo da home</p>
+                <p className="text-gray-500 text-xs mt-2 flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 flex-none" aria-hidden="true" />
+                    O vídeo e o poster daqui aparecem sempre, por trás do banner do Hero — mas só quando existe um banner ativo com "Onde aparece: Hero" em <Link to="/admin/banners" className="underline hover:text-harley-orange">Banners</Link>, que é quem controla o título e o link do botão "Ver Mais". Sem esse banner, o Hero volta a mostrar o carrossel de produtos (não este vídeo).
+                </p>
             </div>
 
             <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 rounded-lg p-6 max-w-3xl">
@@ -106,7 +111,7 @@ const AdminVideoSettings = () => {
                         placeholder="Ex: Feita Pra Rodar"
                         className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Só é usado se não houver um banner "Hero" ativo em Banners — banner de imagem tem prioridade sobre o vídeo.</p>
+                    <p className="text-xs text-gray-500 mt-1">Hoje o Hero sempre usa o título do banner ativo com "Onde aparece: Hero" em Banners — esse campo ainda não é exibido no site. Preencha mesmo assim; é reservado para quando o Hero funcionar sem precisar de um banner cadastrado.</p>
                 </div>
 
                 <button

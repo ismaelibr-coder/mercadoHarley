@@ -156,6 +156,11 @@ const BannerForm = () => {
                             ))}
                         </select>
                         <p className="text-xs text-gray-500 mt-1">Só um banner ativo por local é usado por vez. Ativar um novo aqui não apaga o anterior — ele fica inativo e pode ser reativado.</p>
+                        {formData.placement === 'hero' && (
+                            <p className="text-xs text-harley-orange/80 mt-2 bg-harley-orange/10 border border-harley-orange/30 rounded p-2">
+                                💡 O topo da home mostra um <strong>vídeo</strong> de fundo, cadastrado à parte em <strong>Vídeo</strong> (menu lateral) — não a imagem enviada aqui embaixo. Este banner só controla o <strong>título</strong> e o <strong>link do botão "Ver Mais"</strong>. A imagem serve apenas de reserva, caso o vídeo não consiga carregar.
+                            </p>
+                        )}
                     </div>
 
                     <div>
