@@ -5,6 +5,20 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Package, Search, Filter, ChevronDown, ChevronUp, CheckCircle, XCircle, Clock, Truck, AlertCircle } from 'lucide-react';
 import { useToast } from '../../components/ui/ToastProvider';
 
+// Dates come from Sequelize now (a real Date/ISO string), not the old
+// Firestore Timestamp objects `.toDate ? ... : fallback` was written for —
+// the fallback branch fires for every order today, which meant the date
+// column silently showed *today's* date for every single order (not a
+// crash, just quietly wrong), and search-by-date matched nothing (empty
+// fallback string) instead of crashing either. Fixing both call sites
+// alongside the order-detail-page crash since it's the same root cause.
+const formatOrderDate = (value) => {
+    if (!value) return null;
+    if (typeof value.toDate === 'function') return value.toDate().toLocaleDateString(); // legacy Firestore data, if any remains
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString();
+};
+
 const AdminOrdersPage = () => {
     const { currentUser, isAdmin } = useAuth();
     const navigate = useNavigate();
@@ -86,7 +100,7 @@ const AdminOrdersPage = () => {
         const matchesStatus = filterStatus === 'all' || normalizedStatus === filterStatus;
 
         const searchLower = searchTerm.toLowerCase();
-        const dateString = order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString() : '';
+        const dateString = formatOrderDate(order.createdAt) || '';
         const statusLabel = getStatusLabel(order.status).toLowerCase();
         const totalString = parseFloat(order.total || 0).toFixed(2);
 
@@ -193,7 +207,7 @@ const AdminOrdersPage = () => {
                                             </div>
                                         </td>
                                         <td className="p-4 text-gray-400">
-                                            {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString() : new Date().toLocaleDateString()}
+                                            {formatOrderDate(order.createdAt) || '-'}
                                         </td>
                                         <td className="p-4 text-harley-orange font-bold">
                                             R$ {parseFloat(order.total || 0).toFixed(2)}

@@ -30,6 +30,19 @@ const AdminOrderDetailsPage = () => {
         return translations[status] || status;
     };
 
+    // Dates come from Sequelize now (a real Date/ISO string), not the old
+    // Firestore Timestamp objects this page's .toDate() calls were written
+    // for — createdAt was already guarded (`?.toDate ? ... : '-'`), which
+    // quietly hid every order's real creation date behind a dash instead of
+    // crashing; paidAt wasn't guarded at all and crashed the whole page on
+    // any order that actually has one (i.e. every paid order).
+    const formatOrderDate = (value) => {
+        if (!value) return null;
+        if (typeof value.toDate === 'function') return value.toDate().toLocaleDateString(); // legacy Firestore data, if any remains
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString();
+    };
+
     useEffect(() => {
         const fetchOrder = async () => {
             try {
@@ -196,12 +209,12 @@ const AdminOrderDetailsPage = () => {
                             <div className="text-sm text-gray-400 space-y-2">
                                 <p className="flex justify-between">
                                     <span>Criado em:</span>
-                                    <span>{order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString() : '-'}</span>
+                                    <span>{formatOrderDate(order.createdAt) || '-'}</span>
                                 </p>
-                                {order.paidAt && (
+                                {formatOrderDate(order.paidAt) && (
                                     <p className="flex justify-between">
                                         <span>Pago em:</span>
-                                        <span>{order.paidAt.toDate().toLocaleDateString()}</span>
+                                        <span>{formatOrderDate(order.paidAt)}</span>
                                     </p>
                                 )}
                             </div>
