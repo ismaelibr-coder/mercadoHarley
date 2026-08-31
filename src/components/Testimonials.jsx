@@ -41,13 +41,16 @@ const Testimonials = () => {
                 </div>
 
                 {/* Carrossel horizontal com scroll-snap no mobile (um card
-                    predominante por vez, próximo espiando na borda); vira grid de 3
-                    colunas fixas a partir do md — sem JS de carrossel, só CSS. */}
-                <div className="flex md:grid md:grid-cols-3 gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none -mx-4 px-4 md:mx-0 md:px-0 pb-2 md:pb-0">
+                    predominante por vez, próximo espiando na borda). A partir do md,
+                    flex-wrap + justify-center em vez de um grid-cols-3 fixo — com só
+                    1-2 depoimentos cadastrados hoje, um grid rígido reservava colunas
+                    vazias e prendia o(s) card(s) à esquerda; largura fixa por card
+                    deixa o flex centralizar naturalmente com qualquer quantidade. */}
+                <div className="flex flex-wrap md:justify-center gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none -mx-4 px-4 md:mx-0 md:px-0 pb-2 md:pb-0">
                     {items.map((testimonial) => (
                         <div
                             key={testimonial.id}
-                            className="flex-none w-[85%] sm:w-[60%] md:w-auto snap-center bg-black border border-gray-800 rounded-lg p-6 flex flex-col hover:border-sick-red transition-colors duration-300"
+                            className="flex-none w-[85%] sm:w-[60%] md:w-80 snap-center bg-black border border-gray-800 rounded-lg p-6 flex flex-col hover:border-sick-red transition-colors duration-300"
                         >
                             <Quote className="w-8 h-8 text-sick-red/40 mb-3" aria-hidden="true" />
                             <p className="text-gray-300 flex-1 mb-6 leading-relaxed">"{testimonial.quote}"</p>

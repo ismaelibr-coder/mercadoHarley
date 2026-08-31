@@ -42,13 +42,18 @@ const CustomerShowcase = () => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+                {/* flex-wrap + justify-center, not a fixed grid-cols-N — with only
+                    1-2 photos cadastrados today, a rigid grid reserves empty phantom
+                    columns and pins the real photo(s) to the left instead of reading
+                    as a deliberate layout. Fixed tile width lets flex wrap/center
+                    naturally at any count, from 1 photo up to a full wall of them. */}
+                <div className="flex flex-wrap justify-center gap-3 md:gap-4">
                     {items.map((photo, index) => (
                         <button
                             key={photo.id}
                             type="button"
                             onClick={() => openLightbox(index)}
-                            className="relative aspect-square overflow-hidden rounded-lg group focus:outline-none focus-visible:ring-2 focus-visible:ring-sick-red"
+                            className="relative aspect-square w-32 sm:w-40 md:w-48 overflow-hidden rounded-lg group focus:outline-none focus-visible:ring-2 focus-visible:ring-sick-red"
                         >
                             <img
                                 src={photo.image}
