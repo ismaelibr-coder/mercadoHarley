@@ -16,7 +16,10 @@ const categories = [
         icon: Wrench,
         color: 'from-orange-600 to-red-600',
         description: 'Mantenha sua máquina rodando.',
-        fallbackImage: null // has a real admin-configured banner already
+        // Had a real admin-configured banner in local dev, but that's DB
+        // content, not code — it never made it to production, so this
+        // needs its own fallback like the other 3 categories.
+        fallbackImage: 'https://images.unsplash.com/photo-1514443031610-8c063c7a9822?q=80&w=800&auto=format&fit=crop'
     },
     {
         id: 'acessorios',
