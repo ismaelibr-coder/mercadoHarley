@@ -5,6 +5,7 @@ import { createBanner, updateBanner, getBannerById } from '../../services/banner
 import { getAllProducts } from '../../services/productService';
 import ImageUpload from '../../components/ImageUpload';
 import { useToast } from '../../components/ui/ToastProvider';
+import { CATEGORY_MAP } from '../../config/categories.js';
 
 const BannerForm = () => {
     const { id } = useParams();
@@ -24,7 +25,16 @@ const BannerForm = () => {
         active: true
     });
 
-    const categories = ['Peças', 'Vestuário', 'Acessórios'];
+    // Routes are keyed by macro-category slug ("pecas"), not by display name
+    // ("Peças") — this dropdown used to offer the raw display names as the
+    // link value, producing a /category/Peças link nothing matches (same bug
+    // as the product page's breadcrumb, found in the same pass). Built from
+    // CATEGORY_MAP so it can't drift from what routing actually expects, and
+    // covers all 4 macro-categories instead of the 3 that were hardcoded here
+    // (Elétrica & Iluminação was missing).
+    const categoryLinkOptions = Object.entries(CATEGORY_MAP)
+        .filter(([key]) => key !== 'todos')
+        .map(([key, { title }]) => ({ value: key, label: title }));
 
     // Where this banner shows on the site. 'hero' replaces the homepage's product
     // carousel when active; the 4 category-* placements become that category
@@ -189,8 +199,8 @@ const BannerForm = () => {
                                 className="w-full bg-black border border-gray-700 rounded p-3 text-white focus:border-harley-orange focus:outline-none"
                             >
                                 <option value="">Selecione uma categoria</option>
-                                {categories.map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
+                                {categoryLinkOptions.map(({ value, label }) => (
+                                    <option key={value} value={value}>{label}</option>
                                 ))}
                             </select>
                         ) : formData.linkType === 'product' ? (

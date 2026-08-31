@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Star, ShoppingCart, Minus, Plus, XCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { getProductById, getProductsByCategory } from '../services/productService';
+import { getCategorySlug } from '../config/categories.js';
 import { useCart } from '../context/CartContext';
 import SEO from '../components/SEO';
 import ShippingCalculator from '../components/ShippingCalculator';
@@ -112,9 +113,22 @@ const ProductPage = () => {
                             <>
                                 <li aria-hidden="true">/</li>
                                 <li>
-                                    <Link to={`/category/${product.category}`} className="hover:text-harley-orange transition-colors capitalize">
-                                        {product.category}
-                                    </Link>
+                                    {/* Routes are keyed by macro-category slug ("pecas"), not by
+                                        the display name stored on the product ("Peças") — linking
+                                        straight to /category/${product.category} 0-matched every
+                                        time. If no macro-category claims this raw category (data
+                                        gap, not expected in practice), fall back to plain text
+                                        instead of a link nothing would match either. */}
+                                    {(() => {
+                                        const slug = getCategorySlug(product.category);
+                                        return slug ? (
+                                            <Link to={`/category/${slug}`} className="hover:text-harley-orange transition-colors capitalize">
+                                                {product.category}
+                                            </Link>
+                                        ) : (
+                                            <span className="capitalize">{product.category}</span>
+                                        );
+                                    })()}
                                 </li>
                             </>
                         )}

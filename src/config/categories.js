@@ -27,6 +27,25 @@ export const CATEGORY_MAP = {
 };
 
 /**
+ * Given a product's raw `category` field (e.g. "Peças", "Escapamentos" — the
+ * display-name strings actually stored on products), returns the matching
+ * macro-category slug (e.g. "pecas") that routing/CATEGORY_MAP expects —
+ * NOT the display name itself. Building a `/category/${...}` link straight
+ * from a product's category field (or an admin form's raw category name)
+ * produces a URL nothing matches, since routes are keyed by slug, not by
+ * display name — found as a real, live bug in ProductPage.jsx's breadcrumb
+ * (linked to /category/Peças, which 0-matches; the working link is
+ * /category/pecas). Returns null if no macro-category claims it.
+ */
+export const getCategorySlug = (rawCategory) => {
+    if (!rawCategory) return null;
+    const entry = Object.entries(CATEGORY_MAP).find(
+        ([key, { allowedCategories }]) => key !== 'todos' && allowedCategories?.includes(rawCategory)
+    );
+    return entry?.[0] || null;
+};
+
+/**
  * Counts how many products fall under each macro-category key in CATEGORY_MAP
  * (excluding 'todos', which by definition covers everything). Used to hide menu
  * links / home cards for a macro-category with zero published products instead
